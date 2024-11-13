@@ -1,4 +1,4 @@
-namespace GameEngine
+namespace GameEngine.WinForms
 {
     internal static class Program
     {

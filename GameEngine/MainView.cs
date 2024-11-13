@@ -1,6 +1,5 @@
-using SkiaSharp.Views.Desktop;
-using SkiaSharp;
-using GameEngine.WinForms;
+using GameEngine.Core;
+using GameEngine.Demo;
 
 namespace GameEngine
 {
@@ -16,7 +15,5 @@ namespace GameEngine
             gameEngine.ChangeScene(scene);
             gameEngine.Start();
         }
-
-
     }
 }

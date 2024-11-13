@@ -1,21 +1,19 @@
-﻿using SkiaSharp;
-using SkiaSharp.Views.Desktop;
-using System.Xml.Serialization;
+﻿using SkiaSharp.Views.Desktop;
 
-namespace GameEngine.WinForms
+namespace GameEngine.Core
 {
     public class Engine
     {
         public SKControl SkMain;
         Scene currentScene;
-        int simulationSpeed = 1;
+        readonly int simulationSpeed = 1;
 
         public Engine(SKControl skMain, Size size, Point location)
         {
             SkMain = skMain;
             SkMain.Size = size;
             SkMain.Location = location;
-            SkMain.PaintSurface += new EventHandler<SkiaSharp.Views.Desktop.SKPaintSurfaceEventArgs>(Paint);
+            SkMain.PaintSurface += new EventHandler<SKPaintSurfaceEventArgs>(Paint);
             SkMain.KeyPress += new KeyPressEventHandler(OnKeyPress);
         }
 
@@ -23,7 +21,7 @@ namespace GameEngine.WinForms
         {
             while (true)
             {
-                await Task.Delay(1000 / (simulationSpeed*60));
+                await Task.Delay(1000 / (simulationSpeed * 60));
                 Update();
                 SkMain.Invalidate();
             }
@@ -33,7 +31,6 @@ namespace GameEngine.WinForms
         {
             currentScene?.Simulate();
         }
-
 
         private void OnKeyPress(object sender, KeyPressEventArgs e)
         {
@@ -48,25 +45,8 @@ namespace GameEngine.WinForms
 
         private void Paint(object sender, SKPaintSurfaceEventArgs e)
         {
-
             var canvas = e.Surface.Canvas;
-
-            
             currentScene.Render(canvas);
-
-            using var paint = new SKPaint
-            {
-                Color = SKColors.Black,
-                IsAntialias = true,
-                Style = SKPaintStyle.Fill
-            };
-            using var font = new SKFont
-            {
-                Size = 72
-            };
-            var coord = new SKPoint(e.Info.Width / 2, (e.Info.Height + font.Size) / 2);
-            canvas.DrawText("SkiaSharp", coord.X, coord.Y, font, paint);
         }
-
     }
 }

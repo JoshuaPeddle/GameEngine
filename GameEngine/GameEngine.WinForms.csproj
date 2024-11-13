@@ -13,4 +13,8 @@
     <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="2.88.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\GameEngine.Demo\GameEngine.Demo.csproj" />
+  </ItemGroup>
+
 </Project>
