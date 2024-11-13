@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.WinForms", "GameEngine\GameEngine.WinForms.csproj", "{0271AA5E-0A4D-414F-BCB1-411A173DFAB7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Core", "GameEngine.Infrastructure\GameEngine.Core.csproj", "{F308B3F1-B666-4794-AA25-A51DA9B5CC1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Core", "GameEngine.Core\GameEngine.Core.csproj", "{F308B3F1-B666-4794-AA25-A51DA9B5CC1F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Demo", "GameEngine.Demo\GameEngine.Demo.csproj", "{6ADF83B6-2CCA-4FC9-9C24-DB66445C786C}"
 EndProject
