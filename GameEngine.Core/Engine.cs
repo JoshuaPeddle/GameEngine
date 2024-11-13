@@ -14,7 +14,8 @@ namespace GameEngine.Core
             SkMain.Size = size;
             SkMain.Location = location;
             SkMain.PaintSurface += new EventHandler<SKPaintSurfaceEventArgs>(Paint);
-            SkMain.KeyPress += new KeyPressEventHandler(OnKeyPress);
+            SkMain.KeyDown += new KeyEventHandler(OnKeyDown);
+            SkMain.KeyUp += new KeyEventHandler(OnKeyUp);
         }
 
         public async Task Start()
@@ -43,10 +44,16 @@ namespace GameEngine.Core
             currentScene?.Render(canvas);
         }
 
-        private void OnKeyPress(object? sender, KeyPressEventArgs e)
+        private void OnKeyDown(object? sender, KeyEventArgs e)
         {
-            Keys key = (Keys)char.ToUpper(e.KeyChar);
-            currentScene?.ExecuteAction(key);
+            Keys key = e.KeyCode;
+            currentScene?.HandleAction(key, true);
+        }
+
+        private void OnKeyUp(object? sender, KeyEventArgs e)
+        {
+            Keys key = e.KeyCode;
+            currentScene?.HandleAction(key, false);
         }
     }
 }

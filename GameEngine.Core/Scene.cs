@@ -4,24 +4,19 @@ namespace GameEngine.Core
 {
     public abstract class Scene
     {
-        public Dictionary<Keys, string> actionMap = new();
-
-        public Scene()
-        {
-
-        }
+        public Dictionary<Keys, string> ActionMap = [];
 
         public void AddAction(Keys key, string action)
         {
-            actionMap.Add(key, action);
+            ActionMap.Add(key, action);
         }
 
         public void RemoveAction(Keys key)
         {
-            actionMap.Remove(key);
+            ActionMap.Remove(key);
         }
 
-        public abstract void ExecuteAction(Keys key);
+        public abstract void HandleAction(Keys key, bool start);
 
         public abstract void Simulate();
 

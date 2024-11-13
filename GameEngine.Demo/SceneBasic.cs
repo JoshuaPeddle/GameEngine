@@ -21,11 +21,12 @@ namespace GameEngine.Demo
             playerEntity = entityManager.CreateEntity("player");
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
             playerEntity.AddComponent<CTransform>();
+            playerEntity.AddComponent<CInput>();
         }
 
-        public override void ExecuteAction(Keys key)
+        public  void ExecuteAction2(Keys key)
         {
-            if (actionMap.TryGetValue(key, out string? value))
+            if (ActionMap.TryGetValue(key, out string? value))
             {
                 string action = value;
 
@@ -54,10 +55,94 @@ namespace GameEngine.Demo
             }
         }
 
+        public override void HandleAction(Keys key, bool start)
+        {
+            if (ActionMap.TryGetValue(key, out string? value))
+            {
+                string action = value;
+
+                var playerInput = playerEntity.GetComponent<CInput>();
+
+                if (start)
+                {
+                    if (action == "moveUp")
+                    {
+                        playerInput.Up = true;
+                    }
+                    else if (action == "moveDown")
+                    {
+                        playerInput.Down = true;
+                    }
+                    else if (action == "moveLeft")
+                    {
+                        playerInput.Left = true;
+                    }
+                    else if (action == "moveRight")
+                    {
+                        playerInput.Right = true;
+                    }
+                }
+                else
+                {
+                    if (action == "moveUp")
+                    {
+                        playerInput.Up = false;
+                    }
+                    else if (action == "moveDown")
+                    {
+                        playerInput.Down = false;
+                    }
+                    else if (action == "moveLeft")
+                    {
+                        playerInput.Left = false;
+                    }
+                    else if (action == "moveRight")
+                    {
+                        playerInput.Right = false;
+                    }
+                }
+
+            }
+        }
+
         public override void Simulate()
         {
-
+            Movement();
         }
+
+        void Movement()
+        {
+            var playerInput = playerEntity.GetComponent<CInput>();
+            var playerTransform = playerEntity.GetComponent<CTransform>();
+
+            if (!playerInput.Any)
+            {
+                playerTransform.Velocity = playerTransform.Velocity * 0.9f;
+            }
+            if (playerInput.Up)
+            {
+                playerTransform.Velocity.Y += -1;
+            }
+            if (playerInput.Down)
+            {
+                playerTransform.Velocity.Y += 1;
+            }
+            if (playerInput.Left)
+            {
+                playerTransform.Velocity.X += -1;
+            }
+            if (playerInput.Right)
+            {
+                playerTransform.Velocity.X += 1;
+            }
+            
+            if (playerTransform.Velocity.Length() > 5)
+                playerTransform.Velocity = playerTransform.Velocity.Normalize() * 5;
+
+            playerTransform.Position += playerTransform.Velocity;
+        }
+
+
 
         int i = 0;
         SKPaint paint = new SKPaint() { Color = SKColors.Red, TextSize = 30 };

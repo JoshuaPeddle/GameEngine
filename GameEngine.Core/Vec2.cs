@@ -108,5 +108,10 @@
             float cos = (float)Math.Cos(rad);
             return new Vec2(X * cos - Y * sin, X * sin + Y * cos);
         }
+
+        public double Length()
+        {
+            return Math.Sqrt(X * X + Y * Y);
+        }
     }
 }
