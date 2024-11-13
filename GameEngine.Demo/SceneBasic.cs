@@ -6,8 +6,9 @@ namespace GameEngine.Demo
 {
     public class SceneBasic : Scene
     {
-        private readonly EntityManager entityManager = new EntityManager();
+        private readonly EntityManager entityManager;
         private readonly Entity playerEntity;
+        private readonly Assets assets = new("assets.txt");
 
         public SceneBasic()
         {
@@ -15,19 +16,21 @@ namespace GameEngine.Demo
             AddAction(Keys.S, "moveDown");
             AddAction(Keys.A, "moveLeft");
             AddAction(Keys.D, "moveRight");
+            entityManager = new EntityManager();
 
             playerEntity = entityManager.CreateEntity("player");
+            playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
             playerEntity.AddComponent<CTransform>();
         }
 
         public override void ExecuteAction(Keys key)
         {
-            if (actionMap.ContainsKey(key))
+            if (actionMap.TryGetValue(key, out string? value))
             {
-                string action = actionMap[key];
+                string action = value;
 
                 var playerTransform = playerEntity.GetComponent<CTransform>();
-
+                
                 if (action == "moveUp")
                 {
                     playerTransform.PreviousPosition = playerTransform.Position;
@@ -56,16 +59,24 @@ namespace GameEngine.Demo
 
         }
 
+        int i = 0;
+        SKPaint paint = new SKPaint() { Color = SKColors.Red, TextSize = 30 };
         public override void Render(SKCanvas canvas)
         {
             canvas.Clear(SKColors.White);
             DrawPlayer(canvas);
+
+            canvas.DrawText(i++.ToString(), 30, 50, paint);
         }
 
         private void DrawPlayer(SKCanvas canvas)
         {
             var playerTransform = playerEntity.GetComponent<CTransform>();
-            canvas.DrawRect(new SKRect((float)playerTransform.Position.X, (float)playerTransform.Position.Y, (float)playerTransform.Position.X + 10, (float)playerTransform.Position.Y + 10), new SKPaint() { Color = SKColors.Black });
+
+            var animation = playerEntity.GetComponent<CAnimation>();
+            using var frame = animation.GetCurrentFrame();
+
+            canvas.DrawImage(frame, new SKPoint((float)playerTransform.Position.X, (float)playerTransform.Position.Y));
         }
     }
 }

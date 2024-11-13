@@ -1,0 +1,3 @@
+﻿Texture TexJeep images/jeep.png
+
+Animation JeepBack TexJeep 1 0

@@ -16,4 +16,13 @@
 	<ProjectReference Include="..\GameEngine.Core\GameEngine.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="assets.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="assets\images\jeep.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
