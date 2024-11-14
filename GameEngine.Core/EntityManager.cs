@@ -30,5 +30,17 @@
         {
             return entities[id];
         }
+        public List<Entity> GetEntitiesWithComponent<T>() where T : Component
+        {
+            List<Entity> entitiesWithComponent = new();
+            foreach (var entity in entities)
+            {
+                if (entity.HasComponent<T>())
+                {
+                    entitiesWithComponent.Add(entity);
+                }
+            }
+            return entitiesWithComponent;
+        }
     }
 }

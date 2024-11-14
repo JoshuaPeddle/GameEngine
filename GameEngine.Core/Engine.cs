@@ -8,6 +8,9 @@ namespace GameEngine.Core
         public SKControl SkMain;
         Scene? currentScene;
         readonly int simulationSpeed = 1;
+        private readonly EntityManager entityManager = new EntityManager();
+        private readonly InputManager inputManager = new InputManager();
+        private readonly ActionMapper actionMapper;
         private Stopwatch stopwatch;
         private long lastUpdateTime;
 
@@ -19,6 +22,7 @@ namespace GameEngine.Core
             SkMain.PaintSurface += new EventHandler<SKPaintSurfaceEventArgs>(Paint);
             SkMain.KeyDown += new KeyEventHandler(OnKeyDown);
             SkMain.KeyUp += new KeyEventHandler(OnKeyUp);
+            actionMapper = new ActionMapper(inputManager);
         }
 
         public async Task Start()
@@ -41,12 +45,15 @@ namespace GameEngine.Core
 
         private void Update(float deltaTime)
         {
+            entityManager.Update();
+
             currentScene?.Simulate(deltaTime);
         }
 
         public void ChangeScene(Scene scene, bool endScene = false)
         {
             currentScene = scene;
+            currentScene.Initialize(entityManager, inputManager, actionMapper);
         }
 
         private void Paint(object? sender, SKPaintSurfaceEventArgs e)

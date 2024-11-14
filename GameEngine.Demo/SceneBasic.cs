@@ -6,25 +6,26 @@ namespace GameEngine.Demo
 {
     public class SceneBasic : Scene
     {
-        private readonly EntityManager entityManager;
-        private readonly InputManager inputManager;
-        private readonly ActionMapper actionMapper;
-        private readonly Entity testEntity;
         private readonly Assets assets = new("assets.txt");
 
+        private EntityManager entityManager;
+        private InputManager inputManager;
+        private ActionMapper actionMapper;
         private Entity? playerEntity;
+        private Entity testEntity;
 
-        public SceneBasic()
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, ActionMapper actionMapper)
         {
-            inputManager = new InputManager();
-            actionMapper = new ActionMapper(inputManager);
+            this.entityManager = entityManager;
+            this.inputManager = inputManager;
+            this.actionMapper = actionMapper;
+
 
             inputManager.AddAction(Keys.W, "Up");
             inputManager.AddAction(Keys.S, "Down");
             inputManager.AddAction(Keys.A, "Left");
             inputManager.AddAction(Keys.D, "Right");
 
-            entityManager = new EntityManager();
             CreatePlayer();
 
             testEntity = entityManager.CreateEntity("grenade");
@@ -57,7 +58,6 @@ namespace GameEngine.Demo
         {
             Movement(deltaMs);
             Animations(deltaMs);
-            entityManager.Update();
         }
 
         void Animations(float deltaMs)
@@ -83,7 +83,6 @@ namespace GameEngine.Demo
                 float decelerationFactor = 0.2f;
                 playerTransform.Velocity *= MathF.Pow(decelerationFactor, deltaSeconds);
             }
-
             if (playerInput.Up)
             {
                 playerTransform.Velocity.Y -= playerSpeedTransform;
@@ -141,5 +140,6 @@ namespace GameEngine.Demo
 
             canvas.DrawImage(frame, new SKPoint((float)playerTransform.Position.X, (float)playerTransform.Position.Y));
         }
+
     }
 }
