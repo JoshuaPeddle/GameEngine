@@ -97,38 +97,5 @@ namespace GameEngine.Demo
 
             playerTransform.Position += playerTransform.Velocity * deltaSeconds;
         }
-
-        int i = 0;
-        readonly SKPaint paint = new SKPaint() { Color = SKColors.Red, TextSize = 30 };
-        public override void Render(SKCanvas canvas)
-        {
-            canvas.Clear(SKColors.White);
-            DrawPlayer(canvas);
-
-            DrawTestEntity(canvas);
-
-            canvas.DrawText(i++.ToString(), 30, 50, paint);
-        }
-
-        private void DrawTestEntity(SKCanvas canvas)
-        {
-            var testTransform = testEntity.GetComponent<CTransform>();
-
-            var animation = testEntity.GetComponent<CAnimation>();
-            using var frame = animation.GetCurrentFrame();
-
-            canvas.DrawImage(frame, new SKPoint((float)testTransform.Position.X, (float)testTransform.Position.Y));
-        }
-
-        private void DrawPlayer(SKCanvas canvas)
-        {
-            var playerTransform = playerEntity.GetComponent<CTransform>();
-
-            var animation = playerEntity.GetComponent<CAnimation>();
-            using var frame = animation.GetCurrentFrame();
-
-            canvas.DrawImage(frame, new SKPoint((float)playerTransform.Position.X, (float)playerTransform.Position.Y));
-        }
-
     }
 }

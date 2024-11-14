@@ -19,11 +19,11 @@ namespace GameEngine.Core
             SkMain = skMain;
             SkMain.Size = size;
             SkMain.Location = location;
-            SkMain.PaintSurface += new EventHandler<SKPaintSurfaceEventArgs>(Paint);
             SkMain.KeyDown += new KeyEventHandler(OnKeyDown);
             SkMain.KeyUp += new KeyEventHandler(OnKeyUp);
             actionMapper = new ActionMapper(inputManager);
             systems.Add(new AnimationSystem());
+            systems.Add(new RenderSystem(SkMain, entityManager));
         }
 
         public async Task Start()
@@ -62,11 +62,6 @@ namespace GameEngine.Core
             currentScene.Initialize(entityManager, inputManager, actionMapper);
         }
 
-        private void Paint(object? sender, SKPaintSurfaceEventArgs e)
-        {
-            var canvas = e.Surface.Canvas;
-            currentScene?.Render(canvas);
-        }
 
         private void OnKeyDown(object? sender, KeyEventArgs e)
         {
