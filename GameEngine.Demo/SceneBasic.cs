@@ -56,6 +56,7 @@ namespace GameEngine.Demo
         public override void Simulate(float deltaMs)
         {
             Movement(deltaMs);
+            Animations(deltaMs);
             entityManager.Update();
         }
 
