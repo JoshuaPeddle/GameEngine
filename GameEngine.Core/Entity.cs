@@ -36,7 +36,7 @@ namespace GameEngine.Core
                     return component as T;
                 }
             }
-            throw new ComponentNotFoundException($"Entity {id}:{Tag} does not have component of type {typeof(T)}.");
+            throw new ComponentNotFoundException<T>(this);
         }
 
         public void RemoveComponent<T>()

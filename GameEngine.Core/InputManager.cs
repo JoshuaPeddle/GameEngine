@@ -1,4 +1,6 @@
-﻿namespace GameEngine.Core
+﻿using static GameEngine.Core.Exceptions;
+
+namespace GameEngine.Core
 {
     public class InputManager
     {
@@ -72,7 +74,9 @@
             if (component != null)
             {
                 inputManager.BindAction(actionName, isActive => updateAction(component, isActive));
+                return;
             }
+            throw new ComponentNotFoundException<T>(entity);
         }
     }
 }
