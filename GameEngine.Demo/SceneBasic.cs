@@ -43,20 +43,19 @@ namespace GameEngine.Demo
             actionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);
             actionMapper.MapActionToComponent<CInput>("Left", playerEntity, (input, isActive) => input.Left = isActive);
             actionMapper.MapActionToComponent<CInput>("Right", playerEntity, (input, isActive) => input.Right = isActive);
-                }
+        }
 
         public override void HandleAction(Keys key, bool start)
         {
-                if (start)
+            if (start)
                 inputManager.HandleKeyPress(key);
-                else
+            else
                 inputManager.HandleKeyRelease(key);
         }
 
         public override void Simulate(float deltaMs)
         {
-            Movement();
-            Animations(deltaMs);
+            Movement(deltaMs);
             entityManager.Update();
         }
 
@@ -69,42 +68,49 @@ namespace GameEngine.Demo
             });
         }
 
-        void Movement()
+        void Movement(float deltaMs)
         {
             var playerInput = playerEntity.GetComponent<CInput>();
             var playerTransform = playerEntity.GetComponent<CTransform>();
 
+            float deltaSeconds = deltaMs / 1000f;
+            float playerSpeed = 600f; 
+            float playerSpeedTransform = playerSpeed * deltaSeconds;
+
             if (!playerInput.Any)
             {
-                playerTransform.Velocity = playerTransform.Velocity * 0.9f;
+                float decelerationFactor = 0.2f;
+                playerTransform.Velocity *= MathF.Pow(decelerationFactor, deltaSeconds);
             }
+
             if (playerInput.Up)
             {
-                playerTransform.Velocity.Y += -1;
+                playerTransform.Velocity.Y -= playerSpeedTransform;
             }
             if (playerInput.Down)
             {
-                playerTransform.Velocity.Y += 1;
+                playerTransform.Velocity.Y += playerSpeedTransform;
             }
             if (playerInput.Left)
             {
-                playerTransform.Velocity.X += -1;
+                playerTransform.Velocity.X -= playerSpeedTransform;
             }
             if (playerInput.Right)
             {
-                playerTransform.Velocity.X += 1;
+                playerTransform.Velocity.X += playerSpeedTransform;
             }
-            
-            if (playerTransform.Velocity.Length() > 5)
-                playerTransform.Velocity = playerTransform.Velocity.Normalize() * 5;
 
-            playerTransform.Position += playerTransform.Velocity;
+            float maxSpeed = 250f;
+            if (playerTransform.Velocity.Length() > maxSpeed)
+            {
+                playerTransform.Velocity = playerTransform.Velocity.Normalize() * maxSpeed;
+            }
+
+            playerTransform.Position += playerTransform.Velocity * deltaSeconds;
         }
 
-
-
         int i = 0;
-        SKPaint paint = new SKPaint() { Color = SKColors.Red, TextSize = 30 };
+        readonly SKPaint paint = new SKPaint() { Color = SKColors.Red, TextSize = 30 };
         public override void Render(SKCanvas canvas)
         {
             canvas.Clear(SKColors.White);
