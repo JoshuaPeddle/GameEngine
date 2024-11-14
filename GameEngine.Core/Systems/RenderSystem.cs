@@ -21,7 +21,7 @@ namespace GameEngine.Core.Systems
             skControl.Invalidate();
         }
 
-        private void OnPaintSurface(object sender, SKPaintSurfaceEventArgs e)
+        private void OnPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.White);
@@ -35,7 +35,7 @@ namespace GameEngine.Core.Systems
                     var transform = entity.GetComponent<CTransform>();
                     var animation = entity.GetComponent<CAnimation>();
 
-                    var frame = animation.GetCurrentFrame();
+                    using var frame = animation.GetCurrentFrame();
                     canvas.DrawImage(frame, new SKPoint((float)transform.Position.X, (float)transform.Position.Y));
                 }
             }

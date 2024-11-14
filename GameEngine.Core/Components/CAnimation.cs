@@ -4,21 +4,23 @@ namespace GameEngine.Core.Components
 {
     public class CAnimation : Component
     {
-        public Animation animation;
+        private readonly Animation animation;
+        private float elapsedTime;
 
         public CAnimation(Animation animation)
         {
             this.animation = animation;
+            this.elapsedTime = 0f;
         }
 
         public SKImage GetCurrentFrame()
         {
-            return animation.GetCurrentFrame();
+            return animation.GetCurrentFrame(elapsedTime);
         }
 
         public void Update(float deltaTime)
         {
-            animation.Update(deltaTime);
+            elapsedTime += deltaTime;
         }
     }
 }

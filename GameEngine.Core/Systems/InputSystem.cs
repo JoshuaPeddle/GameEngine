@@ -13,7 +13,7 @@
 
         public void Update(EntityManager entityManager, float deltaTime)
         {
-            inputManager.Update();
+            inputManager.DoActions();
         }
 
         public void OnKeyDown(object? sender, KeyEventArgs e)

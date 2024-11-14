@@ -49,7 +49,7 @@
             }
         }
 
-        public void Update()
+        public void DoActions()
         {
             foreach (var action in actionBindings)
             {
