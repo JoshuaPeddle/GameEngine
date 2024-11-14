@@ -7,106 +7,50 @@ namespace GameEngine.Demo
     public class SceneBasic : Scene
     {
         private readonly EntityManager entityManager;
-        private readonly Entity playerEntity;
+        private readonly InputManager inputManager;
+        private readonly ActionMapper actionMapper;
         private readonly Entity testEntity;
         private readonly Assets assets = new("assets.txt");
 
+        private Entity? playerEntity;
+
         public SceneBasic()
         {
-            AddAction(Keys.W, "moveUp");
-            AddAction(Keys.S, "moveDown");
-            AddAction(Keys.A, "moveLeft");
-            AddAction(Keys.D, "moveRight");
-            entityManager = new EntityManager();
+            inputManager = new InputManager();
+            actionMapper = new ActionMapper(inputManager);
 
-            playerEntity = entityManager.CreateEntity("player");
-            playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
-            playerEntity.AddComponent<CTransform>();
-            playerEntity.AddComponent<CInput>();
+            inputManager.AddAction(Keys.W, "Up");
+            inputManager.AddAction(Keys.S, "Down");
+            inputManager.AddAction(Keys.A, "Left");
+            inputManager.AddAction(Keys.D, "Right");
+
+            entityManager = new EntityManager();
+            CreatePlayer();
 
             testEntity = entityManager.CreateEntity("grenade");
             testEntity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
             testEntity.AddComponent<CTransform>();
         }
 
-        public  void ExecuteAction2(Keys key)
+        private void CreatePlayer()
         {
-            if (ActionMap.TryGetValue(key, out string? value))
-            {
-                string action = value;
+            playerEntity = entityManager.CreateEntity("player");
+            playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
+            playerEntity.AddComponent<CTransform>();
+            var playerInput = playerEntity.AddComponent<CInput>();
 
-                var playerTransform = playerEntity.GetComponent<CTransform>();
-                
-                if (action == "moveUp")
-                {
-                    playerTransform.PreviousPosition = playerTransform.Position;
-                    playerTransform.Position.Y -= 1;
+            actionMapper.MapActionToComponent<CInput>("Up", playerEntity, (input, isActive) => input.Up = isActive);
+            actionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);
+            actionMapper.MapActionToComponent<CInput>("Left", playerEntity, (input, isActive) => input.Left = isActive);
+            actionMapper.MapActionToComponent<CInput>("Right", playerEntity, (input, isActive) => input.Right = isActive);
                 }
-                else if (action == "moveDown")
-                {
-                    playerTransform.PreviousPosition = playerTransform.Position;
-                    playerTransform.Position.Y += 1;
-                }
-                else if (action == "moveLeft")
-                {
-                    playerTransform.PreviousPosition = playerTransform.Position;
-                    playerTransform.Position.X -= 1;
-                }
-                else if (action == "moveRight")
-                {
-                    playerTransform.PreviousPosition = playerTransform.Position;
-                    playerTransform.Position.X += 1;
-                }
-            }
-        }
 
         public override void HandleAction(Keys key, bool start)
         {
-            if (ActionMap.TryGetValue(key, out string? value))
-            {
-                string action = value;
-
-                var playerInput = playerEntity.GetComponent<CInput>();
-
                 if (start)
-                {
-                    if (action == "moveUp")
-                    {
-                        playerInput.Up = true;
-                    }
-                    else if (action == "moveDown")
-                    {
-                        playerInput.Down = true;
-                    }
-                    else if (action == "moveLeft")
-                    {
-                        playerInput.Left = true;
-                    }
-                    else if (action == "moveRight")
-                    {
-                        playerInput.Right = true;
-                    }
-                }
+                inputManager.HandleKeyPress(key);
                 else
-                {
-                    if (action == "moveUp")
-                    {
-                        playerInput.Up = false;
-                    }
-                    else if (action == "moveDown")
-                    {
-                        playerInput.Down = false;
-                    }
-                    else if (action == "moveLeft")
-                    {
-                        playerInput.Left = false;
-                    }
-                    else if (action == "moveRight")
-                    {
-                        playerInput.Right = false;
-                    }
-                }
-            }
+                inputManager.HandleKeyRelease(key);
         }
 
         public override void Simulate(float deltaMs)

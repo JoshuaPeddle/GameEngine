@@ -20,7 +20,7 @@ namespace GameEngine.Core
             return component;
         }
 
-        public Component AddComponent<T>() where T : Component, new()
+        public T AddComponent<T>() where T : Component, new()
         {
             T component = new T();
             Components.Add(component);

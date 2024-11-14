@@ -29,8 +29,8 @@ namespace GameEngine.Core
 
             while (true)
             {
-                await Task.Delay(1000 / (simulationSpeed * 60));
-
+                await Task.Delay(1);
+                //await Task.Delay(1000 / (simulationSpeed * 60));
                 float deltaTime = CalculateDeltaTime();
 
                 Update(deltaTime); 
