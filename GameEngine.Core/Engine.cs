@@ -1,5 +1,6 @@
 ﻿using SkiaSharp.Views.Desktop;
 using System.Diagnostics;
+using GameEngine.Core.Systems;
 
 namespace GameEngine.Core
 {
@@ -21,11 +22,11 @@ namespace GameEngine.Core
             SkMain.Location = location;
             actionMapper = new ActionMapper(inputManager);
 
-            // Initialize systems
             var inputSystem = new InputSystem(inputManager, actionMapper);
             systems.Add(inputSystem);
             SkMain.KeyDown += new KeyEventHandler(inputSystem.OnKeyDown);
             SkMain.KeyUp += new KeyEventHandler(inputSystem.OnKeyUp);
+            systems.Add(new MovementSystem());
             systems.Add(new AnimationSystem());
             systems.Add(new RenderSystem(SkMain, entityManager));
         }
@@ -39,7 +40,6 @@ namespace GameEngine.Core
             while (true)
             {
                 await Task.Delay(1);
-                //await Task.Delay(1000 / (simulationSpeed * 60));
                 float deltaTime = CalculateDeltaTime();
 
                 Update(deltaTime); 
@@ -54,10 +54,7 @@ namespace GameEngine.Core
             {
                 system.Update(entityManager, deltaTime);
             }
-
             entityManager.Update();
-
-            currentScene?.Simulate(deltaTime);
         }
 
         public void ChangeScene(Scene scene, bool endScene = false)
@@ -65,7 +62,7 @@ namespace GameEngine.Core
             currentScene = scene;
             currentScene.Initialize(entityManager, inputManager, actionMapper);
         }
-
+    
         private float CalculateDeltaTime()
         {
             long currentTime = stopwatch.ElapsedMilliseconds;
