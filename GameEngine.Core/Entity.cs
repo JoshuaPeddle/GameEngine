@@ -27,13 +27,39 @@ namespace GameEngine.Core
             return component;
         }
 
-        public T GetComponent<T>() where T : Component
+        public bool HasComponent<T>()
         {
             foreach (var component in Components)
             {
                 if (component is T)
                 {
-                    return component as T;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool TryGetComponent<T>(out T? component) where T : Component
+        {
+            foreach (var c in Components)
+            {
+                if (c is T)
+                {
+                    component = c as T;
+                    return true;
+                }
+            }
+            component = null;
+            return false;
+        }
+
+        public T GetComponent<T>() where T : Component
+        {
+            foreach (var component in Components)
+            {
+                if (component is T typedComponent)
+                {
+                    return typedComponent;
                 }
             }
             throw new ComponentNotFoundException<T>(this);

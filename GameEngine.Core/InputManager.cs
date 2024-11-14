@@ -71,12 +71,7 @@ namespace GameEngine.Core
         public void MapActionToComponent<T>(string actionName, Entity entity, Action<T, bool> updateAction) where T : Component
         {
             var component = entity.GetComponent<T>();
-            if (component != null)
-            {
-                inputManager.BindAction(actionName, isActive => updateAction(component, isActive));
-                return;
-            }
-            throw new ComponentNotFoundException<T>(entity);
+            inputManager.BindAction(actionName, isActive => updateAction(component, isActive));
         }
     }
 }
