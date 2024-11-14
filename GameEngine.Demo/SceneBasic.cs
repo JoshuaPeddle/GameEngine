@@ -8,6 +8,7 @@ namespace GameEngine.Demo
     {
         private readonly EntityManager entityManager;
         private readonly Entity playerEntity;
+        private readonly Entity testEntity;
         private readonly Assets assets = new("assets.txt");
 
         public SceneBasic()
@@ -22,6 +23,10 @@ namespace GameEngine.Demo
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
             playerEntity.AddComponent<CTransform>();
             playerEntity.AddComponent<CInput>();
+
+            testEntity = entityManager.CreateEntity("grenade");
+            testEntity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
+            testEntity.AddComponent<CTransform>();
         }
 
         public  void ExecuteAction2(Keys key)
@@ -101,13 +106,23 @@ namespace GameEngine.Demo
                         playerInput.Right = false;
                     }
                 }
-
             }
         }
 
-        public override void Simulate()
+        public override void Simulate(float deltaMs)
         {
             Movement();
+            Animations(deltaMs);
+            entityManager.Update();
+        }
+
+        void Animations(float deltaMs)
+        {
+            entityManager.GetEntities().ForEach(entity =>
+            {
+                var animation = entity.GetComponent<CAnimation>();
+                animation.Update(deltaMs);
+            });
         }
 
         void Movement()
@@ -151,7 +166,19 @@ namespace GameEngine.Demo
             canvas.Clear(SKColors.White);
             DrawPlayer(canvas);
 
+            DrawTestEntity(canvas);
+
             canvas.DrawText(i++.ToString(), 30, 50, paint);
+        }
+
+        private void DrawTestEntity(SKCanvas canvas)
+        {
+            var testTransform = testEntity.GetComponent<CTransform>();
+
+            var animation = testEntity.GetComponent<CAnimation>();
+            using var frame = animation.GetCurrentFrame();
+
+            canvas.DrawImage(frame, new SKPoint((float)testTransform.Position.X, (float)testTransform.Position.Y));
         }
 
         private void DrawPlayer(SKCanvas canvas)

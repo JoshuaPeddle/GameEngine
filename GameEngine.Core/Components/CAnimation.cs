@@ -15,5 +15,10 @@ namespace GameEngine.Core.Components
         {
             return animation.GetCurrentFrame();
         }
+
+        public void Update(float deltaTime)
+        {
+            animation.Update(deltaTime);
+        }
     }
 }

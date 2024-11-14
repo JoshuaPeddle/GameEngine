@@ -1,4 +1,5 @@
 ﻿using SkiaSharp.Views.Desktop;
+using System.Diagnostics;
 
 namespace GameEngine.Core
 {
@@ -7,6 +8,8 @@ namespace GameEngine.Core
         public SKControl SkMain;
         Scene? currentScene;
         readonly int simulationSpeed = 1;
+        private Stopwatch stopwatch;
+        private long lastUpdateTime;
 
         public Engine(SKControl skMain, Size size, Point location)
         {
@@ -20,18 +23,25 @@ namespace GameEngine.Core
 
         public async Task Start()
         {
+            stopwatch = new Stopwatch();
+            stopwatch.Start();
+            lastUpdateTime = 0;
+
             while (true)
             {
-                await Task.Delay(1);//await Task.Delay(1000 / (simulationSpeed * 60));
-                Update();
+                await Task.Delay(1000 / (simulationSpeed * 60));
+
+                float deltaTime = CalculateDeltaTime();
+
+                Update(deltaTime); 
                 SkMain.Invalidate();
                 SkMain.Update();
             }
         }
 
-        private void Update()
+        private void Update(float deltaTime)
         {
-            currentScene?.Simulate();
+            currentScene?.Simulate(deltaTime);
         }
 
         public void ChangeScene(Scene scene, bool endScene = false)
@@ -55,6 +65,13 @@ namespace GameEngine.Core
         {
             Keys key = e.KeyCode;
             currentScene?.HandleAction(key, false);
+        }
+        private float CalculateDeltaTime()
+        {
+            long currentTime = stopwatch.ElapsedMilliseconds;
+            float deltaTime = currentTime - lastUpdateTime;
+            lastUpdateTime = currentTime;
+            return deltaTime;
         }
     }
 }

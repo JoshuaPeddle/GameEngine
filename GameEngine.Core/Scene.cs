@@ -18,7 +18,7 @@ namespace GameEngine.Core
 
         public abstract void HandleAction(Keys key, bool start);
 
-        public abstract void Simulate();
+        public abstract void Simulate(float deltaMs);
 
         public abstract void Render(SKCanvas canvas);
     }

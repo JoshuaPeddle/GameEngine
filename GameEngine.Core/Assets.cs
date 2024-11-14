@@ -38,7 +38,7 @@ namespace GameEngine.Core
                 }
                 else if (parts[0] == "Animation")
                 {
-                    LoadAnimation(parts[1], parts[2]);
+                    LoadAnimation(parts[1], parts[2], int.Parse(parts[3]), int.Parse(parts[4]));
                 }
             }
         }
@@ -67,9 +67,9 @@ namespace GameEngine.Core
             //fonts.Add(name, new Font(path));
         }
 
-        private void LoadAnimation(string name, string textureName)
+        private void LoadAnimation(string name, string textureName, int frames, int delay)
         {
-            animations.Add(name, new Animation(name, textures[textureName]));
+            animations.Add(name, new Animation(name, textures[textureName], frames, delay));
         }
     }
 }

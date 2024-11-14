@@ -1,3 +1,5 @@
 ﻿Texture TexJeep images/jeep.png
+Texture TexGrenade images/grenade.png
 
-Animation JeepBack TexJeep 1 0
+Animation Grenade TexGrenade 4 250
+Animation JeepBack TexJeep 1 1
