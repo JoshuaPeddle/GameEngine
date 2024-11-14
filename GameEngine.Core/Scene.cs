@@ -1,6 +1,4 @@
-﻿using SkiaSharp;
-
-namespace GameEngine.Core
+﻿namespace GameEngine.Core
 {
     public abstract class Scene
     {

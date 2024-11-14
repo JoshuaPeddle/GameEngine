@@ -1,16 +1,16 @@
-﻿using SkiaSharp.Views.Desktop;
+﻿using GameEngine.Core.Systems;
+using SkiaSharp.Views.Desktop;
 using System.Diagnostics;
-using GameEngine.Core.Systems;
 
 namespace GameEngine.Core
 {
     public class Engine
     {
         public SKControl SkMain;
-        Scene? currentScene;
-        private readonly List<ISystem> systems = new List<ISystem>();
-        private readonly EntityManager entityManager = new EntityManager();
-        private readonly InputManager inputManager = new InputManager();
+        private Scene? currentScene;
+        private readonly List<ISystem> systems = [];
+        private readonly EntityManager entityManager = new();
+        private readonly InputManager inputManager = new();
         private readonly ActionMapper actionMapper;
         private Stopwatch stopwatch;
         private long lastUpdateTime;
@@ -42,7 +42,7 @@ namespace GameEngine.Core
                 await Task.Delay(1);
                 float deltaTime = CalculateDeltaTime();
 
-                Update(deltaTime); 
+                Update(deltaTime);
                 SkMain.Invalidate();
                 SkMain.Update();
             }
@@ -62,7 +62,7 @@ namespace GameEngine.Core
             currentScene = scene;
             currentScene.Initialize(entityManager, inputManager, actionMapper);
         }
-    
+
         private float CalculateDeltaTime()
         {
             long currentTime = stopwatch.ElapsedMilliseconds;

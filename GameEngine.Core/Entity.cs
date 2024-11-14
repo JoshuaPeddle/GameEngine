@@ -7,7 +7,7 @@ namespace GameEngine.Core
         public int id = 0;
         public bool Active = true;
         public string Tag = "default";
-        public List<Component> Components = new();
+        public List<Component> Components = [];
 
         internal Entity(int id, string tag)
         {
@@ -22,7 +22,7 @@ namespace GameEngine.Core
 
         public T AddComponent<T>() where T : Component, new()
         {
-            T component = new T();
+            T component = new();
             Components.Add(component);
             return component;
         }

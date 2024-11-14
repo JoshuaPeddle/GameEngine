@@ -2,8 +2,8 @@
 {
     public class EntityManager
     {
-        private readonly List<Entity> entities = new();
-        private readonly List<Entity> entitiesToAdd = new();
+        private readonly List<Entity> entities = [];
+        private readonly List<Entity> entitiesToAdd = [];
 
         public EntityManager() { }
 
@@ -16,7 +16,7 @@
 
         public Entity CreateEntity(string tag)
         {
-            Entity entity = new Entity(entities.Count, tag);
+            Entity entity = new(entities.Count, tag);
             entitiesToAdd.Add(entity);
             return entity;
         }
@@ -32,7 +32,7 @@
         }
         public List<Entity> GetEntitiesWithComponent<T>() where T : Component
         {
-            List<Entity> entitiesWithComponent = new();
+            List<Entity> entitiesWithComponent = [];
             foreach (var entity in entities)
             {
                 if (entity.HasComponent<T>())

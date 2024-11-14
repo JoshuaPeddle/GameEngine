@@ -2,8 +2,8 @@
 {
     public class Vec2
     {
-        float x;
-        float y;
+        private float x;
+        private float y;
 
         public Vec2(float x, float y)
         {

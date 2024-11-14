@@ -6,10 +6,10 @@ namespace GameEngine.Core
     public class Assets
     {
 
-        private Dictionary<string, SKBitmap> textures = new();
+        private readonly Dictionary<string, SKBitmap> textures = [];
         //private Dictionary<string, Sound> sounds = new(); // TODO: Implement this
-        private Dictionary<string, Font> fonts = new();
-        private Dictionary<string, Animation> animations = new(); // TODO: Implement this
+        private readonly Dictionary<string, Font> fonts = [];
+        private readonly Dictionary<string, Animation> animations = []; // TODO: Implement this
 
         public Assets(string path)
         {
@@ -47,7 +47,8 @@ namespace GameEngine.Core
         {
             return textures[name];
         }
-        public SKBitmap GetFont(string name) {
+        public SKBitmap GetFont(string name)
+        {
             throw new NotImplementedException();
             //return fonts[name];
         }

@@ -2,9 +2,9 @@
 {
     public class InputManager
     {
-        private readonly Dictionary<Keys, string> actionMap = new();
-        private readonly Dictionary<string, bool> actionStates = new();
-        private readonly Dictionary<string, Action<bool>> actionBindings = new(); // Maps actions to update functions
+        private readonly Dictionary<Keys, string> actionMap = [];
+        private readonly Dictionary<string, bool> actionStates = [];
+        private readonly Dictionary<string, Action<bool>> actionBindings = []; // Maps actions to update functions
 
         public void AddAction(Keys key, string actionName)
         {
