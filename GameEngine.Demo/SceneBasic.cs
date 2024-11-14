@@ -20,7 +20,6 @@ namespace GameEngine.Demo
             this.inputManager = inputManager;
             this.actionMapper = actionMapper;
 
-
             inputManager.AddAction(Keys.W, "Up");
             inputManager.AddAction(Keys.S, "Down");
             inputManager.AddAction(Keys.A, "Left");
@@ -57,16 +56,6 @@ namespace GameEngine.Demo
         public override void Simulate(float deltaMs)
         {
             Movement(deltaMs);
-            Animations(deltaMs);
-        }
-
-        void Animations(float deltaMs)
-        {
-            entityManager.GetEntities().ForEach(entity =>
-            {
-                var animation = entity.GetComponent<CAnimation>();
-                animation.Update(deltaMs);
-            });
         }
 
         void Movement(float deltaMs)

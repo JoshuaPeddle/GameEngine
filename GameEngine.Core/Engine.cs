@@ -7,7 +7,7 @@ namespace GameEngine.Core
     {
         public SKControl SkMain;
         Scene? currentScene;
-        readonly int simulationSpeed = 1;
+        private readonly List<ISystem> systems = new List<ISystem>();
         private readonly EntityManager entityManager = new EntityManager();
         private readonly InputManager inputManager = new InputManager();
         private readonly ActionMapper actionMapper;
@@ -23,6 +23,7 @@ namespace GameEngine.Core
             SkMain.KeyDown += new KeyEventHandler(OnKeyDown);
             SkMain.KeyUp += new KeyEventHandler(OnKeyUp);
             actionMapper = new ActionMapper(inputManager);
+            systems.Add(new AnimationSystem());
         }
 
         public async Task Start()
@@ -45,6 +46,11 @@ namespace GameEngine.Core
 
         private void Update(float deltaTime)
         {
+            foreach (ISystem system in systems)
+            {
+                system.Update(entityManager, deltaTime);
+            }
+
             entityManager.Update();
 
             currentScene?.Simulate(deltaTime);
