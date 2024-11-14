@@ -1,6 +1,4 @@
-﻿using static GameEngine.Core.Exceptions;
-
-namespace GameEngine.Core
+﻿namespace GameEngine.Core
 {
     public class InputManager
     {
@@ -40,8 +38,6 @@ namespace GameEngine.Core
             if (actionMap.TryGetValue(key, out string actionName))
             {
                 actionStates[actionName] = true;
-                actionBindings.TryGetValue(actionName, out var action);
-                action?.Invoke(true);
             }
         }
 
@@ -50,8 +46,14 @@ namespace GameEngine.Core
             if (actionMap.TryGetValue(key, out string actionName))
             {
                 actionStates[actionName] = false;
-                actionBindings.TryGetValue(actionName, out var action);
-                action?.Invoke(false);
+            }
+        }
+
+        public void Update()
+        {
+            foreach (var action in actionBindings)
+            {
+                action.Value(actionStates[action.Key]);
             }
         }
 

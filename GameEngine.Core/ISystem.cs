@@ -52,7 +52,19 @@ namespace GameEngine.Core
 
         public void Update(EntityManager entityManager, float deltaTime)
         {
-            // Process input and update components
+            inputManager.Update();
+        }
+
+        public void OnKeyDown(object? sender, KeyEventArgs e)
+        {
+            Keys key = e.KeyCode;
+            inputManager?.HandleKeyPress(key);
+        }
+
+        public void OnKeyUp(object? sender, KeyEventArgs e)
+        {
+            Keys key = e.KeyCode;
+            inputManager?.HandleKeyRelease(key);
         }
     }
 

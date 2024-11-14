@@ -19,9 +19,13 @@ namespace GameEngine.Core
             SkMain = skMain;
             SkMain.Size = size;
             SkMain.Location = location;
-            SkMain.KeyDown += new KeyEventHandler(OnKeyDown);
-            SkMain.KeyUp += new KeyEventHandler(OnKeyUp);
             actionMapper = new ActionMapper(inputManager);
+
+            // Initialize systems
+            var inputSystem = new InputSystem(inputManager, actionMapper);
+            systems.Add(inputSystem);
+            SkMain.KeyDown += new KeyEventHandler(inputSystem.OnKeyDown);
+            SkMain.KeyUp += new KeyEventHandler(inputSystem.OnKeyUp);
             systems.Add(new AnimationSystem());
             systems.Add(new RenderSystem(SkMain, entityManager));
         }
@@ -62,18 +66,6 @@ namespace GameEngine.Core
             currentScene.Initialize(entityManager, inputManager, actionMapper);
         }
 
-
-        private void OnKeyDown(object? sender, KeyEventArgs e)
-        {
-            Keys key = e.KeyCode;
-            currentScene?.HandleAction(key, true);
-        }
-
-        private void OnKeyUp(object? sender, KeyEventArgs e)
-        {
-            Keys key = e.KeyCode;
-            currentScene?.HandleAction(key, false);
-        }
         private float CalculateDeltaTime()
         {
             long currentTime = stopwatch.ElapsedMilliseconds;

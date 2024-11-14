@@ -1,6 +1,5 @@
 ﻿using GameEngine.Core;
 using GameEngine.Core.Components;
-using SkiaSharp;
 
 namespace GameEngine.Demo
 {
@@ -43,14 +42,6 @@ namespace GameEngine.Demo
             actionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);
             actionMapper.MapActionToComponent<CInput>("Left", playerEntity, (input, isActive) => input.Left = isActive);
             actionMapper.MapActionToComponent<CInput>("Right", playerEntity, (input, isActive) => input.Right = isActive);
-        }
-
-        public override void HandleAction(Keys key, bool start)
-        {
-            if (start)
-                inputManager.HandleKeyPress(key);
-            else
-                inputManager.HandleKeyRelease(key);
         }
 
         public override void Simulate(float deltaMs)
