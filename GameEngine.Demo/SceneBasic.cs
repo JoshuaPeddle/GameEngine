@@ -36,7 +36,7 @@ namespace GameEngine.Demo
 
         private void Test_AddBunchOfEntities(EntityManager entityManager)
         {
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 3000; i++)
             {
                 var entity = entityManager.CreateEntity("entity" + i);
                 entity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));

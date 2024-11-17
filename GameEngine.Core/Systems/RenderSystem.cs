@@ -34,17 +34,24 @@ namespace GameEngine.Core.Systems
             {
                 if (options.DrawAnimations && entity.HasComponent<CAnimation>())
                 {
-                    var transform = entity.GetComponent<CTransform>();
                     var animation = entity.GetComponent<CAnimation>();
+                    SKBitmap texture = animation.Texture;
+                    SKRect sourceRect = animation.GetSourceRect();
 
-                    using var frame = animation.GetCurrentFrame();
-                    var aimationSize = new Vec2(frame.Width, frame.Height);
+                    float frameWidth = sourceRect.Width;
+                    float frameHeight = sourceRect.Height;
+                    var animationSize = new Vec2(frameWidth, frameHeight);
 
                     var entityCenter = FindEntityCenter(entity);
 
-                    canvas.DrawImage(frame, new SKPoint((float)entityCenter.X - (float)(aimationSize.X / 2),
-                                                        (float)entityCenter.Y - (float)(aimationSize.Y / 2)));
+                    var destRect = new SKRect(
+                        (float)(entityCenter.X - animationSize.X / 2),
+                        (float)(entityCenter.Y - animationSize.Y / 2),
+                        (float)(entityCenter.X + animationSize.X / 2),
+                        (float)(entityCenter.Y + animationSize.Y / 2)
+                    );
 
+                    canvas.DrawBitmap(texture, sourceRect, destRect);
                 }
                 if (options.DrawBoundingBoxes && entity.HasComponent<CBoundingBox>())
                 {
@@ -68,14 +75,7 @@ namespace GameEngine.Core.Systems
                 var boundingBox = entity.GetComponent<CBoundingBox>();
                 return new Vec2(transform.Position.X + (boundingBox.Width / 2), transform.Position.Y + (boundingBox.Height / 2));
             }
-            else if (entity.HasComponent<CAnimation>())
-            {
-                var animation = entity.GetComponent<CAnimation>();
-                var frame = animation.GetCurrentFrame();
-                var aimationSize = new Vec2(frame.Width, frame.Height);
-
-                return new Vec2(transform.Position.X + (aimationSize.X / 2), transform.Position.Y + (aimationSize.Y / 2));
-            }
+      
             else
             {
                 return new Vec2(transform.Position.X, transform.Position.Y);
@@ -87,7 +87,7 @@ namespace GameEngine.Core.Systems
             canvas.DrawPoint((float)position.X, (float)position.Y, new SKPaint
             {
                 Color = SKColors.Red,
-                StrokeWidth = 5
+                StrokeWidth = 1
             });
         }
 

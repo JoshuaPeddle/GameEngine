@@ -13,9 +13,10 @@ namespace GameEngine.Core.Components
             this.elapsedTime = 0f;
         }
 
-        public SKImage GetCurrentFrame()
+        public SKBitmap Texture => animation.Texture;
+        public SKRect GetSourceRect()
         {
-            return animation.GetCurrentFrame(elapsedTime);
+            return animation.GetSourceRect(elapsedTime);
         }
 
         public void Update(double deltaTime)
