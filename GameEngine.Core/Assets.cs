@@ -70,7 +70,7 @@ namespace GameEngine.Core
 
         private void LoadAnimation(string name, string textureName, int frames, int delay)
         {
-            animations.Add(name, new Animation(name, textures[textureName], frames, delay));
+            animations.Add(name, new Animation(textures[textureName], frames, delay));
         }
     }
 }

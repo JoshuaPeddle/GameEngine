@@ -2,16 +2,14 @@
 
 namespace GameEngine.Core
 {
-      public class Animation
+    public class Animation
     {
-        private readonly string name;
         private readonly SKBitmap texture;
         private readonly int frames;
         private readonly float delay; // Delay between frames in milliseconds
 
-        public Animation(string name, SKBitmap texture, int frames, float delayMs)
+        public Animation(SKBitmap texture, int frames, float delayMs)
         {
-            this.name = name;
             this.texture = texture;
             this.frames = frames;
             this.delay = delayMs;

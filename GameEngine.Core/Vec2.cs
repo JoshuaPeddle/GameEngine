@@ -59,7 +59,7 @@
             return a.X != b.X || a.Y != b.Y;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is Vec2 d &&
                    x == d.x &&

@@ -17,7 +17,7 @@
 
         public void RemoveAction(Keys key)
         {
-            if (actionMap.TryGetValue(key, out string actionName))
+            if (actionMap.TryGetValue(key, out string? actionName))
             {
                 actionMap.Remove(key);
                 actionStates.Remove(actionName);
@@ -35,7 +35,7 @@
 
         public void HandleKeyPress(Keys key)
         {
-            if (actionMap.TryGetValue(key, out string actionName))
+            if (actionMap.TryGetValue(key, out string? actionName))
             {
                 actionStates[actionName] = true;
             }
@@ -43,7 +43,7 @@
 
         public void HandleKeyRelease(Keys key)
         {
-            if (actionMap.TryGetValue(key, out string actionName))
+            if (actionMap.TryGetValue(key, out string? actionName))
             {
                 actionStates[actionName] = false;
             }

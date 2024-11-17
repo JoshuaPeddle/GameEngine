@@ -3,12 +3,10 @@
     public class InputSystem : ISystem
     {
         private readonly InputManager inputManager;
-        private readonly ActionMapper actionMapper;
 
-        public InputSystem(InputManager inputManager, ActionMapper actionMapper)
+        public InputSystem(InputManager inputManager)
         {
             this.inputManager = inputManager;
-            this.actionMapper = actionMapper;
         }
 
         public void Update(EntityManager entityManager, float deltaTime)

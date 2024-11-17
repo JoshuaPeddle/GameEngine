@@ -11,8 +11,7 @@ namespace GameEngine.Core
         private readonly List<ISystem> systems = [];
         private readonly EntityManager entityManager = new();
         private readonly InputManager inputManager = new();
-        private readonly ActionMapper actionMapper;
-        private Stopwatch stopwatch;
+        private readonly Stopwatch stopwatch;
         private long lastUpdateTime;
 
         public Engine(SKControl skMain, Size size, Point location)
@@ -20,20 +19,20 @@ namespace GameEngine.Core
             SkMain = skMain;
             SkMain.Size = size;
             SkMain.Location = location;
-            actionMapper = new ActionMapper(inputManager);
-
-            var inputSystem = new InputSystem(inputManager, actionMapper);
+            
+            var inputSystem = new InputSystem(inputManager);
             systems.Add(inputSystem);
             SkMain.KeyDown += new KeyEventHandler(inputSystem.OnKeyDown);
             SkMain.KeyUp += new KeyEventHandler(inputSystem.OnKeyUp);
             systems.Add(new MovementSystem());
             systems.Add(new AnimationSystem());
             systems.Add(new RenderSystem(SkMain, entityManager));
+
+            stopwatch = new Stopwatch();
         }
 
         public async Task Start()
         {
-            stopwatch = new Stopwatch();
             stopwatch.Start();
             lastUpdateTime = 0;
 
@@ -60,7 +59,7 @@ namespace GameEngine.Core
         public void ChangeScene(Scene scene, bool endScene = false)
         {
             currentScene = scene;
-            currentScene.Initialize(entityManager, inputManager, actionMapper);
+            currentScene.Initialize(entityManager, inputManager, new ActionMapper(inputManager));
         }
 
         private float CalculateDeltaTime()
