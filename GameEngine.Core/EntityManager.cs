@@ -4,19 +4,48 @@
     {
         private readonly List<Entity> entities = [];
         private readonly List<Entity> entitiesToAdd = [];
+        private readonly Dictionary<Type, HashSet<Entity>> componentEntityMap = [];
 
         public EntityManager() { }
 
         public void Update()
         {
-            entities.AddRange(entitiesToAdd);
+            foreach (var entity in entitiesToAdd)
+            {
+                entities.Add(entity);
+                foreach (var componentType in entity.Components.Keys)
+                {
+                    if (!componentEntityMap.TryGetValue(componentType, out var entitySet))
+                    {
+                        entitySet = [];
+                        componentEntityMap[componentType] = entitySet;
+                    }
+                    entitySet.Add(entity);
+                }
+            }
             entitiesToAdd.Clear();
-            entities.RemoveAll(entity => !entity.Active);
+
+            var inactiveEntities = entities.Where(e => !e.Active).ToList();
+            foreach (var entity in inactiveEntities)
+            {
+                entities.Remove(entity);
+                foreach (var componentType in entity.Components.Keys)
+                {
+                    if (componentEntityMap.TryGetValue(componentType, out var entitySet))
+                    {
+                        entitySet.Remove(entity);
+                        if (entitySet.Count == 0)
+                        {
+                            componentEntityMap.Remove(componentType);
+                        }
+                    }
+                }
+            }
         }
 
         public Entity CreateEntity(string tag)
         {
-            Entity entity = new(entities.Count, tag);
+            Entity entity = new(entities.Count, tag, this);
             entitiesToAdd.Add(entity);
             return entity;
         }
@@ -30,17 +59,36 @@
         {
             return entities[id];
         }
+
         public List<Entity> GetEntitiesWithComponent<T>() where T : Component
         {
-            List<Entity> entitiesWithComponent = [];
-            foreach (var entity in entities)
+            if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
             {
-                if (entity.HasComponent<T>())
+                return [.. entitySet];
+            }
+            return [];
+        }
+
+        internal void AddEntityToComponentMap(Type componentType, Entity entity)
+        {
+            if (!componentEntityMap.TryGetValue(componentType, out var entitySet))
+            {
+                entitySet = [];
+                componentEntityMap[componentType] = entitySet;
+            }
+            entitySet.Add(entity);
+        }
+
+        internal void RemoveEntityFromComponentMap(Type componentType, Entity entity)
+        {
+            if (componentEntityMap.TryGetValue(componentType, out var entitySet))
+            {
+                entitySet.Remove(entity);
+                if (entitySet.Count == 0)
                 {
-                    entitiesWithComponent.Add(entity);
+                    componentEntityMap.Remove(componentType);
                 }
             }
-            return entitiesWithComponent;
         }
     }
 }

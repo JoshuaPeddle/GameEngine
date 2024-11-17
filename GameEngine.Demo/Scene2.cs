@@ -3,11 +3,12 @@ using GameEngine.Core.Components;
 
 namespace GameEngine.Demo
 {
-    public class SceneBasic : Scene
+    public class Scene2 : Scene
     {
         private readonly Assets assets = new("assets.txt");
 
         private Entity? playerEntity;
+        private Entity? secondEntity;
         private Entity? grenadeEntity;
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, ActionMapper actionMapper)
@@ -20,37 +21,24 @@ namespace GameEngine.Demo
             playerEntity = entityManager.CreateEntity("player");
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
             playerEntity.AddComponent<CTransform>();
-            var playerInput = playerEntity.AddComponent<CInput>();
+            playerEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), false, false));
+            playerEntity.AddComponent<CInput>();
             actionMapper.MapActionToComponent<CInput>("Up", playerEntity, (input, isActive) => input.Up = isActive);
             actionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);
             actionMapper.MapActionToComponent<CInput>("Left", playerEntity, (input, isActive) => input.Left = isActive);
             actionMapper.MapActionToComponent<CInput>("Right", playerEntity, (input, isActive) => input.Right = isActive);
-            playerEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), false, false));
+
+
+            secondEntity = entityManager.CreateEntity("second");
+            secondEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
+            secondEntity.AddComponent(new CTransform() { Position = new Vec2(500,300) });
+            secondEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), true, true));
+
 
             grenadeEntity = entityManager.CreateEntity("grenade");
             grenadeEntity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
-            grenadeEntity.AddComponent<CTransform>();
-
-            Test_AddBunchOfEntities(entityManager);
+            grenadeEntity.AddComponent(new CTransform() { Position = new Vec2(150, 300) });
+            grenadeEntity.AddComponent(new CBoundingBox(new Vec2(40, 40), true, true));
         }
-
-        private void Test_AddBunchOfEntities(EntityManager entityManager)
-        {
-            for (int i = 0; i < 10000; i++)
-            {
-                var entity = entityManager.CreateEntity("entity" + i);
-                entity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
-
-                var transform = new CTransform();
-                var maxWidth = 1200;
-                var maxHeight = 600;
-
-                var random = new Random();
-                entity.AddComponent(new CBoundingBox(new Vec2(50, 40), true, true));
-
-                transform.Position = new Vec2(random.Next(maxWidth), random.Next(maxHeight));
-                entity.AddComponent(transform);
-            }
-        }    
     }
 }

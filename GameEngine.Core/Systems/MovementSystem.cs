@@ -47,7 +47,7 @@ namespace GameEngine.Core.Systems
                         transform.Velocity = transform.Velocity.Normalize() * maxSpeed;
                     }
                 }
-
+                transform.PreviousPosition = transform.Position.Clone();
                 transform.Position += transform.Velocity * deltaSeconds;
             }
         }

@@ -113,5 +113,10 @@
         {
             return Math.Sqrt(X * X + Y * Y);
         }
+
+        public Vec2 Clone()
+        {
+            return new Vec2(X, Y);
+        }
     }
 }

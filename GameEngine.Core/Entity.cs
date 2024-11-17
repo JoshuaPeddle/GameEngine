@@ -7,47 +7,43 @@ namespace GameEngine.Core
         public int id = 0;
         public bool Active = true;
         public string Tag = "default";
-        public List<Component> Components = [];
+        public Dictionary<Type, Component> Components = [];
 
-        internal Entity(int id, string tag)
+        private readonly EntityManager entityManager;
+
+        internal Entity(int id, string tag, EntityManager manager)
         {
             this.id = id;
             Tag = tag;
+            this.entityManager = manager;
         }
+
         public Component AddComponent(Component component)
         {
-            Components.Add(component);
+            Components[component.GetType()] = component;
+            entityManager.AddEntityToComponentMap(component.GetType(), this);
             return component;
         }
 
         public T AddComponent<T>() where T : Component, new()
         {
             T component = new();
-            Components.Add(component);
+            Components[typeof(T)] = component;
+            entityManager.AddEntityToComponentMap(typeof(T), this);
             return component;
         }
 
-        public bool HasComponent<T>()
+        public bool HasComponent<T>() where T : Component
         {
-            foreach (var component in Components)
-            {
-                if (component is T)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return Components.ContainsKey(typeof(T));
         }
 
         public bool TryGetComponent<T>(out T? component) where T : Component
         {
-            foreach (var c in Components)
+            if (Components.TryGetValue(typeof(T), out var comp))
             {
-                if (c is T)
-                {
-                    component = c as T;
-                    return true;
-                }
+                component = (T)comp;
+                return true;
             }
             component = null;
             return false;
@@ -55,31 +51,27 @@ namespace GameEngine.Core
 
         public T GetComponent<T>() where T : Component
         {
-            foreach (var component in Components)
+            if (Components.TryGetValue(typeof(T), out var comp))
             {
-                if (component is T typedComponent)
-                {
-                    return typedComponent;
-                }
+                return (T)comp;
             }
             throw new ComponentNotFoundException<T>(this);
         }
 
-        public void RemoveComponent<T>()
+        public void RemoveComponent<T>() where T : Component
         {
-            for (int i = 0; i < Components.Count; i++)
+            if (Components.Remove(typeof(T)))
             {
-                if (Components[i].GetType() == typeof(T))
-                {
-                    Components.RemoveAt(i);
-                    return;
-                }
+                entityManager.RemoveEntityFromComponentMap(typeof(T), this);
             }
         }
 
         public void RemoveComponent(Component component)
         {
-            Components.Remove(component);
+            if (Components.Remove(component.GetType()))
+            {
+                entityManager.RemoveEntityFromComponentMap(component.GetType(), this);
+            }
         }
     }
 }

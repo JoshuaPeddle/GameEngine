@@ -19,15 +19,22 @@ namespace GameEngine.Core
             SkMain = skMain;
             SkMain.Size = size;
             SkMain.Location = location;
-            
+
             var inputSystem = new InputSystem(inputManager);
             systems.Add(inputSystem);
             SkMain.KeyDown += new KeyEventHandler(inputSystem.OnKeyDown);
             SkMain.KeyUp += new KeyEventHandler(inputSystem.OnKeyUp);
             systems.Add(new MovementSystem());
             systems.Add(new AnimationSystem());
-            systems.Add(new RenderSystem(SkMain, entityManager));
-
+            systems.Add(new PhysicsSystem());
+            systems.Add(new RenderSystem(
+                SkMain, entityManager,
+                new RenderOptions()
+                {
+                    DrawAnimations = true,
+                    DrawBoundingBoxes = true,
+                    DrawEntityCenters = true
+                }));
             stopwatch = new Stopwatch();
         }
 
@@ -38,10 +45,8 @@ namespace GameEngine.Core
 
             while (true)
             {
-                await Task.Delay(1);
-                float deltaTime = CalculateDeltaTime();
-
-                Update(deltaTime);
+                await Task.Delay(5);
+                Update(CalculateDeltaTime());
                 SkMain.Invalidate();
                 SkMain.Update();
             }
@@ -56,7 +61,7 @@ namespace GameEngine.Core
             entityManager.Update();
         }
 
-        public void ChangeScene(Scene scene, bool endScene = false)
+        public void ChangeScene(Scene scene)
         {
             currentScene = scene;
             currentScene.Initialize(entityManager, inputManager, new ActionMapper(inputManager));
