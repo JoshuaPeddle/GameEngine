@@ -6,11 +6,11 @@ namespace GameEngine.Core.Systems
 {
     public class RenderSystem : ISystem
     {
-        private readonly SKControl skControl;
+        private readonly SKGLControl skControl;
         private readonly EntityManager entityManager;
         private readonly RenderOptions options;
 
-        public RenderSystem(SKControl skControl, EntityManager entityManager, RenderOptions options)
+        public RenderSystem(SKGLControl skControl, EntityManager entityManager, RenderOptions options)
         {
             this.skControl = skControl;
             skControl.PaintSurface += OnPaintSurface;
@@ -23,7 +23,7 @@ namespace GameEngine.Core.Systems
             skControl.Invalidate();
         }
 
-        private void OnPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
+        private void OnPaintSurface(object? sender, SKPaintGLSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.White);

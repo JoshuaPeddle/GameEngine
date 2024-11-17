@@ -28,30 +28,32 @@
         /// </summary>
         private void InitializeComponent()
         {
-            skMain = new SkiaSharp.Views.Desktop.SKControl();
+            skglControl1 = new SkiaSharp.Views.Desktop.SKGLControl();
             SuspendLayout();
             // 
-            // skMain
+            // skglControl1
             // 
-            skMain.Location = new Point(12, 12);
-            skMain.Name = "skMain";
-            skMain.Size = new Size(1161, 671);
-            skMain.TabIndex = 0;
-            skMain.Text = "skControl1";
+            skglControl1.BackColor = Color.Black;
+            skglControl1.Location = new Point(6, 7);
+            skglControl1.Margin = new Padding(6, 7, 6, 7);
+            skglControl1.Name = "skglControl1";
+            skglControl1.Size = new Size(1174, 678);
+            skglControl1.TabIndex = 0;
+            skglControl1.VSync = false;
             // 
-            // Form1
+            // MainView
             // 
             AutoScaleDimensions = new SizeF(13F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1185, 685);
-            Controls.Add(skMain);
-            Name = "Form1";
+            Controls.Add(skglControl1);
+            Name = "MainView";
             Text = "Form1";
             ResumeLayout(false);
         }
 
         #endregion
 
-        private SkiaSharp.Views.Desktop.SKControl skMain;
+        private SkiaSharp.Views.Desktop.SKGLControl skglControl1;
     }
 }

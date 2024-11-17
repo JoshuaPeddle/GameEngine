@@ -6,7 +6,7 @@ namespace GameEngine.Core
 {
     public class Engine
     {
-        public SKControl SkMain;
+        public SKGLControl SkMain;
         private Scene? currentScene;
         private readonly List<ISystem> systems = [];
         private readonly EntityManager entityManager = new();
@@ -14,7 +14,7 @@ namespace GameEngine.Core
         private readonly Stopwatch stopwatch;
         private long lastUpdateTime;
 
-        public Engine(SKControl skMain, Size size, Point location)
+        public Engine(SKGLControl skMain, Size size, Point location)
         {
             SkMain = skMain;
             SkMain.Size = size;
@@ -45,13 +45,12 @@ namespace GameEngine.Core
 
             while (true)
             {
-                await Task.Delay(5);
+                await Task.Delay(1);
                 Update(CalculateDeltaTime());
                 SkMain.Invalidate();
                 SkMain.Update();
             }
         }
-
         private void Update(float deltaTime)
         {
             foreach (ISystem system in systems)
