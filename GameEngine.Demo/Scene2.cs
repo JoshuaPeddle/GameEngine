@@ -31,7 +31,7 @@ namespace GameEngine.Demo
 
             secondEntity = entityManager.CreateEntity("second");
             secondEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
-            secondEntity.AddComponent(new CTransform() { Position = new Vec2(500,300) });
+            secondEntity.AddComponent(new CTransform() { Position = new Vec2(500, 300) });
             secondEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), true, true));
 
 

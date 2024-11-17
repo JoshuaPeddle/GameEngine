@@ -78,7 +78,7 @@
 
         public float Magnitude()
         {
-            return (float)Math.Sqrt(X * X + Y * Y);
+            return (float)Math.Sqrt((X * X) + (Y * Y));
         }
 
         public Vec2 Normalize()
@@ -88,12 +88,12 @@
 
         public float Dot(Vec2 other)
         {
-            return X * other.X + Y * other.Y;
+            return (X * other.X) + (Y * other.Y);
         }
 
         public float Cross(Vec2 other)
         {
-            return X * other.Y - Y * other.X;
+            return (X * other.Y) - (Y * other.X);
         }
 
         public Vec2 Project(Vec2 other)
@@ -106,12 +106,12 @@
             float rad = (float)(angle * Math.PI / 180);
             float sin = (float)Math.Sin(rad);
             float cos = (float)Math.Cos(rad);
-            return new Vec2(X * cos - Y * sin, X * sin + Y * cos);
+            return new Vec2((X * cos) - (Y * sin), (X * sin) + (Y * cos));
         }
 
         public double Length()
         {
-            return Math.Sqrt(X * X + Y * Y);
+            return Math.Sqrt((X * X) + (Y * Y));
         }
 
         public Vec2 Clone()

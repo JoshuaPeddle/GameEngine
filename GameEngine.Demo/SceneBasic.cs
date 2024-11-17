@@ -51,6 +51,6 @@ namespace GameEngine.Demo
                 transform.Position = new Vec2(random.Next(maxWidth), random.Next(maxHeight));
                 entity.AddComponent(transform);
             }
-        }    
+        }
     }
 }

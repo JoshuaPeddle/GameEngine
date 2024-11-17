@@ -42,8 +42,8 @@ namespace GameEngine.Core.Systems
 
                     var entityCenter = FindEntityCenter(entity);
 
-                    canvas.DrawImage(frame, new SKPoint((float)entityCenter.X - aimationSize.X / 2, 
-                                                        (float)entityCenter.Y - aimationSize.Y / 2));
+                    canvas.DrawImage(frame, new SKPoint((float)entityCenter.X - (aimationSize.X / 2),
+                                                        (float)entityCenter.Y - (aimationSize.Y / 2)));
 
                 }
                 if (options.DrawBoundingBoxes && entity.HasComponent<CBoundingBox>())
@@ -66,7 +66,7 @@ namespace GameEngine.Core.Systems
             if (hasBoundingBox)
             {
                 var boundingBox = entity.GetComponent<CBoundingBox>();
-                return new Vec2(transform.Position.X + boundingBox.Width / 2, transform.Position.Y + boundingBox.Height / 2);
+                return new Vec2(transform.Position.X + (boundingBox.Width / 2), transform.Position.Y + (boundingBox.Height / 2));
             }
             else if (entity.HasComponent<CAnimation>())
             {
@@ -74,7 +74,7 @@ namespace GameEngine.Core.Systems
                 var frame = animation.GetCurrentFrame();
                 var aimationSize = new Vec2(frame.Width, frame.Height);
 
-                return new Vec2(transform.Position.X + aimationSize.X / 2, transform.Position.Y + aimationSize.Y / 2);
+                return new Vec2(transform.Position.X + (aimationSize.X / 2), transform.Position.Y + (aimationSize.Y / 2));
             }
             else
             {
