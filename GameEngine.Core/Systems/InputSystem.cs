@@ -9,7 +9,7 @@
             this.inputManager = inputManager;
         }
 
-        public void Update(EntityManager entityManager, float deltaTime)
+        public void Update(EntityManager entityManager, double deltaTime)
         {
             inputManager.DoActions();
         }

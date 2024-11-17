@@ -28,18 +28,18 @@
 
         private static Vec2 CalculateOverlap(Vec2 position1, Vec2 size1, Vec2 position2, Vec2 size2)
         {
-            float left1 = position1.X;
-            float right1 = position1.X + size1.X;
-            float top1 = position1.Y;
-            float bottom1 = position1.Y + size1.Y;
+            double left1 = position1.X;
+            double right1 = position1.X + size1.X;
+            double top1 = position1.Y;
+            double bottom1 = position1.Y + size1.Y;
 
-            float left2 = position2.X;
-            float right2 = position2.X + size2.X;
-            float top2 = position2.Y;
-            float bottom2 = position2.Y + size2.Y;
+            double left2 = position2.X;
+            double right2 = position2.X + size2.X;
+            double top2 = position2.Y;
+            double bottom2 = position2.Y + size2.Y;
 
-            float overlapX = Math.Min(right1, right2) - Math.Max(left1, left2);
-            float overlapY = Math.Min(bottom1, bottom2) - Math.Max(top1, top2);
+            double overlapX = Math.Min(right1, right2) - Math.Max(left1, left2);
+            double overlapY = Math.Min(bottom1, bottom2) - Math.Max(top1, top2);
 
             overlapX = Math.Max(0, overlapX);
             overlapY = Math.Max(0, overlapY);

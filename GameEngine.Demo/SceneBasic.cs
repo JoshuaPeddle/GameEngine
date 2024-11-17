@@ -36,7 +36,7 @@ namespace GameEngine.Demo
 
         private void Test_AddBunchOfEntities(EntityManager entityManager)
         {
-            for (int i = 0; i < 10000; i++)
+            for (int i = 0; i < 10; i++)
             {
                 var entity = entityManager.CreateEntity("entity" + i);
                 entity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
@@ -46,7 +46,7 @@ namespace GameEngine.Demo
                 var maxHeight = 600;
 
                 var random = new Random();
-                entity.AddComponent(new CBoundingBox(new Vec2(50, 40), true, true));
+                entity.AddComponent(new CBoundingBox(new Vec2(15, 15), true, true));
 
                 transform.Position = new Vec2(random.Next(maxWidth), random.Next(maxHeight));
                 entity.AddComponent(transform);

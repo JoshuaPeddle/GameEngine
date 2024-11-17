@@ -2,6 +2,6 @@
 {
     public interface ISystem
     {
-        void Update(EntityManager entityManager, float deltaTime);
+        void Update(EntityManager entityManager, double deltaTime);
     }
 }

@@ -15,13 +15,13 @@ namespace GameEngine.Core
             this.delay = delayMs;
         }
 
-        public SKImage GetCurrentFrame(float elapsedTime)
+        public SKImage GetCurrentFrame(double elapsedTime)
         {
             using SKBitmap bitmap = CreateBitmap(elapsedTime);
             return SKImage.FromBitmap(bitmap);
         }
 
-        private SKBitmap CreateBitmap(float elapsedTime)
+        private SKBitmap CreateBitmap(double elapsedTime)
         {
             int animationFrame = (int)(elapsedTime / delay) % frames;
 

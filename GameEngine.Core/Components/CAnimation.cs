@@ -5,7 +5,7 @@ namespace GameEngine.Core.Components
     public class CAnimation : Component
     {
         private readonly Animation animation;
-        private float elapsedTime;
+        private double elapsedTime;
 
         public CAnimation(Animation animation)
         {
@@ -18,7 +18,7 @@ namespace GameEngine.Core.Components
             return animation.GetCurrentFrame(elapsedTime);
         }
 
-        public void Update(float deltaTime)
+        public void Update(double deltaTime)
         {
             elapsedTime += deltaTime;
         }

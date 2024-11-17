@@ -2,17 +2,17 @@
 {
     public class Vec2
     {
-        private float x;
-        private float y;
+        private double x;
+        private double y;
 
-        public Vec2(float x, float y)
+        public Vec2(double x, double y)
         {
             this.x = x;
             this.y = y;
         }
 
-        public float X { get => x; set => x = value; }
-        public float Y { get => y; set => y = value; }
+        public double X { get => x; set => x = value; }
+        public double Y { get => y; set => y = value; }
 
         public static Vec2 operator +(Vec2 a, Vec2 b)
         {
@@ -24,22 +24,22 @@
             return new Vec2(a.X - b.X, a.Y - b.Y);
         }
 
-        public static Vec2 operator *(Vec2 a, float b)
+        public static Vec2 operator *(Vec2 a, double b)
         {
             return new Vec2(a.X * b, a.Y * b);
         }
 
-        public static Vec2 operator /(Vec2 a, float b)
+        public static Vec2 operator /(Vec2 a, double b)
         {
             return new Vec2(a.X / b, a.Y / b);
         }
 
-        public static Vec2 operator *(float a, Vec2 b)
+        public static Vec2 operator *(double a, Vec2 b)
         {
             return new Vec2(a * b.X, a * b.Y);
         }
 
-        public static Vec2 operator /(float a, Vec2 b)
+        public static Vec2 operator /(double a, Vec2 b)
         {
             return new Vec2(a / b.X, a / b.Y);
         }
@@ -86,12 +86,12 @@
             return this / Magnitude();
         }
 
-        public float Dot(Vec2 other)
+        public double Dot(Vec2 other)
         {
             return (X * other.X) + (Y * other.Y);
         }
 
-        public float Cross(Vec2 other)
+        public double Cross(Vec2 other)
         {
             return (X * other.Y) - (Y * other.X);
         }

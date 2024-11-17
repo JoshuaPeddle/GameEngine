@@ -4,7 +4,7 @@ namespace GameEngine.Core.Systems
 {
     public class PhysicsSystem : ISystem
     {
-        public void Update(EntityManager entityManager, float deltaTime)
+        public void Update(EntityManager entityManager, double deltaTime)
         {
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
             var validEntities = entities.Where(e => e.HasComponent<CBoundingBox>()).ToList();

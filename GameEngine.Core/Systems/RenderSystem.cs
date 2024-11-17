@@ -18,7 +18,7 @@ namespace GameEngine.Core.Systems
             this.options = options;
         }
 
-        public void Update(EntityManager entityManager, float deltaTime)
+        public void Update(EntityManager entityManager, double deltaTime)
         {
             skControl.Invalidate();
         }
@@ -42,8 +42,8 @@ namespace GameEngine.Core.Systems
 
                     var entityCenter = FindEntityCenter(entity);
 
-                    canvas.DrawImage(frame, new SKPoint((float)entityCenter.X - (aimationSize.X / 2),
-                                                        (float)entityCenter.Y - (aimationSize.Y / 2)));
+                    canvas.DrawImage(frame, new SKPoint((float)entityCenter.X - (float)(aimationSize.X / 2),
+                                                        (float)entityCenter.Y - (float)(aimationSize.Y / 2)));
 
                 }
                 if (options.DrawBoundingBoxes && entity.HasComponent<CBoundingBox>())
@@ -84,7 +84,7 @@ namespace GameEngine.Core.Systems
 
         private static void DrawEntityCenterDebugPoints(SKCanvas canvas, Vec2 position)
         {
-            canvas.DrawPoint(position.X, position.Y, new SKPaint
+            canvas.DrawPoint((float)position.X, (float)position.Y, new SKPaint
             {
                 Color = SKColors.Red,
                 StrokeWidth = 5
@@ -96,7 +96,7 @@ namespace GameEngine.Core.Systems
             var transform = entity.GetComponent<CTransform>();
             var boundingBox = entity.GetComponent<CBoundingBox>();
 
-            var rect = new SKRect((float)transform.Position.X, (float)transform.Position.Y, (float)transform.Position.X + boundingBox.Width, (float)transform.Position.Y + boundingBox.Height);
+            var rect = new SKRect((float)transform.Position.X, (float)transform.Position.Y, (float)transform.Position.X + (float)boundingBox.Width, (float)transform.Position.Y + (float)boundingBox.Height);
             canvas.DrawRect(rect, new SKPaint
             {
                 Color = options.BoundingBoxColor,

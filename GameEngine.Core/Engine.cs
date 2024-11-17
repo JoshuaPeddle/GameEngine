@@ -12,7 +12,7 @@ namespace GameEngine.Core
         private readonly EntityManager entityManager = new();
         private readonly InputManager inputManager = new();
         private readonly Stopwatch stopwatch;
-        private long lastUpdateTime;
+        private long lastUpdateTicks = 0;
 
         public Engine(SKGLControl skMain, Size size, Point location)
         {
@@ -41,7 +41,7 @@ namespace GameEngine.Core
         public async Task Start()
         {
             stopwatch.Start();
-            lastUpdateTime = 0;
+            lastUpdateTicks = 0;
 
             while (true)
             {
@@ -51,7 +51,7 @@ namespace GameEngine.Core
                 SkMain.Update();
             }
         }
-        private void Update(float deltaTime)
+        private void Update(double deltaTime)
         {
             foreach (ISystem system in systems)
             {
@@ -66,12 +66,12 @@ namespace GameEngine.Core
             currentScene.Initialize(entityManager, inputManager, new ActionMapper(inputManager));
         }
 
-        private float CalculateDeltaTime()
+        private double CalculateDeltaTime()
         {
-            long currentTime = stopwatch.ElapsedMilliseconds;
-            float deltaTime = currentTime - lastUpdateTime;
-            lastUpdateTime = currentTime;
-            return deltaTime;
+            long currentTicks = stopwatch.ElapsedTicks;
+            double deltaTime = (currentTicks - lastUpdateTicks) / (double)Stopwatch.Frequency;
+            lastUpdateTicks = currentTicks;
+            return deltaTime * 1000;
         }
     }
 }

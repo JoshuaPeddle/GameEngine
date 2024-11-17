@@ -4,7 +4,7 @@ namespace GameEngine.Core.Systems
 {
     public class AnimationSystem : ISystem
     {
-        public void Update(EntityManager entityManager, float deltaTime)
+        public void Update(EntityManager entityManager, double deltaTime)
         {
             var entities = entityManager.GetEntitiesWithComponent<CAnimation>();
             foreach (var entity in entities)

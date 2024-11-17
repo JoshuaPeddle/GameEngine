@@ -4,25 +4,26 @@ namespace GameEngine.Core.Systems
 {
     public class MovementSystem : ISystem
     {
-        public void Update(EntityManager entityManager, float deltaMs)
+        public void Update(EntityManager entityManager, double deltaMs)
         {
-            float deltaSeconds = deltaMs / 1000f;
-            float moveSpeed = 600f; // TODO: Move somewhere else
+            double deltaSeconds = deltaMs / 1000f;
+            double moveSpeed = 600; // TODO: Move somewhere else
 
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
             foreach (var entity in entities)
             {
                 var transform = entity.GetComponent<CTransform>();
+                transform.PreviousPosition = transform.Position.Clone();
                 if (entity.HasComponent<CInput>())
                 {
                     var input = entity.GetComponent<CInput>();
 
-                    float playerSpeedTransform = moveSpeed * deltaSeconds;
+                    double playerSpeedTransform = moveSpeed * deltaSeconds;
 
                     if (!input.Any)
                     {
                         float decelerationFactor = 0.2f;
-                        transform.Velocity *= MathF.Pow(decelerationFactor, deltaSeconds);
+                        transform.Velocity *= Math.Pow(decelerationFactor, deltaSeconds);
                     }
                     if (input.Up)
                     {
@@ -47,7 +48,6 @@ namespace GameEngine.Core.Systems
                         transform.Velocity = transform.Velocity.Normalize() * maxSpeed;
                     }
                 }
-                transform.PreviousPosition = transform.Position.Clone();
                 transform.Position += transform.Velocity * deltaSeconds;
             }
         }
