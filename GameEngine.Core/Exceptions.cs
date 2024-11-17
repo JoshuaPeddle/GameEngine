@@ -8,7 +8,7 @@
         {
             public ComponentNotFoundException(Entity entity) : base(FormatMessage(entity)) { }
 
-            private static string FormatMessage(Entity entity) => $"Entity {entity.id}:{entity.Tag} does not have component of type {typeof(T)}.";
+            private static string FormatMessage(Entity entity) => $"Entity {entity.Id}:{entity.Tag} does not have component of type {typeof(T)}.";
         }
 
         public class FailedToLoadTextureException(string message) : Exception(message) { }

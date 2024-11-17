@@ -7,5 +7,11 @@
         public Vec2 Scale = new(1.0f, 1.0f);
         public Vec2 Velocity = new(0.0f, 0.0f);
         public float AngleDeg = 0; // in degrees
+
+        public CTransform(Vec2 position)
+        {
+            Position = position;
+            PreviousPosition = position;
+        }
     }
 }

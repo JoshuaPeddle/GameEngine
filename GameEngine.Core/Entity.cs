@@ -4,7 +4,7 @@ namespace GameEngine.Core
 {
     public class Entity
     {
-        public int id = 0;
+        public int Id = 0;
         public bool Active = true;
         public string Tag = "default";
         public Dictionary<Type, Component> Components = [];
@@ -13,7 +13,7 @@ namespace GameEngine.Core
 
         internal Entity(int id, string tag, EntityManager manager)
         {
-            this.id = id;
+            this.Id = id;
             Tag = tag;
             this.entityManager = manager;
         }

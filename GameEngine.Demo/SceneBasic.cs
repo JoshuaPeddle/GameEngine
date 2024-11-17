@@ -19,7 +19,7 @@ namespace GameEngine.Demo
 
             playerEntity = entityManager.CreateEntity("player");
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
-            playerEntity.AddComponent<CTransform>();
+            playerEntity.AddComponent(new CTransform(Vec2.Zero));
             var playerInput = playerEntity.AddComponent<CInput>();
             actionMapper.MapActionToComponent<CInput>("Up", playerEntity, (input, isActive) => input.Up = isActive);
             actionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);
@@ -29,26 +29,26 @@ namespace GameEngine.Demo
 
             grenadeEntity = entityManager.CreateEntity("grenade");
             grenadeEntity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
-            grenadeEntity.AddComponent<CTransform>();
+            grenadeEntity.AddComponent(new CTransform(Vec2.Zero));
 
             Test_AddBunchOfEntities(entityManager);
         }
 
         private void Test_AddBunchOfEntities(EntityManager entityManager)
         {
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 1000; i++)
             {
                 var entity = entityManager.CreateEntity("entity" + i);
                 entity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
 
-                var transform = new CTransform();
-                var maxWidth = 1200;
+                var transform = new CTransform(Vec2.Zero);
+                var maxWidth = 800;
                 var maxHeight = 600;
 
                 var random = new Random();
-                entity.AddComponent(new CBoundingBox(new Vec2(15, 15), true, true));
+                entity.AddComponent(new CBoundingBox(new Vec2(20, 20), true, true));
 
-                transform.Position = new Vec2(random.Next(maxWidth), random.Next(maxHeight));
+                transform.Position = new Vec2(random.Next(100,maxWidth), random.Next(100,maxHeight));
                 entity.AddComponent(transform);
             }
         }

@@ -1,18 +1,10 @@
-﻿namespace GameEngine.Core
+﻿using GameEngine.Core.Components;
+
+namespace GameEngine.Core
 {
     public class Physics
     {
         public static Vec2 GetOverlap(Entity entity1, Entity entity2)
-        {
-            return GetOverlapInternal(entity1, entity2, usePreviousPosition: false);
-        }
-
-        public static Vec2 GetPreviousOverlap(Entity entity1, Entity entity2)
-        {
-            return GetOverlapInternal(entity1, entity2, usePreviousPosition: true);
-        }
-
-        private static Vec2 GetOverlapInternal(Entity entity1, Entity entity2, bool usePreviousPosition)
         {
             var t1 = entity1.GetComponent<Components.CTransform>();
             var t2 = entity2.GetComponent<Components.CTransform>();
@@ -20,10 +12,18 @@
             var b1 = entity1.GetComponent<Components.CBoundingBox>();
             var b2 = entity2.GetComponent<Components.CBoundingBox>();
 
-            var position1 = usePreviousPosition ? t1.PreviousPosition : t1.Position;
+            var position1 = t1.Position;
             var position2 = t2.Position;
 
             return CalculateOverlap(position1, b1.Size, position2, b2.Size);
+        }
+
+        public static Vec2 GetOverlap(CTransform cTransform1, CTransform cTransform2, CBoundingBox cBoundingBox1, CBoundingBox cBoundingBox2)
+        {
+            var position1 = cTransform1.Position;
+            var position2 = cTransform2.Position;
+
+            return CalculateOverlap(position1, cBoundingBox1.Size, position2, cBoundingBox2.Size);
         }
 
         private static Vec2 CalculateOverlap(Vec2 position1, Vec2 size1, Vec2 position2, Vec2 size2)

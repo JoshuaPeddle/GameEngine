@@ -25,8 +25,8 @@ namespace GameEngine.Core
             SkMain.KeyDown += new KeyEventHandler(inputSystem.OnKeyDown);
             SkMain.KeyUp += new KeyEventHandler(inputSystem.OnKeyUp);
             systems.Add(new MovementSystem());
-            systems.Add(new AnimationSystem());
             systems.Add(new PhysicsSystem());
+            systems.Add(new AnimationSystem());
             systems.Add(new RenderSystem(
                 SkMain, entityManager,
                 new RenderOptions()

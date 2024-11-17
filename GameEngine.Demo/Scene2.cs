@@ -20,7 +20,7 @@ namespace GameEngine.Demo
 
             playerEntity = entityManager.CreateEntity("player");
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
-            playerEntity.AddComponent<CTransform>();
+            playerEntity.AddComponent(new CTransform(new Vec2(10, 10)));
             playerEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), false, false));
             playerEntity.AddComponent<CInput>();
             actionMapper.MapActionToComponent<CInput>("Up", playerEntity, (input, isActive) => input.Up = isActive);
@@ -31,13 +31,13 @@ namespace GameEngine.Demo
 
             secondEntity = entityManager.CreateEntity("second");
             secondEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
-            secondEntity.AddComponent(new CTransform() { Position = new Vec2(500, 300) });
+            secondEntity.AddComponent(new CTransform(new Vec2(500, 300)));
             secondEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), true, true));
 
 
             grenadeEntity = entityManager.CreateEntity("grenade");
             grenadeEntity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
-            grenadeEntity.AddComponent(new CTransform() { Position = new Vec2(150, 300) });
+            grenadeEntity.AddComponent(new CTransform(new Vec2(150, 300)));
             grenadeEntity.AddComponent(new CBoundingBox(new Vec2(40, 40), true, true));
         }
     }

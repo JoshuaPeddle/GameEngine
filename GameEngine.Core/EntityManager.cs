@@ -45,7 +45,7 @@
 
         public Entity CreateEntity(string tag)
         {
-            Entity entity = new(entities.Count, tag, this);
+            Entity entity = new(entities.Count + entitiesToAdd.Count, tag, this);
             entitiesToAdd.Add(entity);
             return entity;
         }

@@ -118,5 +118,9 @@
         {
             return new Vec2(X, Y);
         }
+
+        public static Vec2 Zero => new Vec2(0, 0);
+        public static Vec2 One => new Vec2(1, 1);
+
     }
 }

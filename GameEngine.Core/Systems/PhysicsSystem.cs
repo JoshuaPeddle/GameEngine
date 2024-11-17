@@ -4,6 +4,8 @@ namespace GameEngine.Core.Systems
 {
     public class PhysicsSystem : ISystem
     {
+        const double epsilon = 0.0001;
+
         public void Update(EntityManager entityManager, double deltaTime)
         {
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
@@ -12,38 +14,63 @@ namespace GameEngine.Core.Systems
             foreach (var entity in validEntities)
             {
                 var transform = entity.GetComponent<CTransform>();
+                if (transform.Position == transform.PreviousPosition)
+                    continue;
+
                 var boundingBox = entity.GetComponent<CBoundingBox>();
 
-                var entitiesToCheck = validEntities.Where(e => e != entity).ToList();
+                var entitiesToCheck = validEntities.Where(e => e.Id != entity.Id).ToList();
                 foreach (var entityToCheck in entitiesToCheck)
                 {
                     var transformToCheck = entityToCheck.GetComponent<CTransform>();
                     var boundingBoxToCheck = entityToCheck.GetComponent<CBoundingBox>();
                     if (boundingBoxToCheck.BlockMovement != true)
                         continue;
-                    Vec2 overlap = Physics.GetOverlap(entity, entityToCheck);
-                    if (overlap.X > 0 && overlap.Y > 0)
+                    Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
+                    if (overlap.X > 0.0 && overlap.Y > 0.0)
                     {
-                        Vec2 previousOverlap = Physics.GetPreviousOverlap(entity, entityToCheck);
                         if (overlap.X < overlap.Y)
                         {
-                            if (previousOverlap.X > 0)
-                                transform.Position.X += overlap.X;
+                            double deltaX = transform.Position.X - transform.PreviousPosition.X;
+                            if (Math.Abs(deltaX) > epsilon)
+                            {
+                                if (deltaX > 0)
+                                    transform.Position.X -= overlap.X;
+                                else
+                                    transform.Position.X += overlap.X;
+                            }
                             else
-                                transform.Position.X -= overlap.X;
+                            {
+                                if (transform.Position.X < transformToCheck.Position.X)
+                                    transform.Position.X -= overlap.X;
+                                else
+                                    transform.Position.X += overlap.X;
+                            }
                             transform.Velocity.X = 0;
                         }
                         else
                         {
-                            if (previousOverlap.Y > 0)
-                                transform.Position.Y += overlap.Y;
+                            double deltaY = transform.Position.Y - transform.PreviousPosition.Y;
+                            if (Math.Abs(deltaY) > epsilon)
+                            {
+                                if (deltaY > 0)
+                                    transform.Position.Y -= overlap.Y;
+                                else
+                                    transform.Position.Y += overlap.Y;
+                            }
                             else
-                                transform.Position.Y -= overlap.Y;
+                            {
+                                if (transform.Position.Y < transformToCheck.Position.Y)
+                                    transform.Position.Y -= overlap.Y;
+                                else
+                                    transform.Position.Y += overlap.Y;
+                            }
                             transform.Velocity.Y = 0;
                         }
                     }
                 }
             }
+
         }
     }
 }
