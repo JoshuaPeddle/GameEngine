@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:GameEngine.Editor.ViewModels"
+		mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="600"
+        x:Class="GameEngine.Editor.AssetEditorWindow"
+		x:DataType="vm:AssetEditorViewModel"
+        Title="Window1">
+	<Design.DataContext>
+		<vm:AssetEditorViewModel />
+	</Design.DataContext>
+
+	<Grid ColumnDefinitions="100,*" RowDefinitions=""  Margin="4">
+		<Border Background="AliceBlue" Grid.Row="1" Grid.Column="0">
+			<ScrollViewer>
+				<StackPanel>
+					<TextBlock FontSize="22" Height="100" Background="LightBlue">Block 1</TextBlock>
+					<TextBlock FontSize="22" Height="100">Block 2</TextBlock>
+					<TextBlock FontSize="22" Height="100" Background="LightBlue">Block 3</TextBlock>
+					<TextBlock FontSize="22" Height="100">Block 4</TextBlock>
+					<TextBlock FontSize="22" Height="100" Background="LightBlue">Block 5</TextBlock>
+					<TextBlock FontSize="22" Height="100">Block 6</TextBlock>
+					<TextBlock FontSize="22" Height="100" Background="LightBlue">Block 7</TextBlock>
+					<TextBlock FontSize="22" Height="100">Block 8</TextBlock>
+					<TextBlock FontSize="22" Height="100" Background="LightBlue">Block 9</TextBlock>
+				</StackPanel>
+			</ScrollViewer>
+		</Border>
+		<Border Background="White" Grid.Row="0" Grid.Column="1">
+			<Grid ColumnDefinitions="*" RowDefinitions="100,*"  Margin="4">
+				<TextBlock Background="LightBlue" FontSize="22" Height="100" Grid.Row="0" Grid.Column="0" RenderOptions.BitmapInterpolationMode="HighQuality" >Block 2</TextBlock>
+
+				<Image Grid.Row="1" Grid.Column="1" Source="{Binding ImageFromWebsite^}>" MaxWidth="400" MaxHeight="400"/>
+					
+
+			</Grid>
+		</Border>
+
+	</Grid>
+
+
+</Window>
