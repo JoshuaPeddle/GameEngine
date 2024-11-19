@@ -18,10 +18,7 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new AssetEditorWindow
-            {
-                DataContext = new AssetEditorViewModel()
-            };
+            desktop.MainWindow = new AssetEditorWindow();
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
         {
