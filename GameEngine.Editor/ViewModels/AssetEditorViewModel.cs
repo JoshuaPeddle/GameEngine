@@ -17,25 +17,29 @@ public class AssetEditorViewModel : ViewModelBase
     private readonly IFilePickerService _filePickerService;
     private ObservableCollection<Texture> _textures;
     private Task<Bitmap>? _image;
-    private Uri _imagePath;    
+    private Uri _imagePath;
     private double _imageWidth;
     private double _imageHeight;
+    private string textureName;
 
     public AssetEditorViewModel(IFilePickerService filePickerService)
     {
         _filePickerService = filePickerService;
         OpenImageCommand = ReactiveCommand.CreateFromTask(OpenImage);
         CloseImageCommand = ReactiveCommand.CreateFromTask(CloseImage);
-        ImportTextureCommand = ReactiveCommand.Create(ImportTexture);
+        ImportTextureCommand = ReactiveCommand.CreateFromTask(ImportTexture);
         Textures = new ObservableCollection<Texture>();
     }
-    public AssetEditorViewModel() : this(null!) 
+    public AssetEditorViewModel() : this(null!) // Designer constructor
     {
         Textures =
         [
             new Texture { Name = "Texture 1", Path = "path/to/texture1.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png")) },
             new Texture { Name = "Texture 2", Path = "path/to/texture2.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/grenade.png")) },
         ];
+        Image = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png"));
+        ImageHeight = 100;
+        ImageWidth = 80;
     }
 
     public Task<Bitmap>? Image
@@ -45,6 +49,7 @@ public class AssetEditorViewModel : ViewModelBase
         {
             this.RaiseAndSetIfChanged(ref _image, value);
             this.RaisePropertyChanged(nameof(ImageDimensions));
+            this.RaisePropertyChanged(nameof(ImportButtonEnabled));
         }
     }
 
@@ -57,34 +62,51 @@ public class AssetEditorViewModel : ViewModelBase
         {
             this.RaiseAndSetIfChanged(ref _imageWidth, value);
             this.RaisePropertyChanged(nameof(ImageDimensions));
+            this.RaisePropertyChanged(nameof(ImageDisplayWidth));
         }
     }
 
+    public double ImageDisplayWidth => ImageWidth < 800 ? ImageWidth : 800;
+
     public double ImageHeight
     {
-        get => _imageHeight < 1000 ? _imageHeight : 400;
+        get => _imageHeight;
         set
         {
             this.RaiseAndSetIfChanged(ref _imageHeight, value);
             this.RaisePropertyChanged(nameof(ImageDimensions));
+            this.RaisePropertyChanged(nameof(ImageDisplayHeight));
         }
     }
 
-    public ObservableCollection<Texture> Textures 
+    public double ImageDisplayHeight => ImageHeight < 600 ? ImageHeight : 600;
+
+    public ObservableCollection<Texture> Textures
     {
         get => _textures;
         set => this.RaiseAndSetIfChanged(ref _textures, value);
     }
 
-    public async void ImportTexture()
+    public string TextureName
+    {
+        get => textureName;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref textureName, value);
+            this.RaisePropertyChanged(nameof(ImportButtonEnabled));
+        }
+    }
+
+    public async Task ImportTexture()
     {
         var texture = new Texture
         {
-            Name = "New Texture",
+            Name = TextureName,
             Path = _imagePath.LocalPath,
             Bitmap = Image
         };
         Textures.Add(texture);
+        await Reset();
     }
 
     public async Task OpenImage()
@@ -103,15 +125,22 @@ public class AssetEditorViewModel : ViewModelBase
 
     public async Task CloseImage()
     {
+        await Reset();
+    }
+
+    private async Task Reset()
+    {
         if (Image != null)
         {
             await Image;
             Image = null;
-            ImageWidth = 0;
-            ImageHeight = 0;
         }
+        ImageWidth = 0;
+        ImageHeight = 0;
+        TextureName = string.Empty;
     }
 
+    public bool ImportButtonEnabled => Image != null && !string.IsNullOrWhiteSpace(TextureName);
 
     public class Texture
     {
@@ -119,5 +148,4 @@ public class AssetEditorViewModel : ViewModelBase
         public string Path { get; set; }
         public Task<Bitmap> Bitmap { get; set; }
     }
-
 }
