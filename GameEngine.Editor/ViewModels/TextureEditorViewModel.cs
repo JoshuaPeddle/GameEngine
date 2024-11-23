@@ -1,5 +1,6 @@
 ﻿using Avalonia.Media.Imaging;
 using DynamicData;
+using GameEngine.Editor.Models;
 using GameEngine.Editor.Services;
 using ReactiveUI;
 using System;
@@ -142,11 +143,4 @@ public class TextureEditorViewModel : ViewModelBase
     }
 
     public bool ImportButtonEnabled => Image != null && !string.IsNullOrWhiteSpace(TextureName);
-
-    public class Texture
-    {
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public Task<Bitmap> Bitmap { get; set; }
-    }
 }

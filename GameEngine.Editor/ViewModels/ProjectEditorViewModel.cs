@@ -1,6 +1,7 @@
 ﻿using GameEngine.Editor.Services;
 using ReactiveUI;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 
@@ -9,6 +10,7 @@ namespace GameEngine.Editor.ViewModels
     public class ProjectEditorViewModel : ViewModelBase
     {
         public ReactiveCommand<Unit, Unit> OpenProjectCommand { get; }
+        public ReactiveCommand<Unit, Unit> SaveProjectCommand { get; }
 
         private readonly IFilePickerService _filePickerService;
         private readonly AssetEditorViewModel _parentViewModel;
@@ -72,6 +74,13 @@ namespace GameEngine.Editor.ViewModels
             {
                 ProjectFolderPath = filePath;
             }
+        }
+
+        public async Task SaveProject()
+        {
+            var assetCollection = new AssetCollection([.. _parentViewModel.SharedTextures]);
+            var projectFolder = Path.GetDirectoryName(ProjectFolderPath);
+            AssetFileWriter.WriteAssetFiles(projectFolder, assetCollection);
         }
     }
 }

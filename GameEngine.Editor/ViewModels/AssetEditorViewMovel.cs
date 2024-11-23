@@ -1,4 +1,5 @@
-﻿using GameEngine.Editor.Services;
+﻿using GameEngine.Editor.Models;
+using GameEngine.Editor.Services;
 using System.Collections.ObjectModel;
 
 namespace GameEngine.Editor.ViewModels
@@ -20,7 +21,6 @@ namespace GameEngine.Editor.ViewModels
             TextureEditor = new TextureEditorViewModel();
         }
 
-
-        public ObservableCollection<TextureEditorViewModel.Texture> SharedTextures { get; } = [];
+        public ObservableCollection<Texture> SharedTextures { get; } = [];
     }
 }
