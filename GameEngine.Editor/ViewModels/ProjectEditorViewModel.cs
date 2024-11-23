@@ -1,7 +1,7 @@
-﻿using GameEngine.Editor.Services;
+﻿using DynamicData;
+using GameEngine.Editor.Services;
 using ReactiveUI;
 using System.IO;
-using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 
@@ -20,6 +20,7 @@ namespace GameEngine.Editor.ViewModels
             _filePickerService = filePickerService;
             _parentViewModel = parentViewModel;
             OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProject);
+            SaveProjectCommand = ReactiveCommand.CreateFromTask(SaveProject);
         }
         public ProjectEditorViewModel() : this(null!, null!) // Designer constructor
         {
@@ -50,22 +51,6 @@ namespace GameEngine.Editor.ViewModels
             }
         }
 
-        public void CreateProject()
-        {
-            // Create the project folder
-            // Create the assets folder
-            // Create the assets.txt file
-        }
-        public void DeleteProject()
-        {
-            // Delete the project folder
-        }
-        public void UpdateProject()
-        {
-            // Update the project folder
-            // Update the assets folder
-            // Update the assets.txt file
-        }
 
         public async Task OpenProject()
         {
@@ -73,6 +58,10 @@ namespace GameEngine.Editor.ViewModels
             if (filePath != null)
             {
                 ProjectFolderPath = filePath;
+                var projectFolder = Path.GetDirectoryName(ProjectFolderPath);
+                var assetCollection = AssetFileLoader.LoadAssetCollection(projectFolder);
+                _parentViewModel.SharedTextures.Clear();
+                _parentViewModel.SharedTextures.AddRange(assetCollection.Textures);
             }
         }
 
@@ -80,7 +69,10 @@ namespace GameEngine.Editor.ViewModels
         {
             var assetCollection = new AssetCollection([.. _parentViewModel.SharedTextures]);
             var projectFolder = Path.GetDirectoryName(ProjectFolderPath);
-            AssetFileWriter.WriteAssetFiles(projectFolder, assetCollection);
+            await AssetFileWriter.WriteAssetFilesAsync(projectFolder, assetCollection);
+
+            ProjectFolderPath = "";
+            _parentViewModel.SharedTextures.Clear();
         }
     }
 }
