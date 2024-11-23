@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 xmlns:vm="clr-namespace:GameEngine.Editor.ViewModels"
+             x:Class="GameEngine.Editor.Controls.TextureEditor"
+			 x:DataType="vm:TextureEditorViewModel">
+	<Design.DataContext>
+		<vm:TextureEditorViewModel />
+	</Design.DataContext>
+
+	<UserControl.Styles>
+		<Style Selector="Button.ControlButton">
+			<Setter Property="FontSize" Value="24"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="Foreground" Value="Black"/>
+			<Setter Property="Background" Value="White"/>
+		</Style>
+		<Style Selector="TextBox.TexName">
+			<Setter Property="FontSize" Value="24"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+		</Style>
+	</UserControl.Styles>
+
+	<Grid ColumnDefinitions="200,*" RowDefinitions=""  Margin="4">
+		<Border Background="AliceBlue" Grid.Row="1" Grid.Column="0">
+			<ListBox ItemsSource="{Binding Textures}">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<StackPanel Orientation="Vertical">
+							<TextBlock Text="{Binding Name}" Margin="0,0,10,0"/>
+							<Image Source="{Binding Bitmap^}" Width="100" Height="100" RenderOptions.BitmapInterpolationMode="HighQuality"/>
+						</StackPanel>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+		</Border>
+		<Border Background="White" Grid.Row="0" Grid.Column="1">
+			<Grid ColumnDefinitions="*" RowDefinitions="60,*"  Margin="0"  RenderOptions.BitmapInterpolationMode="HighQuality">
+				<Border Background="DarkGray">
+					<StackPanel Orientation="Horizontal" Spacing="10">
+						<Button Classes="ControlButton" Margin="10,0,0,0" Command="{Binding OpenImageCommand}">Open</Button>
+						<Button Classes="ControlButton" Command="{Binding CloseImageCommand}">Close</Button>
+						<Button Classes="ControlButton" Command="{Binding ImportTextureCommand}" IsEnabled="{Binding ImportButtonEnabled}">Import Texture</Button>
+						<TextBox Classes="TexName" Watermark="Texture name" Text="{Binding TextureName}" Width="400" Margin="0,10,0,10"/>
+						<TextBlock FontSize="22" Text="{Binding ImageDimensions}" VerticalAlignment="Center"/>
+					</StackPanel>
+				</Border>
+				<Image Grid.Row="1" Grid.Column="1" Source="{Binding Image^}" Width="{Binding ImageDisplayWidth}" Height="{Binding ImageDisplayHeight}" RenderOptions.BitmapInterpolationMode="HighQuality"/>
+			</Grid>
+		</Border>
+	</Grid>
+</UserControl>

@@ -1,42 +1,48 @@
 ﻿using Avalonia.Media.Imaging;
-using System.Threading.Tasks;
-using ReactiveUI;
-using System.Reactive;
+using DynamicData;
 using GameEngine.Editor.Services;
+using ReactiveUI;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Reactive;
+using System.Threading.Tasks;
 
 namespace GameEngine.Editor.ViewModels;
 
-public class AssetEditorViewModel : ViewModelBase
+public class TextureEditorViewModel : ViewModelBase
 {
     public ReactiveCommand<Unit, Unit> OpenImageCommand { get; }
     public ReactiveCommand<Unit, Unit> CloseImageCommand { get; }
     public ReactiveCommand<Unit, Unit> ImportTextureCommand { get; }
 
     private readonly IFilePickerService _filePickerService;
-    private ObservableCollection<Texture> _textures;
+    private readonly AssetEditorViewModel _parentViewModel;
     private Task<Bitmap>? _image;
     private Uri _imagePath;
     private double _imageWidth;
     private double _imageHeight;
     private string textureName;
 
-    public AssetEditorViewModel(IFilePickerService filePickerService)
+    public TextureEditorViewModel(IFilePickerService filePickerService, AssetEditorViewModel parentViewModel)
     {
         _filePickerService = filePickerService;
+        _parentViewModel = parentViewModel;
         OpenImageCommand = ReactiveCommand.CreateFromTask(OpenImage);
         CloseImageCommand = ReactiveCommand.CreateFromTask(CloseImage);
         ImportTextureCommand = ReactiveCommand.CreateFromTask(ImportTexture);
-        Textures = new ObservableCollection<Texture>();
     }
-    public AssetEditorViewModel() : this(null!) // Designer constructor
+
+    public TextureEditorViewModel() : this(null!, null!) // Designer constructor
     {
-        Textures =
+
+        _parentViewModel = new AssetEditorViewModel(new FilePickerService());
+
+        Textures.AddRange(
         [
             new Texture { Name = "Texture 1", Path = "path/to/texture1.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png")) },
-            new Texture { Name = "Texture 2", Path = "path/to/texture2.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/grenade.png")) },
-        ];
+            new Texture { Name = "Texture 2", Path = "path/to/texture2.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/grenade.png")) }
+        ]);
         Image = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png"));
         ImageHeight = 100;
         ImageWidth = 80;
@@ -81,11 +87,7 @@ public class AssetEditorViewModel : ViewModelBase
 
     public double ImageDisplayHeight => ImageHeight < 600 ? ImageHeight : 600;
 
-    public ObservableCollection<Texture> Textures
-    {
-        get => _textures;
-        set => this.RaiseAndSetIfChanged(ref _textures, value);
-    }
+    public ObservableCollection<Texture> Textures => _parentViewModel.SharedTextures;
 
     public string TextureName
     {
@@ -111,16 +113,15 @@ public class AssetEditorViewModel : ViewModelBase
 
     public async Task OpenImage()
     {
-        var filePath = await _filePickerService.OpenFileAsync();
+        var filePath = await _filePickerService.PromptForImagePath();
         if (filePath != null)
-            if (filePath != null)
-            {
-                _imagePath = new Uri(filePath);
-                var bitmap = new Bitmap(filePath);
-                Image = Task.FromResult(bitmap);
-                ImageWidth = bitmap.PixelSize.Width;
-                ImageHeight = bitmap.PixelSize.Height;
-            }
+        {
+            _imagePath = new Uri(filePath);
+            var bitmap = new Bitmap(filePath);
+            Image = Task.FromResult(bitmap);
+            ImageWidth = bitmap.PixelSize.Width;
+            ImageHeight = bitmap.PixelSize.Height;
+        }
     }
 
     public async Task CloseImage()

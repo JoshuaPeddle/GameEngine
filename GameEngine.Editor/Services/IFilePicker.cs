@@ -4,6 +4,7 @@ namespace GameEngine.Editor.Services
 {
     public interface IFilePickerService
     {
-        Task<string?> OpenFileAsync();
+        Task<string?> PromptForImagePath();
+        Task<string?> PromptForProjectPath();
     }
 }

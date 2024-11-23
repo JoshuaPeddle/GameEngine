@@ -45,10 +45,10 @@ namespace GameEngine.Core.Systems
                     var entityCenter = FindEntityCenter(entity);
 
                     var destRect = new SKRect(
-                        (float)(entityCenter.X - animationSize.X / 2),
-                        (float)(entityCenter.Y - animationSize.Y / 2),
-                        (float)(entityCenter.X + animationSize.X / 2),
-                        (float)(entityCenter.Y + animationSize.Y / 2)
+                        (float)(entityCenter.X - (animationSize.X / 2)),
+                        (float)(entityCenter.Y - (animationSize.Y / 2)),
+                        (float)(entityCenter.X + (animationSize.X / 2)),
+                        (float)(entityCenter.Y + (animationSize.Y / 2))
                     );
 
                     canvas.DrawBitmap(texture, sourceRect, destRect);
@@ -75,7 +75,7 @@ namespace GameEngine.Core.Systems
                 var boundingBox = entity.GetComponent<CBoundingBox>();
                 return new Vec2(transform.Position.X + (boundingBox.Width / 2), transform.Position.Y + (boundingBox.Height / 2));
             }
-      
+
             else
             {
                 return new Vec2(transform.Position.X, transform.Position.Y);

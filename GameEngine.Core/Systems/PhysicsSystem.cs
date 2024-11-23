@@ -4,7 +4,7 @@ namespace GameEngine.Core.Systems
 {
     public class PhysicsSystem : ISystem
     {
-        const double epsilon = 0.0001;
+        private const double epsilon = 0.0001;
 
         public void Update(EntityManager entityManager, double deltaTime)
         {

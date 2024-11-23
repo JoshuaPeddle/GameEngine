@@ -48,7 +48,7 @@ namespace GameEngine.Demo
                 var random = new Random();
                 entity.AddComponent(new CBoundingBox(new Vec2(20, 20), true, true));
 
-                transform.Position = new Vec2(random.Next(100,maxWidth), random.Next(100,maxHeight));
+                transform.Position = new Vec2(random.Next(100, maxWidth), random.Next(100, maxHeight));
                 entity.AddComponent(transform);
             }
         }
