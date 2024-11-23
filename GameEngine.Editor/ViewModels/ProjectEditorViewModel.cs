@@ -62,12 +62,14 @@ namespace GameEngine.Editor.ViewModels
                 var assetCollection = AssetFileLoader.LoadAssetCollection(projectFolder);
                 _parentViewModel.SharedTextures.Clear();
                 _parentViewModel.SharedTextures.AddRange(assetCollection.Textures);
+                _parentViewModel.SharedAnimations.Clear();
+                _parentViewModel.SharedAnimations.AddRange(assetCollection.Animations);
             }
         }
 
         public async Task SaveProject()
         {
-            var assetCollection = new AssetCollection([.. _parentViewModel.SharedTextures]);
+            var assetCollection = new AssetCollection([.. _parentViewModel.SharedTextures], [.. _parentViewModel.SharedAnimations]);
             var projectFolder = Path.GetDirectoryName(ProjectFolderPath);
             await AssetFileWriter.WriteAssetFilesAsync(projectFolder, assetCollection);
 

@@ -11,9 +11,9 @@ namespace GameEngine.Editor.Services
         {
             string assetFilePath = Path.Combine(projectFileFolder, "assets.txt");
             if (!File.Exists(assetFilePath))
-                return new AssetCollection([]);
+                return new AssetCollection([], []);
             string[] lines = File.ReadAllLines(assetFilePath);
-            AssetCollection assetCollection = new([]);
+            AssetCollection assetCollection = new([], []);
             foreach (string line in lines)
             {
                 string[] parts = line.Split(' ');
@@ -30,8 +30,15 @@ namespace GameEngine.Editor.Services
                 }
                 else if (assetType == "Animation")
                 {
-                    //string animationPath = Path.Combine(projectFileFolder, parts[2]);
-                    //assetCollection.Animations.Add(new Animation(assetName, animationPath));
+                    // Animation [Name] [TextureName] [FrameCount] [Delay]
+                    string textureName = parts[2];
+                    Texture? texture = assetCollection.Textures.Find(t => t.Name == textureName);
+                    if (texture == null)
+                        continue;
+                    int frameCount = int.Parse(parts[3]);
+                    int delay = int.Parse(parts[4]);
+                    assetCollection.Animations.Add(new Animation(assetName, texture, frameCount, delay));
+
                 }
             }
             return assetCollection;

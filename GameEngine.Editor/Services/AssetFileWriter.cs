@@ -19,6 +19,12 @@ namespace GameEngine.Editor.Services
                 sb.AppendLine(textureLine);
             }
 
+            foreach (Animation animation in assetCollection.Animations)
+            {
+                string textureName = animation.Texture.Name;
+                string animationLine = $"Animation {animation.Name} {textureName} {animation.FrameCount} {animation.Delay}";
+                sb.AppendLine(animationLine);
+            }
             string assetFilePath = Path.Combine(projectFolder, "assets.txt");
             await File.WriteAllTextAsync(assetFilePath, sb.ToString());
 
@@ -27,7 +33,7 @@ namespace GameEngine.Editor.Services
 
         private static string GetTextureAssetFilePath(Texture texture)
         {
-            return Path.Combine("textures", Path.GetFileName(texture.Path));
+            return Path.Combine("textures", Path.GetFileName(texture.Path)).Replace("\\", "/");
         }
 
         private static string GetTextureRelativePath(Texture texture)
@@ -76,11 +82,13 @@ namespace GameEngine.Editor.Services
     public class AssetCollection
     {
         public List<Texture> Textures { get; }
+        public List<Animation> Animations { get; }
 
         // Additional asset types can be added here
-        public AssetCollection(List<Texture> textures)
+        public AssetCollection(List<Texture> textures, List<Animation> animations)
         {
             Textures = textures;
+            Animations = animations;
         }
     }
 }

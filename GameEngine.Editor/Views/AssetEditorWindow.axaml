@@ -28,6 +28,9 @@
 			<TabItem Header="Texture Editor">
 				<uc:TextureEditor DataContext="{Binding TextureEditor}" />
 			</TabItem>
+			<TabItem Header="Animation Editor">
+				<uc:AnimationEditor DataContext="{Binding AnimationEditor}" />
+			</TabItem>
 		</TabControl>
 	</DockPanel>
 </Window>

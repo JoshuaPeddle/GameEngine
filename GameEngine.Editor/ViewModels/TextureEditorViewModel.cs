@@ -34,11 +34,9 @@ public class TextureEditorViewModel : ViewModelBase
         ImportTextureCommand = ReactiveCommand.CreateFromTask(ImportTexture);
     }
 
-    public TextureEditorViewModel() : this(null!, null!) // Designer constructor
+    public TextureEditorViewModel() // Designer constructor
     {
-
         _parentViewModel = new AssetEditorViewModel(new FilePickerService());
-
         Textures.AddRange(
         [
             new Texture { Name = "Texture 1", Path = "path/to/texture1.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png")) },
