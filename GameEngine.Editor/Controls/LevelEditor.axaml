@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:GameEngine.Editor.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+             x:Class="GameEngine.Editor.Controls.LevelEditor"
+             x:DataType="vm:LevelEditorViewModel">
+
+	<UserControl.DataContext>
+		<vm:LevelEditorViewModel />
+	</UserControl.DataContext>
+	<Border Background="Gray">
+		<ScrollViewer x:Name="MainScrollViewer" Background="White" Margin="10,10" Padding="10,10"
+					  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+			<ItemsControl x:Name="TileItemsControl" ItemsSource="{Binding Tiles}"
+						  Width="{Binding TotalWidth}"
+						  Height="{Binding TotalHeight}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<UniformGrid Rows="{Binding GridRows}" Columns="{Binding GridColumns}" />
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<Border BorderBrush="Black" BorderThickness="1" Background="Transparent"
+								Width="32" Height="32" Panel.ZIndex="{Binding ZIndex}">
+							<Image Source="{Binding Image}"
+								   HorizontalAlignment="Left"
+								   VerticalAlignment="Bottom" 
+								   Width="70" Height="120"  />
+						</Border>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</Border>
+</UserControl>

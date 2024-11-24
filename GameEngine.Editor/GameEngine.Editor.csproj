@@ -28,6 +28,9 @@
     <Compile Update="Controls\AnimationEditor.axaml.cs">
       <DependentUpon>AnimationEditor.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Controls\LevelEditor.axaml.cs">
+      <DependentUpon>LevelEditor.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\AssetEditorWindow.axaml.cs">
       <DependentUpon>AssetEditorWindow.axaml</DependentUpon>
     </Compile>

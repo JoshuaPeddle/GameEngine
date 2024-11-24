@@ -12,19 +12,19 @@
 
 	<UserControl.Styles>
 		<Style Selector="Button.ControlButton">
-			<Setter Property="FontSize" Value="24"/>
+			<Setter Property="FontSize" Value="22"/>
 			<Setter Property="FontWeight" Value="Bold"/>
 			<Setter Property="Foreground" Value="Black"/>
 			<Setter Property="Background" Value="White"/>
 		</Style>
 		<Style Selector="TextBox.TexName">
-			<Setter Property="FontSize" Value="24"/>
+			<Setter Property="FontSize" Value="22"/>
 			<Setter Property="FontWeight" Value="Bold"/>
 		</Style>
 	</UserControl.Styles>
 
-	<Grid ColumnDefinitions="200,*" RowDefinitions=""  Margin="4">
-		<Border Background="AliceBlue" Grid.Row="1" Grid.Column="0">
+	<Grid ColumnDefinitions="200,1,*" RowDefinitions=""  Margin="4">
+		<Border Background="AliceBlue" Grid.Column="0">
 			<ListBox ItemsSource="{Binding Textures}">
 				<ListBox.ItemTemplate>
 					<DataTemplate>
@@ -36,7 +36,8 @@
 				</ListBox.ItemTemplate>
 			</ListBox>
 		</Border>
-		<Border Background="White" Grid.Row="0" Grid.Column="1">
+		<GridSplitter Grid.Column="1"  Background="LightGray" ResizeDirection="Columns"/>
+		<Border Background="White" Grid.Column="2">
 			<Grid ColumnDefinitions="*" RowDefinitions="60,*"  Margin="0"  RenderOptions.BitmapInterpolationMode="HighQuality">
 				<Border Background="DarkGray">
 					<StackPanel Orientation="Horizontal" Spacing="10">

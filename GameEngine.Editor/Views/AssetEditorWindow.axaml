@@ -31,6 +31,9 @@
 			<TabItem Header="Animation Editor">
 				<uc:AnimationEditor DataContext="{Binding AnimationEditor}" />
 			</TabItem>
+			<TabItem Header="Level Editor">
+				<uc:LevelEditor DataContext="{Binding LevelEditor}" />
+			</TabItem>
 		</TabControl>
 	</DockPanel>
 </Window>

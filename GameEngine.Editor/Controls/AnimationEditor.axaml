@@ -10,8 +10,26 @@
 	<Design.DataContext>
 		<vm:AnimationEditorViewModel />
 	</Design.DataContext>
-	<Grid ColumnDefinitions="200,150,*" RowDefinitions=""  Margin="4">
-		<Border Background="AliceBlue" Grid.Row="1" Grid.Column="0">
+
+	<UserControl.Styles>
+		<Style Selector="Button.ControlButton">
+			<Setter Property="FontSize" Value="22"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="Foreground" Value="Black"/>
+			<Setter Property="Background" Value="White"/>
+		</Style>
+		<Style Selector="TextBox.TexInput">
+			<Setter Property="FontSize" Value="22"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+		</Style>
+		<Style Selector="CheckBox.ChkAnimate">
+			<Setter Property="FontSize" Value="22"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+		</Style>
+	</UserControl.Styles>
+
+	<Grid ColumnDefinitions="200,1,150,1,*" Margin="4">
+		<Border Background="AliceBlue"  Grid.Column="0">
 			<ListBox ItemsSource="{Binding Animations}">
 				<ListBox.ItemTemplate>
 					<DataTemplate>
@@ -23,7 +41,8 @@
 				</ListBox.ItemTemplate>
 			</ListBox>
 		</Border>
-		<Border Background="AliceBlue" Grid.Row="1" Grid.Column="1" Margin="1,0,0,0">
+		<GridSplitter Grid.Column="1"  Background="LightGray" ResizeDirection="Columns"/>
+		<Border Background="AliceBlue" Grid.Column="2" >
 			<ListBox ItemsSource="{Binding Textures}" SelectedItem="{Binding SelectedTexture}">
 				<ListBox.ItemTemplate>
 					<DataTemplate>
@@ -35,15 +54,16 @@
 				</ListBox.ItemTemplate>
 			</ListBox>
 		</Border>
-		<Border Background="White" Grid.Row="0" Grid.Column="2">
+		<GridSplitter Grid.Column="3"  Background="LightGray" ResizeDirection="Columns"/>
+		<Border Background="White"  Grid.Column="4">
 			<Grid ColumnDefinitions="*" RowDefinitions="60,*"  Margin="0"  RenderOptions.BitmapInterpolationMode="HighQuality">
 				<Border Background="DarkGray">
 					<StackPanel Orientation="Horizontal" Spacing="10">
 						<Button Margin="10,0,0,0" Classes="ControlButton" Command="{Binding SaveAnimationCommand}" IsEnabled="{Binding SaveButtonEnabled}">Save</Button>
-						<TextBox Classes="TexName" Watermark="Amimation Name" Text="{Binding AnimationName}" Width="300" Margin="0,10,0,10"/>
-						<TextBox Classes="TexFrames" Watermark="Frame Count" Text="{Binding FrameCount}" Width="130" Margin="0,10,0,10"/>
-						<TextBox Classes="TexName" Watermark="Frame Delay(ms)" Text="{Binding FrameDelay}" Width="130" Margin="0,10,0,10"/>
-						<CheckBox IsChecked="{Binding Animate}">Animate</CheckBox>
+						<TextBox Classes="TexInput" Watermark="Amimation Name" Text="{Binding AnimationName}" Width="300" Margin="0,10,0,10"/>
+						<TextBox Classes="TexInput" Watermark="Frame Count" Text="{Binding FrameCount}" Width="130" Margin="0,10,0,10"/>
+						<TextBox Classes="TexInput" Watermark="Frame Delay(ms)" Text="{Binding FrameDelay}" Width="130" Margin="0,10,0,10"/>
+						<CheckBox Classes="ChkAnimate" IsChecked="{Binding Animate}">Animate</CheckBox>
 					</StackPanel>
 				</Border>
 				<Image Grid.Row="1" Grid.Column="1" Source="{Binding Image}"  RenderOptions.BitmapInterpolationMode="HighQuality"/>
