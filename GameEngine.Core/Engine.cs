@@ -32,7 +32,7 @@ namespace GameEngine.Core
                 new RenderOptions()
                 {
                     DrawAnimations = true,
-                    DrawBoundingBoxes = false,
+                    DrawBoundingBoxes = true,
                     DrawEntityCenters = true
                 }));
             stopwatch = new Stopwatch();

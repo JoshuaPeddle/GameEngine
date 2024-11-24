@@ -39,6 +39,12 @@ namespace GameEngine.Demo
             grenadeEntity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
             grenadeEntity.AddComponent(new CTransform(new Vec2(150, 300)));
             grenadeEntity.AddComponent(new CBoundingBox(new Vec2(40, 40), true, true));
+
+            grenadeEntity = entityManager.CreateEntity("stoneBlock");
+            grenadeEntity.AddComponent(new CAnimation(assets.GetAnimation("StoneBlock")));
+            grenadeEntity.AddComponent(new CTransform(new Vec2(250, 300)));
+            grenadeEntity.AddComponent(new CBoundingBox(new Vec2(60, 60), true, true));
+
         }
     }
 }

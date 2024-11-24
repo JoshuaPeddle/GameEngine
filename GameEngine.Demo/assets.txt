@@ -1,5 +1,7 @@
 ﻿Texture TexJeep images/jeep.png
 Texture TexGrenade images/grenade.png
+Texture TexStoneBlock images/stoneBlock.png
 
 Animation Grenade TexGrenade 4 250
 Animation JeepBack TexJeep 1 1
+Animation StoneBlock TexStoneBlock 1 0
