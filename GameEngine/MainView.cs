@@ -10,7 +10,7 @@ namespace GameEngine
             InitializeComponent();
             var gameEngine = new Engine(skglControl1, new Size(1161, 671), new Point(12, 12));
 
-            var scene = new Scene2();
+            var scene = new SceneJson();
 
             gameEngine.ChangeScene(scene);
             gameEngine.Start();

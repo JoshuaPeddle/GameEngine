@@ -1,0 +1,55 @@
+﻿[
+  {
+    "tag": "player",
+    "components": [
+      {
+        "type": "CTransform",
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      {
+        "type": "CAnimation",
+        "animationName": "JeepBack"
+      },
+      {
+        "type": "CBoundingBox",
+        "size": {
+          "x": 50,
+          "y": 80
+        },
+        "blockVision": false,
+        "blockMovement": false
+      },
+      {
+        "type": "CInput"
+      }
+    ]
+  },
+  {
+    "tag": "tile",
+    "components": [
+      {
+        "type": "CTransform",
+        "position": {
+          "x": 250,
+          "y": 300
+        }
+      },
+      {
+        "type": "CAnimation",
+        "animationName": "StoneBlock"
+      },
+      {
+        "type": "CBoundingBox",
+        "size": {
+          "x": 60,
+          "y": 60
+        },
+        "blockVision": true,
+        "blockMovement": true
+      }
+    ]
+  }
+]
