@@ -11,7 +11,7 @@ namespace GameEngine.Demo
         private Entity? secondEntity;
         private Entity? grenadeEntity;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, ActionMapper actionMapper)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager)
         {
             inputManager.AddAction(Keys.W, "Up");
             inputManager.AddAction(Keys.S, "Down");
@@ -23,10 +23,10 @@ namespace GameEngine.Demo
             playerEntity.AddComponent(new CTransform(new Vec2(100, 100)));
             playerEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), false, false));
             playerEntity.AddComponent<CInput>();
-            actionMapper.MapActionToComponent<CInput>("Up", playerEntity, (input, isActive) => input.Up = isActive);
-            actionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);
-            actionMapper.MapActionToComponent<CInput>("Left", playerEntity, (input, isActive) => input.Left = isActive);
-            actionMapper.MapActionToComponent<CInput>("Right", playerEntity, (input, isActive) => input.Right = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Up", playerEntity, (input, isActive) => input.Up = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Left", playerEntity, (input, isActive) => input.Left = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Right", playerEntity, (input, isActive) => input.Right = isActive);
 
 
             secondEntity = entityManager.CreateEntity("second");

@@ -63,7 +63,7 @@ namespace GameEngine.Core
         public void ChangeScene(Scene scene)
         {
             currentScene = scene;
-            currentScene.Initialize(entityManager, inputManager, new ActionMapper(inputManager));
+            currentScene.Initialize(entityManager, inputManager);
         }
 
         private double CalculateDeltaTime()
