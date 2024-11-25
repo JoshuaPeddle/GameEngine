@@ -1,19 +1,37 @@
 using GameEngine.Core;
 using GameEngine.Demo;
+using SkiaSharp.Views.Desktop;
 
 namespace GameEngine
 {
     public partial class MainView : Form
     {
+
+        private Engine _gameEngine;
         public MainView()
         {
             InitializeComponent();
-            var gameEngine = new Engine(skglControl1, new Size(1161, 671), new Point(12, 12));
+            skglControl1.PaintSurface += OnPaintSurface;
+            skglControl1.Size = new Size(1161, 671);
+            skglControl1.Location = new Point(12, 12);
 
-            var scene = new SceneJson();
+            _gameEngine = new Engine(skglControl1);
 
-            gameEngine.ChangeScene(scene);
-            gameEngine.Start();
+            skglControl1.KeyDown += new KeyEventHandler(_gameEngine.InputSystem.OnKeyDown);
+            skglControl1.KeyUp += new KeyEventHandler(_gameEngine.InputSystem.OnKeyUp);
+
+
+            var scene = new SceneBasic();
+            _gameEngine.ChangeScene(scene);
+            _gameEngine.Start();
+        }
+
+        private void OnPaintSurface(object? sender, SKPaintGLSurfaceEventArgs e)
+        {
+            var canvas = e.Surface.Canvas;
+
+            _gameEngine.RenderSystem.DrawEntitiesToCanvas(canvas);
+            skglControl1.Invalidate();
         }
     }
 }

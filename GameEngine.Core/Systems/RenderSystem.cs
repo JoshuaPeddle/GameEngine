@@ -1,41 +1,26 @@
 ﻿using GameEngine.Core.Components;
 using SkiaSharp;
-using SkiaSharp.Views.Desktop;
 
 namespace GameEngine.Core.Systems
 {
     public class RenderSystem : ISystem
     {
-        private readonly SKGLControl skControl;
         private readonly EntityManager entityManager;
         private readonly RenderOptions options;
 
-        public RenderSystem(SKGLControl skControl, EntityManager entityManager, RenderOptions options)
+        public RenderSystem(EntityManager entityManager, RenderOptions options)
         {
-            this.skControl = skControl;
-            if (skControl != null)
-                skControl.PaintSurface += OnPaintSurface;
             this.entityManager = entityManager;
             this.options = options;
         }
 
-        public void Update(EntityManager entityManager, double deltaTime)
-        {
-            skControl.Invalidate();
-        }
+        public void Update(EntityManager entityManager, double deltaTime) { }
 
-        private void OnPaintSurface(object? sender, SKPaintGLSurfaceEventArgs e)
+        public void DrawEntitiesToCanvas(SKCanvas canvas)
         {
-            var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.White);
 
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
-
-            DrawEntitiesToCanvas(canvas, entities);
-        }
-
-        public void DrawEntitiesToCanvas(SKCanvas canvas, List<Entity> entities)
-        {
             foreach (var entity in entities)
             {
                 if (options.DrawAnimations && entity.HasComponent<CAnimation>())

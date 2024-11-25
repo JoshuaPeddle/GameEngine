@@ -30,7 +30,7 @@ public class SkiaCanvasControl : Control
         entity1.AddComponent(new CAnimation(assets.GetAnimation("StoneBlock")));
 
 
-        var renderSystem = new RenderSystem(null, entityManager, new Core.Systems.RenderOptions()
+        var renderSystem = new RenderSystem(entityManager, new Core.Systems.RenderOptions()
         {
             DrawAnimations = true,
             DrawBoundingBoxes = true,
@@ -43,14 +43,14 @@ public class SkiaCanvasControl : Control
 
         using var surface = SKSurface.Create(info);
         var canvas = surface.Canvas;
-        renderSystem.DrawEntitiesToCanvas(canvas, entityManager.GetEntitiesWithComponent<CTransform>());
+        renderSystem.DrawEntitiesToCanvas(canvas);
         using var image = surface.Snapshot();
         // Convert the SKImage to a bitmap
         using var data = image.Encode();
         using var stream = data.AsStream();
         var bitmap = new Bitmap(stream);
 
-        var rect = new Rect(50, 50, size.Width, size.Height);
+        var rect = new Rect(0, 0, size.Width, size.Height);
         context.DrawImage(bitmap, rect);
     }
 }

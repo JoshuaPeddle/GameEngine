@@ -9,26 +9,24 @@ namespace GameEngine.Core
         public SKGLControl SkMain;
         private Scene? currentScene;
         private readonly List<ISystem> systems = [];
+        public RenderSystem? RenderSystem => (RenderSystem?)systems.Find(s => s is RenderSystem);
+        public InputSystem? InputSystem => (InputSystem?)systems.Find(s => s is InputSystem);
         private readonly EntityManager entityManager = new();
         private readonly InputManager inputManager = new();
         private readonly Stopwatch stopwatch;
         private long lastUpdateTicks = 0;
 
-        public Engine(SKGLControl skMain, Size size, Point location)
+        public Engine(SKGLControl skMain)
         {
             SkMain = skMain;
-            SkMain.Size = size;
-            SkMain.Location = location;
-
             var inputSystem = new InputSystem(inputManager);
             systems.Add(inputSystem);
-            SkMain.KeyDown += new KeyEventHandler(inputSystem.OnKeyDown);
-            SkMain.KeyUp += new KeyEventHandler(inputSystem.OnKeyUp);
+
             systems.Add(new MovementSystem());
             systems.Add(new PhysicsSystem());
             systems.Add(new AnimationSystem());
             systems.Add(new RenderSystem(
-                SkMain, entityManager,
+                entityManager,
                 new RenderOptions()
                 {
                     DrawAnimations = true,
