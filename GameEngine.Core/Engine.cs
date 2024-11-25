@@ -7,8 +7,8 @@ namespace GameEngine.Core
     {
         private Scene? currentScene;
         private readonly List<ISystem> systems = [];
-        public RenderSystem? RenderSystem => (RenderSystem?)systems.Find(s => s is RenderSystem);
-        public InputSystem? InputSystem => (InputSystem?)systems.Find(s => s is InputSystem);
+        public RenderSystem? RenderSystem { get; }
+        public InputSystem? InputSystem { get; }
         private readonly EntityManager entityManager = new();
         private readonly InputManager inputManager = new();
         private readonly Stopwatch stopwatch;
@@ -16,20 +16,21 @@ namespace GameEngine.Core
 
         public Engine()
         {
-            var inputSystem = new InputSystem(inputManager);
-            systems.Add(inputSystem);
+            InputSystem = new InputSystem(inputManager);
+            systems.Add(InputSystem);
 
             systems.Add(new MovementSystem());
             systems.Add(new PhysicsSystem());
             systems.Add(new AnimationSystem());
-            systems.Add(new RenderSystem(
+            RenderSystem = new RenderSystem(
                 entityManager,
                 new RenderOptions()
                 {
                     DrawAnimations = true,
                     DrawBoundingBoxes = true,
                     DrawEntityCenters = true
-                }));
+                });
+            systems.Add(RenderSystem);
             stopwatch = new Stopwatch();
         }
 
