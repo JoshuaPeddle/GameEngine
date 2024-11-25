@@ -13,7 +13,8 @@ namespace GameEngine.Core.Systems
         public RenderSystem(SKGLControl skControl, EntityManager entityManager, RenderOptions options)
         {
             this.skControl = skControl;
-            skControl.PaintSurface += OnPaintSurface;
+            if (skControl != null)
+                skControl.PaintSurface += OnPaintSurface;
             this.entityManager = entityManager;
             this.options = options;
         }
@@ -30,6 +31,11 @@ namespace GameEngine.Core.Systems
 
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
 
+            DrawEntitiesToCanvas(canvas, entities);
+        }
+
+        public void DrawEntitiesToCanvas(SKCanvas canvas, List<Entity> entities)
+        {
             foreach (var entity in entities)
             {
                 if (options.DrawAnimations && entity.HasComponent<CAnimation>())
