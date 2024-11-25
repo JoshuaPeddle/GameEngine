@@ -31,7 +31,7 @@ public class SkiaCanvasControl : Control
 
 
         var renderSystem = new RenderSystem(null, entityManager, new Core.Systems.RenderOptions()
-                {
+        {
             DrawAnimations = true,
             DrawBoundingBoxes = true,
             DrawEntityCenters = true
@@ -39,7 +39,7 @@ public class SkiaCanvasControl : Control
 
         var size = this.Bounds.Size;
 
-        var info = new SKImageInfo((int)size.Width*2, (int)size.Height*2);
+        var info = new SKImageInfo((int)size.Width * 2, (int)size.Height * 2);
 
         using var surface = SKSurface.Create(info);
         var canvas = surface.Canvas;

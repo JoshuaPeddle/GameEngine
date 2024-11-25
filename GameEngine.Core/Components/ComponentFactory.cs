@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
-using GameEngine.Core.Components;
 
-namespace GameEngine.Core
+namespace GameEngine.Core.Components
 {
     public class ComponentFactory
     {

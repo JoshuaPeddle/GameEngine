@@ -21,7 +21,7 @@ namespace GameEngine.Editor.ViewModels
 
         public LevelEditorViewModel()
         {
-            Tiles = new ObservableCollection<TileViewModel>();
+            Tiles = [];
             for (int i = 0; i < GridColumns * GridRows; i++)
             {
                 Tiles.Add(new TileViewModel { Color = Brushes.Black, Content = "das" });
@@ -42,7 +42,7 @@ namespace GameEngine.Editor.ViewModels
     {
         private IBrush _color;
         private string _content;
-        private Bitmap _image = new Random().Next(1, 100) >1 ? null : new Bitmap("C:\\Users\\Josh\\source\\repos\\GameEngine\\GameEngine.Demo\\assets\\images\\jeep.png");
+        private Bitmap _image = new Random().Next(1, 100) > 1 ? null : new Bitmap("C:\\Users\\Josh\\source\\repos\\GameEngine\\GameEngine.Demo\\assets\\images\\jeep.png");
 
         public IBrush Color
         {
