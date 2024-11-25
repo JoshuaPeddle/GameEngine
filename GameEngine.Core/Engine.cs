@@ -1,12 +1,10 @@
 ﻿using GameEngine.Core.Systems;
-using SkiaSharp.Views.Desktop;
 using System.Diagnostics;
 
 namespace GameEngine.Core
 {
     public class Engine
     {
-        public SKGLControl SkMain;
         private Scene? currentScene;
         private readonly List<ISystem> systems = [];
         public RenderSystem? RenderSystem => (RenderSystem?)systems.Find(s => s is RenderSystem);
@@ -16,9 +14,8 @@ namespace GameEngine.Core
         private readonly Stopwatch stopwatch;
         private long lastUpdateTicks = 0;
 
-        public Engine(SKGLControl skMain)
+        public Engine()
         {
-            SkMain = skMain;
             var inputSystem = new InputSystem(inputManager);
             systems.Add(inputSystem);
 
@@ -45,8 +42,6 @@ namespace GameEngine.Core
             {
                 await Task.Delay(1);
                 Update(CalculateDeltaTime());
-                SkMain.Invalidate();
-                SkMain.Update();
             }
         }
         private void Update(double deltaTime)
