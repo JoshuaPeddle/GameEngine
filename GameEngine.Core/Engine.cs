@@ -5,17 +5,21 @@ namespace GameEngine.Core
 {
     public class Engine
     {
-        private Scene? currentScene;
-        private readonly List<ISystem> systems = [];
         public RenderSystem? RenderSystem { get; }
         public InputSystem? InputSystem { get; }
+        public Action? InvalidateAction { get; }
+
+        private readonly List<ISystem> systems = [];
+
         private readonly EntityManager entityManager = new();
         private readonly InputManager inputManager = new();
         private readonly Stopwatch stopwatch;
+        private Scene? currentScene;
         private long lastUpdateTicks = 0;
 
-        public Engine()
+        public Engine(Action? invalidateAction = null)
         {
+            InvalidateAction = invalidateAction;
             InputSystem = new InputSystem(inputManager);
             systems.Add(InputSystem);
 
@@ -43,8 +47,10 @@ namespace GameEngine.Core
             {
                 await Task.Delay(1);
                 Update(CalculateDeltaTime());
+                InvalidateAction?.Invoke();
             }
         }
+
         private void Update(double deltaTime)
         {
             foreach (ISystem system in systems)
