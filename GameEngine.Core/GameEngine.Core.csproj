@@ -9,7 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<PackageReference Include="ppy.SDL2-CS" Version="1.0.741-alpha" />
 	<PackageReference Include="SkiaSharp" Version="2.88.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="SDL2_mixer.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -7,9 +7,9 @@ namespace GameEngine.Core
     {
 
         private readonly Dictionary<string, SKBitmap> textures = [];
-        //private Dictionary<string, Sound> sounds = new(); // TODO: Implement this
+        private Dictionary<string, Sound> sounds = new(); 
         private readonly Dictionary<string, Font> fonts = [];
-        private readonly Dictionary<string, Animation> animations = []; // TODO: Implement this
+        private readonly Dictionary<string, Animation> animations = [];
 
         public Assets(string path)
         {
@@ -40,6 +40,10 @@ namespace GameEngine.Core
                 {
                     LoadAnimation(parts[1], parts[2], int.Parse(parts[3]), int.Parse(parts[4]));
                 }
+                else if (parts[0] == "Sound")
+                {
+                    LoadSound(parts[1], parts[2]);
+                }
             }
         }
 
@@ -57,10 +61,20 @@ namespace GameEngine.Core
             return animations[name];
         }
 
+        public Sound GetSound(string name)
+        {
+            return sounds[name];
+        }
+
         private void LoadTexture(string name, string path)
         {
             var bitmap = SKBitmap.Decode(Path.Combine("assets", path)) ?? throw new FailedToLoadTextureException($"Failed to load texture {name} from {path}");
             textures.Add(name, bitmap);
+        }
+
+        private void LoadSound(string name, string path)
+        {
+            sounds.Add(name, new Sound(name, path));
         }
 
         private void LoadFont(string name, string path)
