@@ -1,5 +1,6 @@
 ﻿using GameEngine.Core;
 using GameEngine.Core.Components;
+using GameEngine.Core.Systems;
 
 namespace GameEngine.Demo
 {
@@ -10,7 +11,7 @@ namespace GameEngine.Demo
         private Entity? playerEntity;
         private Entity? grenadeEntity;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer)
         {
             inputManager.AddAction(Keys.W, "Up");
             inputManager.AddAction(Keys.S, "Down");

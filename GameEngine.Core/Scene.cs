@@ -1,7 +1,9 @@
-﻿namespace GameEngine.Core
+﻿using GameEngine.Core.Systems;
+
+namespace GameEngine.Core
 {
     public abstract class Scene
     {
-        public abstract void Initialize(EntityManager entityManager, InputManager inputManager);
+        public abstract void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer);
     }
 }

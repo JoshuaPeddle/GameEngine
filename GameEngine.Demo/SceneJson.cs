@@ -1,5 +1,6 @@
 ﻿using GameEngine.Core;
 using GameEngine.Core.Components;
+using GameEngine.Core.Systems;
 using System.Text.Json;
 
 namespace GameEngine.Demo
@@ -7,18 +8,20 @@ namespace GameEngine.Demo
     public class SceneJson : Scene
     {
         private readonly Assets assets = new("assets.txt");
-
+        private AudioSystem _audioPlayer;
         private ComponentFactory? componentFactory;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer)
         {
             componentFactory = new ComponentFactory(assets);
+            _audioPlayer = audioPlayer;
 
             inputManager.AddAction(Keys.W, "Up");
             inputManager.AddAction(Keys.S, "Down");
             inputManager.AddAction(Keys.A, "Left");
             inputManager.AddAction(Keys.D, "Right");
-
+            inputManager.AddAction(Keys.Space, "PlaySound");
+            _audioPlayer.Play("Level1", SoundType.BGM);
             LoadLevel("levels/level1.json", entityManager, inputManager);
         }
 
@@ -51,10 +54,17 @@ namespace GameEngine.Demo
 
         private void MapInputActions(Entity entity, InputManager inputManager)
         {
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Up", entity, (input, isActive) => input.Up = isActive);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Down", entity, (input, isActive) => input.Down = isActive);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Left", entity, (input, isActive) => input.Left = isActive);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Right", entity, (input, isActive) => input.Right = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Up", entity, (input, isActive) => input.Up = isActive, true);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Down", entity, (input, isActive) => input.Down = isActive, true);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Left", entity, (input, isActive) => input.Left = isActive, true);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Right", entity, (input, isActive) => input.Right = isActive, true);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("PlaySound", entity, (input, isActive) =>
+            {
+                if (isActive)
+                {
+                    _audioPlayer.Play("Hit", SoundType.SoundEffect);
+                }
+            }, true);
         }
     }
 }

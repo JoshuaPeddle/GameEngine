@@ -5,47 +5,48 @@ namespace GameEngine.Core
 {
     public class Engine
     {
-        public RenderSystem? RenderSystem { get; }
-        public InputSystem? InputSystem { get; }
         public Action? InvalidateAction { get; }
 
-        private readonly List<ISystem> systems = [];
+        public readonly SystemContainer Systems = new();
 
         private readonly EntityManager entityManager = new();
         private readonly InputManager inputManager = new();
-        private readonly Stopwatch stopwatch;
+        private readonly Stopwatch stopwatch = new();
+
         private Scene? currentScene;
-        private long lastUpdateTicks = 0;
+        private double lastUpdateTime = 0;
 
         public Engine(Action? invalidateAction = null)
         {
             InvalidateAction = invalidateAction;
-            InputSystem = new InputSystem(inputManager);
-            systems.Add(InputSystem);
+            InitializeSystems();
+        }
 
-            systems.Add(new MovementSystem());
-            systems.Add(new PhysicsSystem());
-            systems.Add(new AnimationSystem());
-            RenderSystem = new RenderSystem(
+        private void InitializeSystems()
+        {
+            Systems.Add(new InputSystem(inputManager));
+            Systems.Add(new MovementSystem());
+            Systems.Add(new PhysicsSystem());
+            Systems.Add(new AnimationSystem());
+            Systems.Add(new RenderSystem(
                 entityManager,
                 new RenderOptions()
-                {
+                { 
                     DrawAnimations = true,
                     DrawBoundingBoxes = true,
                     DrawEntityCenters = true
-                });
-            systems.Add(RenderSystem);
-            stopwatch = new Stopwatch();
+                }));
+            Systems.Add(new AudioSystem());
         }
 
         public async Task Start()
         {
             stopwatch.Start();
-            lastUpdateTicks = 0;
+            lastUpdateTime = 0;
 
             while (true)
             {
-                await Task.Delay(1);
+                await Task.Delay(16);
                 Update(CalculateDeltaTime());
                 InvalidateAction?.Invoke();
             }
@@ -53,7 +54,7 @@ namespace GameEngine.Core
 
         private void Update(double deltaTime)
         {
-            foreach (ISystem system in systems)
+            foreach (ISystem system in Systems.Systems)
             {
                 system.Update(entityManager, deltaTime);
             }
@@ -63,14 +64,14 @@ namespace GameEngine.Core
         public void ChangeScene(Scene scene)
         {
             currentScene = scene;
-            currentScene.Initialize(entityManager, inputManager);
+            currentScene.Initialize(entityManager, inputManager, Systems.Get<AudioSystem>());
         }
-
+        
         private double CalculateDeltaTime()
         {
-            long currentTicks = stopwatch.ElapsedTicks;
-            double deltaTime = (currentTicks - lastUpdateTicks) / (double)Stopwatch.Frequency;
-            lastUpdateTicks = currentTicks;
+            double currentTime = stopwatch.Elapsed.TotalSeconds;
+            double deltaTime = currentTime - lastUpdateTime;
+            lastUpdateTime = currentTime;
             return deltaTime * 1000;
         }
     }

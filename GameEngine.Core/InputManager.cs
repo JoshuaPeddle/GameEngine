@@ -77,10 +77,40 @@
             this.inputManager = inputManager;
         }
 
-        public void MapActionToComponent<T>(string actionName, Entity entity, Action<T, bool> updateAction) where T : Component
+        public void MapActionToComponent<T>(
+            string actionName,
+            Entity entity,
+            Action<T, bool> updateAction,
+            bool oneShot = false
+        ) where T : Component
         {
             var component = entity.GetComponent<T>();
-            inputManager.BindAction(actionName, isActive => updateAction(component, isActive));
+            bool previouslyActive = false;
+
+            inputManager.BindAction(actionName, isActive =>
+            {
+                if (!oneShot)
+                {
+                    // Original "continuous" behavior
+                    updateAction(component, isActive);
+                }
+                else
+                {
+                    // One-shot logic with press/release transitions
+                    if (!previouslyActive && isActive)
+                    {
+                        // Transition from false -> true (key pressed)
+                        updateAction(component, true);
+                    }
+                    else if (previouslyActive && !isActive)
+                    {
+                        // Transition from true -> false (key released)
+                        updateAction(component, false);
+                    }
+                }
+
+                previouslyActive = isActive;
+            });
         }
     }
 }
