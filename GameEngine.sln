@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.WinForms", "GameEngine\GameEngine.WinForms.csproj", "{0271AA5E-0A4D-414F-BCB1-411A173DFAB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Runner.WinForms", "GameEngine\GameEngine.Runner.WinForms.csproj", "{0271AA5E-0A4D-414F-BCB1-411A173DFAB7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Core", "GameEngine.Core\GameEngine.Core.csproj", "{F308B3F1-B666-4794-AA25-A51DA9B5CC1F}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Editor.Desktop", "GameEngine.Editor.Desktop\GameEngine.Editor.Desktop.csproj", "{CFDB4E41-2B03-4F95-BD87-45A359332E62}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia", "GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj", "{B25F4AB2-4F4E-4670-A098-E538678FF714}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Maui", "GameEngine.Runner.Maui\GameEngine.Runner.Maui.csproj", "{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{B25F4AB2-4F4E-4670-A098-E538678FF714}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B25F4AB2-4F4E-4670-A098-E538678FF714}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B25F4AB2-4F4E-4670-A098-E538678FF714}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

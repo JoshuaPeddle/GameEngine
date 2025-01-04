@@ -17,4 +17,10 @@
     <ProjectReference Include="..\GameEngine.Demo\GameEngine.Demo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="libegl.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

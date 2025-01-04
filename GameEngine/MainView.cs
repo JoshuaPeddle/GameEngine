@@ -19,12 +19,35 @@ namespace GameEngine
             _gameEngine = new Engine(skglControl1.Invalidate);
 
 
-            skglControl1.KeyDown += new KeyEventHandler(_gameEngine.Systems.Get<InputSystem>().OnKeyDown);
-            skglControl1.KeyUp += new KeyEventHandler(_gameEngine.Systems.Get<InputSystem>().OnKeyUp);
+            skglControl1.KeyDown += KeyPressed;
+            skglControl1.KeyUp += KeyReleased;
 
             _gameEngine.ChangeScene(new SceneJson());
             _gameEngine.Start(); // Dont await this, it will block the UI thread
         }
+
+        void KeyPressed(object sender, KeyEventArgs args)
+        {
+            if (KeyMap.ContainsKey(args.KeyCode))
+                _gameEngine.Systems.Get<InputSystem>().KeyDown(KeyMap[args.KeyCode]);
+
+        }
+
+        void KeyReleased(object sender, KeyEventArgs args)
+        {
+            
+            if (KeyMap.ContainsKey(args.KeyCode))
+                _gameEngine.Systems.Get<InputSystem>().KeyUp(KeyMap[args.KeyCode]);
+        }
+
+        public Dictionary<Keys, GeKeys> KeyMap { get; private set; } = new Dictionary<Keys, GeKeys>()
+        {
+            { Keys.W, GeKeys.W },
+            { Keys.A, GeKeys.A },
+            { Keys.S, GeKeys.S },
+            { Keys.D, GeKeys.D },
+            { Keys.Space, GeKeys.Space }
+        };
 
         private void OnPaintSurface(object? sender, SKPaintGLSurfaceEventArgs e)
         {
