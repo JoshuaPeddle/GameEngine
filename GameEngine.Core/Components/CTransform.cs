@@ -13,5 +13,12 @@
             Position = position;
             PreviousPosition = position;
         }
+
+        public CTransform(Vec2 position, Vec2 velocity)
+        {
+            Position = position;
+            PreviousPosition = position;
+            Velocity = velocity;
+        }
     }
 }
