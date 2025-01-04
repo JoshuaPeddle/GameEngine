@@ -34,7 +34,9 @@ namespace GameEngine.Core
                 { 
                     DrawAnimations = true,
                     DrawBoundingBoxes = true,
-                    DrawEntityCenters = true
+                    DrawEntityCenters = true,
+                    DrawFps = true,
+                    FpsSmoothingSamples = 1000
                 }));
             Systems.Add(new AudioSystem());
         }
