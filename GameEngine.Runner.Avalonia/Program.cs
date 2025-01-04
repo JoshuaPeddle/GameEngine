@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using System.Collections.Generic;
 
 namespace GameEngine.Runner.Avalonia
 {
@@ -15,6 +16,10 @@ namespace GameEngine.Runner.Avalonia
         // Avalonia configuration, don't remove; also used by visual designer.
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
+                 .With(new Win32PlatformOptions
+                 {
+                     RenderingMode = [Win32RenderingMode.AngleEgl],
+                 })
                 .UsePlatformDetect()
                 .WithInterFont()
                 .LogToTrace();
