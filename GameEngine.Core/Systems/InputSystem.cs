@@ -14,15 +14,13 @@
             inputManager.DoActions();
         }
 
-        public void OnKeyDown(object? sender, KeyEventArgs e)
+        public void KeyDown(GeKeys key)
         {
-            Keys key = e.KeyCode;
             inputManager?.HandleKeyPress(key);
         }
 
-        public void OnKeyUp(object? sender, KeyEventArgs e)
+        public void KeyUp(GeKeys key)
         {
-            Keys key = e.KeyCode;
             inputManager?.HandleKeyRelease(key);
         }
     }

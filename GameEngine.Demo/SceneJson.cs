@@ -1,6 +1,8 @@
 ﻿using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
+using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 
 namespace GameEngine.Demo
@@ -16,11 +18,11 @@ namespace GameEngine.Demo
             componentFactory = new ComponentFactory(assets);
             _audioPlayer = audioPlayer;
 
-            inputManager.AddAction(Keys.W, "Up");
-            inputManager.AddAction(Keys.S, "Down");
-            inputManager.AddAction(Keys.A, "Left");
-            inputManager.AddAction(Keys.D, "Right");
-            inputManager.AddAction(Keys.Space, "PlaySound");
+            inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.AddAction(GeKeys.Space, "PlaySound");
             _audioPlayer.Play("Level1", SoundType.BGM);
             LoadLevel("levels/level1.json", entityManager, inputManager);
         }

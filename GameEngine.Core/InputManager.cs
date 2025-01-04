@@ -4,7 +4,7 @@
     {
         public ActionMapper ActionMapper { get; }
 
-        private readonly Dictionary<Keys, string> actionMap = [];
+        private readonly Dictionary<GeKeys, string> actionMap = [];
         private readonly Dictionary<string, bool> actionStates = [];
         private readonly Dictionary<string, Action<bool>> actionBindings = []; // Maps actions to update functions
 
@@ -13,7 +13,7 @@
             ActionMapper = new ActionMapper(this);
         }
 
-        public void AddAction(Keys key, string actionName)
+        public void AddAction(GeKeys key, string actionName)
         {
             if (!actionMap.ContainsKey(key))
             {
@@ -22,7 +22,7 @@
             }
         }
 
-        public void RemoveAction(Keys key)
+        public void RemoveAction(GeKeys key)
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
@@ -40,7 +40,7 @@
             }
         }
 
-        public void HandleKeyPress(Keys key)
+        public void HandleKeyPress(GeKeys key)
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
@@ -48,7 +48,7 @@
             }
         }
 
-        public void HandleKeyRelease(Keys key)
+        public void HandleKeyRelease(GeKeys key)
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {

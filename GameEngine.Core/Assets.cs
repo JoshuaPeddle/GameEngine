@@ -8,7 +8,6 @@ namespace GameEngine.Core
 
         private readonly Dictionary<string, SKBitmap> textures = [];
         private Dictionary<string, Sound> sounds = new(); 
-        private readonly Dictionary<string, Font> fonts = [];
         private readonly Dictionary<string, Animation> animations = [];
 
         public Assets(string path)

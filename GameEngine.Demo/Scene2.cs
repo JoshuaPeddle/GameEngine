@@ -1,6 +1,8 @@
 ﻿using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
+using System;
+using System.IO;
 
 namespace GameEngine.Demo
 {
@@ -14,10 +16,10 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer)
         {
-            inputManager.AddAction(Keys.W, "Up");
-            inputManager.AddAction(Keys.S, "Down");
-            inputManager.AddAction(Keys.A, "Left");
-            inputManager.AddAction(Keys.D, "Right");
+            inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.AddAction(GeKeys.D, "Right");
 
             playerEntity = entityManager.CreateEntity("player");
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
