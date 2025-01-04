@@ -8,7 +8,7 @@
 		xmlns:local="using:GameEngine.Runner.Avalonia">
 		
     <Border>
-	    <local:SkiaCanvasControl />
+	    <local:GameView />
     </Border>
 
 </Window>
