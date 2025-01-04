@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Runner.WinForms", "GameEngine\GameEngine.Runner.WinForms.csproj", "{0271AA5E-0A4D-414F-BCB1-411A173DFAB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Runner.WinForms", "GameEngine.Runner.WinForms\GameEngine.Runner.WinForms.csproj", "{0271AA5E-0A4D-414F-BCB1-411A173DFAB7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Core", "GameEngine.Core\GameEngine.Core.csproj", "{F308B3F1-B666-4794-AA25-A51DA9B5CC1F}"
 EndProject
