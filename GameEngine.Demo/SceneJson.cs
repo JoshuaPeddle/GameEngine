@@ -1,6 +1,7 @@
 ﻿using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -10,7 +11,7 @@ namespace GameEngine.Demo
     public class SceneJson : Scene
     {
         private readonly Assets assets = new("assets.txt");
-        private AudioSystem _audioPlayer;
+        private AudioSystem? _audioPlayer;
         private ComponentFactory? componentFactory;
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer)
@@ -31,16 +32,15 @@ namespace GameEngine.Demo
         private void LoadLevel(string levelFilePath, EntityManager entityManager, InputManager inputManager)
         {
             var json = File.ReadAllText(levelFilePath);
-            var entitiesData = JsonSerializer.Deserialize<List<JsonElement>>(json);
-
+            var entitiesData = JsonSerializer.Deserialize<List<JsonElement>>(json) ?? throw new Exception("Invalid level file");
             foreach (var entityData in entitiesData)
             {
-                string tag = entityData.GetProperty("tag").GetString();
+                string tag = entityData.GetProperty("tag").GetString() ?? throw new Exception("Entity tag is required");
                 var entity = entityManager.CreateEntity(tag);
 
                 foreach (var componentData in entityData.GetProperty("components").EnumerateArray())
                 {
-                    string componentType = componentData.GetProperty("type").GetString();
+                    string componentType = componentData.GetProperty("type").GetString() ?? throw new Exception("Component type is required");
                     Component component = componentFactory!.CreateComponent(componentType, componentData);
 
                     entity.AddComponent(component);
@@ -64,7 +64,7 @@ namespace GameEngine.Demo
             {
                 if (isActive)
                 {
-                    _audioPlayer.Play("Hit", SoundType.SoundEffect);
+                    _audioPlayer?.Play("Hit", SoundType.SoundEffect);
                 }
             }, true);
         }

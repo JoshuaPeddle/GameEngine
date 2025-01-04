@@ -18,7 +18,7 @@ public class PhysicsAndMovementSystemTests
         entity.AddComponent(new CBoundingBox(new Vec2(10, 10), true, true));
         // Setup a "wall" entity
         var wall = entityManager.CreateEntity("_");
-        wall.AddComponent(new CTransform(new Vec2(60, 50)));
+        wall.AddComponent(new CTransform(new Vec2(70, 50)));
         wall.AddComponent(new CBoundingBox(new Vec2(10, 10), true, true));
 
 
@@ -30,6 +30,6 @@ public class PhysicsAndMovementSystemTests
         }
 
         var transform = entity.GetComponent<CTransform>();
-        Assert.LessOrEqual(transform.Position.X, 60);
+        Assert.That(transform.Position.X, Is.EqualTo(60).Within(0.00001));
     }
 }

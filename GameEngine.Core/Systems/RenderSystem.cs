@@ -8,7 +8,7 @@ namespace GameEngine.Core.Systems
         private readonly EntityManager entityManager;
         private readonly RenderOptions options;
 
-        private readonly List<double> _fpsSamples = new();
+        private readonly List<double> _fpsSamples = [];
 
         private double _fps;
 
@@ -136,7 +136,7 @@ namespace GameEngine.Core.Systems
             });
         }
 
-        private void DrawFpsCounter(SKCanvas canvas, double fps)
+        private static void DrawFpsCounter(SKCanvas canvas, double fps)
         {
             using var paint = new SKPaint
             {

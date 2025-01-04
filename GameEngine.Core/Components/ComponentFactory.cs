@@ -39,7 +39,7 @@ namespace GameEngine.Core.Components
 
         private Component CreateCAnimation(JsonElement data)
         {
-            string animationName = data.GetProperty("animationName").GetString();
+            string animationName = data.GetProperty("animationName").GetString()!;
             var animation = assets.GetAnimation(animationName);
             return new CAnimation(animation);
         }

@@ -1,35 +1,31 @@
-﻿using Avalonia.Media;
+﻿using Avalonia;
 using Avalonia.Controls;
-using Avalonia;
-using GameEngine.Core.Systems;
+using Avalonia.Media;
+using Avalonia.Platform;
+using Avalonia.Rendering.SceneGraph;
+using Avalonia.Skia;
 using GameEngine.Core;
-using SkiaSharp;
+using GameEngine.Core.Systems;
 using GameEngine.Demo;
-using Avalonia.Media.Imaging;
-using System.Collections.Generic;
-using SharpHook.Reactive;
 using SharpHook;
 using SharpHook.Native;
+using SharpHook.Reactive;
 using System;
-using Avalonia.Rendering.SceneGraph;
-using Avalonia.Platform;
-using Avalonia.Skia;
+using System.Collections.Generic;
 
 namespace GameEngine.Runner.Avalonia
 {
     public class GameView : Control
     {
-        private Engine _gameEngine;
-        SimpleReactiveGlobalHook _keyboardHook;
-
-        private SKSurface _surface;
-        private Bitmap _bitmap;
+        private readonly Engine _gameEngine;
+        private readonly SimpleReactiveGlobalHook _keyboardHook;
 
         public GameView()
         {
             _gameEngine = new Engine(InvalidateVisual);
             _gameEngine.ChangeScene(new SceneJson());
             ConfigureKeyEvents();
+            _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
             _keyboardHook.RunAsync();
             _gameEngine.Start();
         }
@@ -39,17 +35,8 @@ namespace GameEngine.Runner.Avalonia
             context.Custom(new CustomDrawOp(new Rect(0, 0, Bounds.Width, Bounds.Height), _gameEngine));
         }
 
-        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-        {
-            base.OnDetachedFromVisualTree(e);
-            _surface?.Dispose();
-            _bitmap?.Dispose();
-        }
-
         public void ConfigureKeyEvents()
         {
-            _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
-
             _keyboardHook.KeyPressed
                 .Subscribe(KeyPressed);
 
@@ -59,15 +46,14 @@ namespace GameEngine.Runner.Avalonia
 
         void KeyPressed(KeyboardHookEventArgs args)
         {
-            if (KeyMap.ContainsKey(args.Data.KeyCode))
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(KeyMap[args.Data.KeyCode]);
-
+            if (KeyMap.TryGetValue(args.Data.KeyCode, out GeKeys value))
+                _gameEngine.Systems.Get<InputSystem>().KeyDown(value);
         }
 
         void KeyReleased(KeyboardHookEventArgs args)
         {
-            if (KeyMap.ContainsKey(args.Data.KeyCode))
-                _gameEngine.Systems.Get<InputSystem>().KeyUp(KeyMap[args.Data.KeyCode]);
+            if (KeyMap.TryGetValue(args.Data.KeyCode, out GeKeys value))
+                _gameEngine.Systems.Get<InputSystem>().KeyUp(value);
         }
 
         public Dictionary<KeyCode, GeKeys> KeyMap { get; private set; } = new Dictionary<KeyCode, GeKeys>()
@@ -83,7 +69,7 @@ namespace GameEngine.Runner.Avalonia
     class CustomDrawOp : ICustomDrawOperation
     {
         public Rect Bounds { get; set; }
-        private Engine _engine;
+        private readonly Engine _engine;
 
         public CustomDrawOp(Rect bounds, Engine engine)
         {
@@ -93,13 +79,15 @@ namespace GameEngine.Runner.Avalonia
 
         public void Dispose() { }
 
-        public bool Equals(ICustomDrawOperation other) => false;
+        public bool Equals(ICustomDrawOperation? other) => false;
 
         public bool HitTest(Point p) => false;
 
         public void Render(ImmediateDrawingContext context)
         {
             var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
+            if (leaseFeature == null)
+                return;
 
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;

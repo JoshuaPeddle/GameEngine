@@ -8,7 +8,7 @@ namespace GameEngine
     public partial class MainView : Form
     {
 
-        private Engine _gameEngine;
+        private readonly Engine _gameEngine;
         public MainView()
         {
             InitializeComponent();
@@ -26,18 +26,18 @@ namespace GameEngine
             _gameEngine.Start(); // Dont await this, it will block the UI thread
         }
 
-        void KeyPressed(object sender, KeyEventArgs args)
+        void KeyPressed(object? sender, KeyEventArgs args)
         {
-            if (KeyMap.ContainsKey(args.KeyCode))
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(KeyMap[args.KeyCode]);
+            if (KeyMap.TryGetValue(args.KeyCode, out GeKeys value))
+                _gameEngine.Systems.Get<InputSystem>().KeyDown(value);
 
         }
 
-        void KeyReleased(object sender, KeyEventArgs args)
+        void KeyReleased(object? sender, KeyEventArgs args)
         {
             
-            if (KeyMap.ContainsKey(args.KeyCode))
-                _gameEngine.Systems.Get<InputSystem>().KeyUp(KeyMap[args.KeyCode]);
+            if (KeyMap.TryGetValue(args.KeyCode, out GeKeys value))
+                _gameEngine.Systems.Get<InputSystem>().KeyUp(value);
         }
 
         public Dictionary<Keys, GeKeys> KeyMap { get; private set; } = new Dictionary<Keys, GeKeys>()
