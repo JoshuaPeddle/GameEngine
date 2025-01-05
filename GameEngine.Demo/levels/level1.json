@@ -51,5 +51,30 @@
         "blockMovement": true
       }
     ]
+  },
+  {
+    "tag": "tile",
+    "components": [
+      {
+        "type": "CTransform",
+        "position": {
+          "x": 310,
+          "y": 300
+        }
+      },
+      {
+        "type": "CAnimation",
+        "animationName": "StoneBlock"
+      },
+      {
+        "type": "CBoundingBox",
+        "size": {
+          "x": 60,
+          "y": 60
+        },
+        "blockVision": true,
+        "blockMovement": true
+      }
+    ]
   }
 ]

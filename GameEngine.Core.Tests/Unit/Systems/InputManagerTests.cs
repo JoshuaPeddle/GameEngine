@@ -25,10 +25,13 @@
             // The bound callback is only called in DoActions()
             inputManager.DoActions();
 
-            // Assert
-            Assert.True(callbackInvoked, "Callback was not invoked");
-            Assert.True(callbackValue, "Callback value should be 'true' after key press");
-            Assert.True(inputManager.IsActionActive("MoveForward"), "Action state should be true after key press");
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(callbackInvoked, Is.True, "Callback was not invoked");
+                Assert.That(callbackValue, Is.True, "Callback value should be 'true' after key press");
+                Assert.That(inputManager.IsActionActive("MoveForward"), Is.True, "Action state should be true after key press");
+            });
         }
 
         [Test]
@@ -44,16 +47,19 @@
             // Press the key first
             inputManager.HandleKeyPress(GeKeys.Space);
             inputManager.DoActions();
-            Assert.True(callbackValue);
+            Assert.That(callbackValue, Is.True);
 
             // Act
             // Now release the key
             inputManager.HandleKeyRelease(GeKeys.Space);
             inputManager.DoActions();
 
-            // Assert
-            Assert.False(callbackValue, "Callback value should be 'false' after key release");
-            Assert.False(inputManager.IsActionActive("Jump"), "Action state should be false after key release");
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(callbackValue, Is.False, "Callback value should be 'false' after key release");
+                Assert.That(inputManager.IsActionActive("Jump"), Is.False, "Action state should be false after key release");
+            });
         }
 
         [Test]
@@ -73,9 +79,12 @@
             inputManager.HandleKeyPress(GeKeys.S);
             inputManager.DoActions();
 
-            // Assert
-            Assert.False(callbackInvoked, "Callback should not be invoked after action is removed");
-            Assert.False(inputManager.IsActionActive("MoveBackward"), "Removed action should not be in actionStates");
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(callbackInvoked, Is.False, "Callback should not be invoked after action is removed");
+                Assert.That(inputManager.IsActionActive("MoveBackward"), Is.False, "Removed action should not be in actionStates");
+            });
         }
     }
 }

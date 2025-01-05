@@ -12,7 +12,6 @@ namespace GameEngine.Core.Systems
 
         private double _fps;
 
-
         public RenderSystem(EntityManager entityManager, RenderOptions options)
         {
             this.entityManager = entityManager;
@@ -151,10 +150,10 @@ namespace GameEngine.Core.Systems
 
             SKRect canvasBounds = canvas.DeviceClipBounds;
 
-            float x = canvasBounds.Right - textWidth - margin;
+            float x = canvasBounds.Left + margin;
             float y = margin + paint.TextSize;
 
-            canvas.DrawText(fpsText, x/3, y, paint);
+            canvas.DrawText(fpsText, x, y, paint);
         }
     }
 

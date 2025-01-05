@@ -46,8 +46,11 @@ namespace GameEngine.Core.Tests.Integration.Systems
 
             // 6. Assert that position changed as we expect (10 px/sec for 0.1 seconds = 1 px)
             var transform = entity.GetComponent<CTransform>();
-            Assert.AreEqual(1.0, transform.Position.X);
-            Assert.AreEqual(0.0, transform.Position.Y);
+            Assert.Multiple(() =>
+            {
+                Assert.That(transform.Position.X, Is.EqualTo(1.0));
+                Assert.That(transform.Position.Y, Is.EqualTo(0.0));
+            });
 
             // 7. Release W
             inputManager.HandleKeyRelease(GeKeys.W);
@@ -57,9 +60,12 @@ namespace GameEngine.Core.Tests.Integration.Systems
             movementSystem.Update(entityManager, 100);
             entityManager.Update();
 
-            // Position should remain the same
-            Assert.AreEqual(1.0, transform.Position.X);
-            Assert.AreEqual(0.0, transform.Position.Y);
+            Assert.Multiple(() =>
+            {
+                // Position should remain the same
+                Assert.That(transform.Position.X, Is.EqualTo(1.0));
+                Assert.That(transform.Position.Y, Is.EqualTo(0.0));
+            });
         }
     }
 }

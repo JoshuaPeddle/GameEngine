@@ -30,14 +30,14 @@
             inputManager.DoActions(); // triggers callback
 
             // Assert
-            Assert.True(myTestComponent.IsPressed);
+            Assert.That(myTestComponent.IsPressed, Is.True);
 
             // Act #2 - Release the key
             inputManager.HandleKeyRelease(GeKeys.W);
             inputManager.DoActions();
 
             // Assert #2
-            Assert.False(myTestComponent.IsPressed);
+            Assert.That(myTestComponent.IsPressed, Is.False);
         }
 
         [Test]
@@ -71,16 +71,19 @@
             inputManager.HandleKeyPress(GeKeys.Space);
             inputManager.DoActions();
 
-            // Assert
-            Assert.True(pressedInvoked, "Should have triggered on press");
-            Assert.False(releasedInvoked, "Should not trigger release yet");
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(pressedInvoked, Is.True, "Should have triggered on press");
+                Assert.That(releasedInvoked, Is.False, "Should not trigger release yet");
+            });
 
             // Act #2
             inputManager.HandleKeyRelease(GeKeys.Space);
             inputManager.DoActions();
 
             // Assert #2
-            Assert.True(releasedInvoked, "Should trigger after release");
+            Assert.That(releasedInvoked, Is.True, "Should trigger after release");
         }
     }
 

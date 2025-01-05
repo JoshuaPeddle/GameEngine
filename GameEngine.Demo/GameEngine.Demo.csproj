@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="3.116.1" />
+  </ItemGroup>
+
+  <ItemGroup>
 	<ProjectReference Include="..\GameEngine.Core\GameEngine.Core.csproj" />
   </ItemGroup>
 
