@@ -24,8 +24,8 @@ namespace GameEngine.Runner.Avalonia
         {
             _gameEngine = new Engine(InvalidateVisual);
             _gameEngine.ChangeScene(new SceneJson());
-            ConfigureKeyEvents();
             _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
+            ConfigureKeyEvents();
             _keyboardHook.RunAsync();
             _gameEngine.Start();
         }
