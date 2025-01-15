@@ -58,22 +58,22 @@ namespace GameEngine.Demo
                 var top = entityManager.CreateEntity("Wall");
                 top.AddComponent(new CTransform(new Vec2(x * 40, 0)));
                 top.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                top.AddComponent(new CAnimation(assets.GetAnimation("Wall")));
+                top.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
                 var bottom = entityManager.CreateEntity("Wall");
                 bottom.AddComponent(new CTransform(new Vec2(x * 40, (_height - 1) * 40)));
                 bottom.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                bottom.AddComponent(new CAnimation(assets.GetAnimation("Wall")));
+                bottom.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
             }
             for (int y = 1; y < _height - 1; y++)
             {
                 var left = entityManager.CreateEntity("Wall");
                 left.AddComponent(new CTransform(new Vec2(0, y * 40)));
                 left.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                left.AddComponent(new CAnimation(assets.GetAnimation("Wall")));
+                left.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
                 var right = entityManager.CreateEntity("Wall");
                 right.AddComponent(new CTransform(new Vec2((_width - 1) * 40, y * 40)));
                 right.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                right.AddComponent(new CAnimation(assets.GetAnimation("Wall")));
+                right.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
             }
         }
 

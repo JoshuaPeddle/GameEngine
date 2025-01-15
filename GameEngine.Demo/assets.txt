@@ -4,6 +4,8 @@ Texture TexStoneBlock images/stoneBlock.png
 Texture TexSnakeHead images/snakeHead.png
 Texture TexSnakeBody images/snakeBody.png
 Texture TexSnakeFood images/snakeFood.png
+Texture TexQuadBlock images/quadBlock.png
+Texture TexBrickBlock images/brickBlock.png
 
 Animation Grenade TexGrenade 4 250
 Animation JeepBack TexJeep 1 1
@@ -12,6 +14,8 @@ Animation SnakeHead TexSnakeHead 1 0
 Animation SnakeBody TexSnakeBody 1 0
 Animation SnakeFood TexSnakeFood 1 0
 Animation Wall TexSnakeBody 1 0
+Animation QuadBlock TexQuadBlock 1 0
+Animation BrickBlock TexBrickBlock 1 0
 
 Sound Hit sounds/hit.wav
 Sound Level1 sounds/level1.wav
