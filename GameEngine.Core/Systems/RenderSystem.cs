@@ -43,33 +43,68 @@ namespace GameEngine.Core.Systems
         {
             canvas.Clear(SKColors.White);
 
+            // 1. Compute scale factors (width-based and height-based)
+            var canvasBounds = canvas.DeviceClipBounds; // e.g., (0,0, screenWidth, screenHeight)
+            float screenWidth = canvasBounds.Width;
+            float screenHeight = canvasBounds.Height;
+
+            float scaleX = screenWidth / options.VirtualWidth;
+            float scaleY = screenHeight / options.VirtualHeight;
+
+            float finalScale = 1.0f;
+
+            switch (options.ScalingStrategy)
+            {
+                case ScalingStrategy.Letterbox:
+                    // Use the smaller scale so the entire game area is visible
+                    finalScale = Math.Min(scaleX, scaleY);
+                    break;
+                case ScalingStrategy.Stretch:
+                    // Use the entire screen, even if it distorts
+                    finalScale = scaleX;
+                    // or handle X and Y separately, if you *really* want full stretch
+                    break;
+                case ScalingStrategy.Crop:
+                    // Possibly use the larger scale and let some of the game area go off screen
+                    finalScale = Math.Max(scaleX, scaleY);
+                    break;
+            }
+
+            // 2. If you want letterboxing, compute the leftover space
+            float scaledWidth = options.VirtualWidth * finalScale;
+            float scaledHeight = options.VirtualHeight * finalScale;
+
+            float leftoverX = (screenWidth - scaledWidth) / 4f;
+            float leftoverY = (screenHeight - scaledHeight) / 4f;
+
+            // 3. Apply transformations so that (0,0) in *game space* ends up at
+            // leftoverX, leftoverY in *screen space*, and everything is scaled by finalScale
+            canvas.Save();
+            canvas.Translate(leftoverX, leftoverY);
+            canvas.Scale(finalScale, finalScale);
+
+            // 4. Now draw your entities as if everything is at logical coords.
+            DrawEntities(canvas);
+
+            // 5. Restore so that subsequent UI draws (like FPS counter) are in pixel space
+            canvas.Restore();
+
+            if (options.DrawFps)
+            {
+                DrawFpsCounter(canvas, _fps);
+            }
+        }
+
+        private void DrawEntities(SKCanvas canvas)
+        {
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
             foreach (var entity in entities)
             {
+                // The existing logic is fine because from this point forward,
+                // your (x, y) are in "virtual" coordinates, and Skia is scaling them.
                 if (options.DrawAnimations && entity.HasComponent<CAnimation>())
                 {
-                    var animation = entity.GetComponent<CAnimation>();
-                    SKBitmap texture = animation.Texture;
-                    SKRect sourceRect = animation.GetSourceRect();
-
-                    float frameWidth = sourceRect.Width;
-                    float frameHeight = sourceRect.Height;
-                    var animationSize = new Vec2(frameWidth, frameHeight);
-
-                    var entityCenter = FindEntityCenter(entity);
-
-                    var destRect = new SKRect(
-                        (float)(entityCenter.X - (animationSize.X / 2)),
-                        (float)(entityCenter.Y - (animationSize.Y / 2)),
-                        (float)(entityCenter.X + (animationSize.X / 2)),
-                        (float)(entityCenter.Y + (animationSize.Y / 2))
-                    );
-                    using var paint = new SKPaint
-                    {
-                        FilterQuality = SKFilterQuality.High,
-                        IsAntialias = true
-                    };
-                    canvas.DrawBitmap(texture, sourceRect, destRect, paint);
+                    DrawAnimation(canvas, entity);
                 }
 
                 if (options.DrawBoundingBoxes && entity.HasComponent<CBoundingBox>())
@@ -82,11 +117,44 @@ namespace GameEngine.Core.Systems
                     DrawEntityCenterDebugPoints(canvas, FindEntityCenter(entity));
                 }
             }
+        }
 
-            if (options.DrawFps)
+        private static SKPaint DrawAnimation(SKCanvas canvas, Entity entity)
+        {
+            var animation = entity.GetComponent<CAnimation>();
+            SKBitmap texture = animation.Texture;
+            SKRect sourceRect = animation.GetSourceRect();
+
+            float frameWidth = sourceRect.Width;
+            float frameHeight = sourceRect.Height;
+            var animationSize = new Vec2(frameWidth, frameHeight);
+
+            var entityCenter = FindEntityCenter(entity);
+
+            float rotationAngle = entity.GetComponent<CTransform>().Rotation;
+
+            canvas.Save();
+
+            canvas.Translate((float)entityCenter.X, (float)entityCenter.Y);
+
+            canvas.RotateDegrees(rotationAngle);
+
+            SKRect destRect = new SKRect(
+                (float)-(animationSize.X / 2),
+                (float)-(animationSize.Y / 2),
+                (float)animationSize.X / 2,
+                (float)animationSize.Y / 2
+            );
+            var paint = new SKPaint
             {
-                DrawFpsCounter(canvas, _fps);
-            }
+                FilterQuality = SKFilterQuality.High,
+                IsAntialias = true
+            };
+            var samplingSettings = new SKSamplingOptions(SKFilterMode.Nearest);
+            canvas.DrawBitmap(texture, sourceRect, destRect, paint);
+
+            canvas.Restore();
+            return paint;
         }
 
         private static Vec2 FindEntityCenter(Entity entity)
@@ -145,20 +213,17 @@ namespace GameEngine.Core.Systems
             };
 
             string fpsText = $"FPS: {fps:0.0}";
-            float textWidth = paint.MeasureText(fpsText);
             float margin = 10;
+            // Coordinates now are in *actual* pixels
+            canvas.DrawText(fpsText, margin, margin + paint.TextSize, paint);
 
-            SKRect canvasBounds = canvas.DeviceClipBounds;
-
-            float x = canvasBounds.Left + margin;
-            float y = margin + paint.TextSize;
-
-            canvas.DrawText(fpsText, x, y, paint);
         }
     }
 
     public class RenderOptions
     {
+        public float VirtualWidth { get; set; } = 1600; 
+        public float VirtualHeight { get; set; } = 1600; 
         public bool DrawBoundingBoxes { get; set; } = true;
         public bool DrawAnimations { get; set; } = true;
         public bool DrawEntityCenters { get; set; } = false;
@@ -166,5 +231,14 @@ namespace GameEngine.Core.Systems
         public SKColor BoundingBoxColor { get; set; } = SKColor.Parse("#FF0000");
         public int FpsSmoothingSamples { get; set; } = 1;
         public static RenderOptions Default => new();
+        public ScalingStrategy ScalingStrategy { get; set; } = ScalingStrategy.Letterbox;
+
+    }
+
+    public enum ScalingStrategy
+    {
+        Letterbox,
+        Stretch,
+        Crop
     }
 }

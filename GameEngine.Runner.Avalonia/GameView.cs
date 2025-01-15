@@ -23,7 +23,7 @@ namespace GameEngine.Runner.Avalonia
         public GameView()
         {
             _gameEngine = new Engine(InvalidateVisual);
-            _gameEngine.ChangeScene(new SceneJson());
+            _gameEngine.ChangeScene(new SceneSnake());
             _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
             ConfigureKeyEvents();
             _keyboardHook.RunAsync();

@@ -60,6 +60,20 @@
             return entities[id];
         }
 
+        public List<Entity> GetEntitiesWith<T>() where T : Component
+        {
+            if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
+            {
+                return [.. entitySet];
+            }
+            return [];
+        }
+
+        public List<Entity> GetEntitiesWithTag(string tag)
+        {
+            return entities.Where(e => e.Tag == tag).ToList();
+        }
+
         public List<Entity> GetEntitiesWithComponent<T>() where T : Component
         {
             if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))

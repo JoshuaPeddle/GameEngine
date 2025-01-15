@@ -26,6 +26,12 @@ namespace GameEngine.Core
             return CalculateOverlap(position1, cBoundingBox1.Size, position2, cBoundingBox2.Size);
         }
 
+        public static bool IsColliding(Entity entity1, Entity entity2)
+        {
+            var overlap = GetOverlap(entity1, entity2);
+            return overlap.X > 0 && overlap.Y > 0;
+        }
+
         private static Vec2 CalculateOverlap(Vec2 position1, Vec2 size1, Vec2 position2, Vec2 size2)
         {
             double left1 = position1.X;
