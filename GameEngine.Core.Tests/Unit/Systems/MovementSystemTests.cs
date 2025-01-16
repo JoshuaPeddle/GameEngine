@@ -13,6 +13,7 @@ namespace GameEngine.Core.Tests.Unit.Systems
             var movementSystem = new MovementSystem();
             var entity = entityManager.CreateEntity("_");
             entity.AddComponent(new CTransform(new Vec2(0, 0), new Vec2(10, 0)));
+            entity.AddComponent<CMovement>();
 
             // Act
             movementSystem.Update(entityManager, deltaMs: 100); // 100 ms

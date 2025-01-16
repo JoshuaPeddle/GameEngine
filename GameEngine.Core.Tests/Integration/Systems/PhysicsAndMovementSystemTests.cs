@@ -16,6 +16,7 @@ public class PhysicsAndMovementSystemTests
         var entity = entityManager.CreateEntity("_");
         entity.AddComponent(new CTransform(new Vec2(50, 50), new Vec2(100, 0)));
         entity.AddComponent(new CBoundingBox(new Vec2(10, 10), true, true));
+        entity.AddComponent<CMovement>();
         // Setup a "wall" entity
         var wall = entityManager.CreateEntity("_");
         wall.AddComponent(new CTransform(new Vec2(70, 50)));
