@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
 	<PublishSingleFile>true</PublishSingleFile>
 	<SelfContained>true</SelfContained>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 	<ApplicationManifest Condition=" '$(OS)' == 'Windows_NT' ">app.manifest</ApplicationManifest>

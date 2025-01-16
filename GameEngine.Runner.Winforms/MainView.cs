@@ -2,6 +2,7 @@ using GameEngine.Core;
 using GameEngine.Core.Systems;
 using GameEngine.Demo;
 using SkiaSharp.Views.Desktop;
+using System.ComponentModel;
 
 namespace GameEngine
 {
@@ -14,6 +15,7 @@ namespace GameEngine
             InitializeComponent();
             skglControl1.PaintSurface += OnPaintSurface;
             skglControl1.Size = new Size(1161, 671);
+            skglControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             skglControl1.Location = new Point(12, 12);
 
             _gameEngine = new Engine(skglControl1.Invalidate);
@@ -22,7 +24,7 @@ namespace GameEngine
             skglControl1.KeyDown += KeyPressed;
             skglControl1.KeyUp += KeyReleased;
 
-            _gameEngine.ChangeScene(new SceneJson());
+            _gameEngine.ChangeScene(new SceneSnake());
             _gameEngine.Start(); // Dont await this, it will block the UI thread
         }
 
@@ -40,6 +42,7 @@ namespace GameEngine
                 _gameEngine.Systems.Get<InputSystem>().KeyUp(value);
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Dictionary<Keys, GeKeys> KeyMap { get; private set; } = new Dictionary<Keys, GeKeys>()
         {
             { Keys.W, GeKeys.W },

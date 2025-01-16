@@ -23,7 +23,7 @@ namespace GameEngine.Runner.Maui
 
             _gameEngine = new Engine(canvasView.InvalidateSurface);
 
-            _gameEngine.ChangeScene(new SceneJson());
+            _gameEngine.ChangeScene(new SceneSnake());
 
             Content = canvasView;
             ConfigureKeyEvents();
@@ -45,15 +45,15 @@ namespace GameEngine.Runner.Maui
 
         void KeyPressed(KeyboardHookEventArgs args)
         {
-            if (KeyMap.ContainsKey(args.Data.KeyCode))
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(KeyMap[args.Data.KeyCode]);
+            if (KeyMap.TryGetValue(args.Data.KeyCode, out GeKeys value))
+                _gameEngine.Systems.Get<InputSystem>().KeyDown(value);
 
         }
 
         void KeyReleased(KeyboardHookEventArgs args)
         {
-            if (KeyMap.ContainsKey(args.Data.KeyCode))
-                _gameEngine.Systems.Get<InputSystem>().KeyUp(KeyMap[args.Data.KeyCode]);
+            if (KeyMap.TryGetValue(args.Data.KeyCode, out GeKeys value))
+                _gameEngine.Systems.Get<InputSystem>().KeyUp(value);
         }
 
         public Dictionary<KeyCode, GeKeys> KeyMap { get; private set; } = new Dictionary<KeyCode, GeKeys>()
