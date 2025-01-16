@@ -14,7 +14,7 @@ namespace GameEngine.Demo
         private Entity? secondEntity;
         private Entity? grenadeEntity;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
         {
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
@@ -25,6 +25,7 @@ namespace GameEngine.Demo
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));
             playerEntity.AddComponent(new CTransform(new Vec2(100, 100)));
             playerEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), false, false));
+            playerEntity.AddComponent<CMovement>();
             playerEntity.AddComponent<CInput>();
             inputManager.ActionMapper.MapActionToComponent<CInput>("Up", playerEntity, (input, isActive) => input.Up = isActive);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Down", playerEntity, (input, isActive) => input.Down = isActive);

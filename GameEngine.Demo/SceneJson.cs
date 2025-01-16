@@ -14,7 +14,7 @@ namespace GameEngine.Demo
         private AudioSystem? _audioPlayer;
         private ComponentFactory? componentFactory;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
         {
             componentFactory = new ComponentFactory(assets);
             _audioPlayer = audioPlayer;
@@ -56,6 +56,7 @@ namespace GameEngine.Demo
 
         private void MapInputActions(Entity entity, InputManager inputManager)
         {
+            entity.AddComponent<CMovement>();
             inputManager.ActionMapper.MapActionToComponent<CInput>("Up", entity, (input, isActive) => input.Up = isActive, true);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Down", entity, (input, isActive) => input.Down = isActive, true);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Left", entity, (input, isActive) => input.Left = isActive, true);

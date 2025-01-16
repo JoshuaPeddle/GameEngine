@@ -10,10 +10,10 @@ namespace GameEngine.Core.Systems
             double moveSpeed = 600; // TODO: Move somewhere else
 
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
-            foreach (var entity in entities)
+            var validEntities = entities.Where(e => e.HasComponent<CMovement>()).ToList();
+            foreach (var entity in validEntities)
             {
                 var transform = entity.GetComponent<CTransform>();
-                transform.PreviousPosition = transform.Position.Clone();
                 if (entity.HasComponent<CInput>())
                 {
                     var input = entity.GetComponent<CInput>();
@@ -47,6 +47,8 @@ namespace GameEngine.Core.Systems
                     {
                         transform.Velocity = transform.Velocity.Normalize() * maxSpeed;
                     }
+                    transform.PreviousPosition = transform.Position.Clone();
+
                 }
                 transform.Position += transform.Velocity * deltaSeconds;
             }

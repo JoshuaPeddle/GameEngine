@@ -9,14 +9,15 @@ namespace GameEngine.Demo
     public class SceneSnake : Scene
     {
         Assets assets = new("assets.txt");
+        private Action _resetScene;
 
         int _width = 20;
         int _height = 20;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
         {
             var snakeHead = entityManager.CreateEntity("SnakeHead");
-            snakeHead.AddComponent(new CTransform(new Vec2(0, 0)));
+            snakeHead.AddComponent(new CTransform(new Vec2(40, 80)));
             snakeHead.AddComponent<CInput>();
             snakeHead.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
             snakeHead.AddComponent(new CAnimation(assets.GetAnimation("SnakeHead")));
@@ -49,6 +50,7 @@ namespace GameEngine.Demo
 
             AddFood(entityManager);
             CreateBoundingEntities(entityManager);
+            _resetScene = ResetScene;
         }
 
         private void CreateBoundingEntities(EntityManager entityManager)
@@ -77,7 +79,7 @@ namespace GameEngine.Demo
             }
         }
 
-        public override void Update(EntityManager entityManager, double deltaTimeMs)
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTimeMs)
         {
             var snakeHead = entityManager.GetEntitiesWith<CSnake>()[0];
             var cSnake = snakeHead.GetComponent<CSnake>();
@@ -88,6 +90,28 @@ namespace GameEngine.Demo
             {
                 cSnake.TimeSinceLastMove -= cSnake.MoveInterval;
 
+                var collisions = physicsSystem.CollisionEvents;
+                foreach (var collision in collisions)
+                {
+                    var tagA = collision.A.Tag;
+                    var tagB = collision.B.Tag;
+                    if ((tagA == "SnakeHead" && tagB == "Food") ||
+                        (tagB == "SnakeHead" && tagA == "Food"))
+                    {
+                        HandleSnakeHeadFoodCollision(collision, entityManager);
+                    }
+                    else if ((tagA == "SnakeHead" && tagB == "Wall") ||
+                             (tagB == "SnakeHead" && tagA == "Wall"))
+                    {
+                        _resetScene();
+                    }
+                    else if ((tagA == "SnakeHead" && tagB == "SnakeBody") ||
+                             (tagB == "SnakeHead" && tagA == "SnakeBody"))
+                    {
+                        _resetScene();
+                    }
+                }
+
                 var oldPositions = new List<Vec2>();
                 foreach (var segment in cSnake.Segments)
                 {
@@ -95,40 +119,34 @@ namespace GameEngine.Demo
                 }
 
                 var headTransform = snakeHead.GetComponent<CTransform>();
+                headTransform.PreviousPosition = headTransform.Position.Clone();
                 headTransform.Position += cSnake.Direction * cSnake.TileSize;
                 UpdateSnakeHeadRotation(cSnake.Direction, headTransform);
 
                 for (int i = 1; i < cSnake.Segments.Count; i++)
                 {
                     var segmentTransform = cSnake.Segments[i].GetComponent<CTransform>();
+                    segmentTransform.PreviousPosition = segmentTransform.Position.Clone();
                     segmentTransform.Position = oldPositions[i - 1];
                 }
-
-                CheckFoodCollision(entityManager, snakeHead, cSnake);
             }
         }
 
-        private void CheckFoodCollision(EntityManager entityManager, Entity snakeHead, CSnake cSnake)
+        private void HandleSnakeHeadFoodCollision(CollisionEvent collision, EntityManager entityManager)
         {
-            var food = entityManager.GetEntitiesWithTag("Food");
-            if (food.Count > 0)
-            {
-                var theFood = food[0];
-                bool isColliding = Physics.IsColliding(snakeHead, theFood);
-                if (isColliding)
-                {
-                    cSnake.Length++;
-                    cSnake.Score++;
+            var snakeHead = collision.A.Tag == "SnakeHead" ? collision.A : collision.B;
+            var cSnake = snakeHead.GetComponent<CSnake>();
+            
+            cSnake.Length++;
+            cSnake.Score++;
+            var theFood = collision.A.Tag == "Food" ? collision.A : collision.B;
 
-                    theFood.Active = false;
+            theFood.Active = false;
+            GrowSnake(entityManager, cSnake);
 
-                    GrowSnake(entityManager, cSnake);
-
-                    AddFood(entityManager);
-                }
-            }
+            AddFood(entityManager);
         }
-
+  
         private void GrowSnake(EntityManager entityManager, CSnake cSnake)
         {
             var lastSegment = cSnake.Segments[^1];

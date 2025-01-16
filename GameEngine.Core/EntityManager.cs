@@ -83,6 +83,13 @@
             return [];
         }
 
+        public void Clear()
+        {
+            entities.Clear();
+            entitiesToAdd.Clear();
+            componentEntityMap.Clear();
+        }
+
         internal void AddEntityToComponentMap(Type componentType, Entity entity)
         {
             if (!componentEntityMap.TryGetValue(componentType, out var entitySet))

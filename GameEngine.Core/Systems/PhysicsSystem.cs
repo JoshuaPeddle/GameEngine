@@ -2,12 +2,17 @@
 
 namespace GameEngine.Core.Systems
 {
+    public record CollisionEvent(Entity A, Entity B, Vec2 Overlap);
+
     public class PhysicsSystem : ISystem
     {
         private const double epsilon = 0.0001;
+        public List<CollisionEvent> CollisionEvents { get; private set; } = [];
 
         public void Update(EntityManager entityManager, double deltaTime)
         {
+            CollisionEvents.Clear();
+
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
             var validEntities = entities.Where(e => e.HasComponent<CBoundingBox>()).ToList();
 
@@ -24,11 +29,15 @@ namespace GameEngine.Core.Systems
                 {
                     var transformToCheck = entityToCheck.GetComponent<CTransform>();
                     var boundingBoxToCheck = entityToCheck.GetComponent<CBoundingBox>();
-                    if (boundingBoxToCheck.BlockMovement != true)
-                        continue;
+               
                     Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
                     if (overlap.X > 0.0 && overlap.Y > 0.0)
                     {
+                        CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
+
+                        if (boundingBoxToCheck.BlockMovement != true)
+                            continue;
+
                         if (overlap.X < overlap.Y)
                         {
                             double deltaX = transform.Position.X - transform.PreviousPosition.X;

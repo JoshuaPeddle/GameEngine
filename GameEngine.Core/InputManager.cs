@@ -4,9 +4,9 @@
     {
         public ActionMapper ActionMapper { get; }
 
-        private readonly Dictionary<GeKeys, string> actionMap = [];
-        private readonly Dictionary<string, bool> actionStates = [];
-        private readonly Dictionary<string, Action<bool>> actionBindings = []; // Maps actions to update functions
+        private Dictionary<GeKeys, string> actionMap = [];
+        private Dictionary<string, bool> actionStates = [];
+        private Dictionary<string, Action<bool>> actionBindings = []; // Maps actions to update functions
 
         public InputManager()
         {

@@ -61,15 +61,23 @@ namespace GameEngine.Core
                 system.Update(entityManager, deltaTime);
             }
             entityManager.Update();
-            currentScene?.Update(entityManager, deltaTime);
+
+            var physicsSystem = Systems.Get<PhysicsSystem>();
+            currentScene?.Update(entityManager, physicsSystem, deltaTime);
         }
 
         public void ChangeScene(Scene scene)
         {
             currentScene = scene;
-            currentScene.Initialize(entityManager, inputManager, Systems.Get<AudioSystem>());
+            currentScene.Initialize(entityManager, inputManager, Systems.Get<AudioSystem>(), ResetScene);
         }
-        
+
+        public void ResetScene()
+        {
+            entityManager.Clear();
+            ChangeScene(currentScene!);
+        }
+
         private double CalculateDeltaTime()
         {
             double currentTime = stopwatch.Elapsed.TotalSeconds;
