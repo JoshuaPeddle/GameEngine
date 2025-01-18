@@ -69,7 +69,7 @@ namespace GameEngine.Core
         public void ChangeScene(Scene scene)
         {
             currentScene = scene;
-            currentScene.Initialize(entityManager, inputManager, Systems.Get<AudioSystem>(), ResetScene);
+            currentScene.Initialize(entityManager, inputManager, Systems.TryGet<AudioSystem>(), ResetScene);
         }
 
         public void ResetScene()

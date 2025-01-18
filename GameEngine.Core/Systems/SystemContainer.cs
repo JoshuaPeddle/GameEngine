@@ -19,6 +19,11 @@
             return system != null ? (T)system : throw new MissingSystemException();
         }
 
+        public T? TryGet<T>() where T : class, ISystem
+        {
+            return Systems.FirstOrDefault(s => s.GetType() == typeof(T)) as T;
+        }
+
         public bool Contains<T>() where T : ISystem
         {
             return Systems.Any(s => s.GetType() == typeof(T));
