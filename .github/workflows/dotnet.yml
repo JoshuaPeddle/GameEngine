@@ -22,6 +22,8 @@ jobs:
         dotnet-version: 9.0.x
 #    - name: Install maui workload
 #      run:  dotnet workload restore GameEngine.Runner.Maui/GameEngine.Runner.Maui.csproj
+    - name: Install workloads
+      run:  dotnet workload install 
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
