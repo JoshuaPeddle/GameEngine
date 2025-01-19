@@ -81,7 +81,7 @@ namespace GameEngine.Core.Systems
             // leftoverX, leftoverY in *screen space*, and everything is scaled by finalScale
             canvas.Save();
             canvas.Translate(leftoverX, leftoverY);
-            canvas.Scale(finalScale*2, finalScale*2);
+            canvas.Scale(finalScale, finalScale);
 
             // 4. Now draw your entities as if everything is at logical coords.
             DrawEntities(canvas);
@@ -217,6 +217,12 @@ namespace GameEngine.Core.Systems
             // Coordinates now are in *actual* pixels
             canvas.DrawText(fpsText, margin, margin + paint.TextSize, paint);
 
+        }
+
+        public void SetRenderDimensions(float width, float height)
+        {
+            options.VirtualWidth = width;
+            options.VirtualHeight = height;
         }
     }
 

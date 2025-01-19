@@ -14,6 +14,9 @@ namespace GameEngine.Demo
         int _width = 20;
         int _height = 20;
 
+        public override int VirtualWidth => 800;
+        public override int VirtualHeight => 800;
+
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
         {
             var snakeHead = entityManager.CreateEntity("SnakeHead");
