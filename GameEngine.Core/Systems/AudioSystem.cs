@@ -19,7 +19,7 @@ namespace GameEngine.Core.Systems
      */
     public class AudioSystem : ISystem, IDisposable
     {
-        private Assets _assets = new Assets("assets.txt");
+        private Assets? _assets;
         private List<(int channel, IntPtr chunkPtr)> _activeChannels = new List<(int, IntPtr)>();
         private int _numSFXChannels = 31;
 
@@ -40,6 +40,8 @@ namespace GameEngine.Core.Systems
 
         public void Play(string assetName, SoundType soundType)
         {
+            _assets ??= new Assets("assets.txt");
+
             var sound = _assets.GetSound(assetName);
 
             var chunkPtr = Mix_LoadWAV(Path.Combine("assets", sound.Path)); //Mix_QuickLoad_WAV

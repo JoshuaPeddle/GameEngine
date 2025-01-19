@@ -44,7 +44,7 @@ namespace GameEngine.Core.Systems
             canvas.Clear(SKColors.White);
 
             // 1. Compute scale factors (width-based and height-based)
-            var canvasBounds = canvas.DeviceClipBounds; // e.g., (0,0, screenWidth, screenHeight)
+            var canvasBounds = canvas.LocalClipBounds; // e.g., (0,0, screenWidth, screenHeight)
             float screenWidth = canvasBounds.Width;
             float screenHeight = canvasBounds.Height;
 
@@ -74,14 +74,14 @@ namespace GameEngine.Core.Systems
             float scaledWidth = options.VirtualWidth * finalScale;
             float scaledHeight = options.VirtualHeight * finalScale;
 
-            float leftoverX = (screenWidth - scaledWidth) / 4f;
-            float leftoverY = (screenHeight - scaledHeight) / 4f;
+            float leftoverX = (screenWidth - scaledWidth) / 2f;
+            float leftoverY = (screenHeight - scaledHeight) / 2f;
 
             // 3. Apply transformations so that (0,0) in *game space* ends up at
             // leftoverX, leftoverY in *screen space*, and everything is scaled by finalScale
             canvas.Save();
             canvas.Translate(leftoverX, leftoverY);
-            canvas.Scale(finalScale, finalScale);
+            canvas.Scale(finalScale*2, finalScale*2);
 
             // 4. Now draw your entities as if everything is at logical coords.
             DrawEntities(canvas);

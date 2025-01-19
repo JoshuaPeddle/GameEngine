@@ -13,11 +13,25 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Editor", "GameEn
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameEngine.Editor.Desktop", "GameEngine.Editor.Desktop\GameEngine.Editor.Desktop.csproj", "{CFDB4E41-2B03-4F95-BD87-45A359332E62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia", "GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj", "{B25F4AB2-4F4E-4670-A098-E538678FF714}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia.Old", "GameEngine.Runner.Avalonia.Old\GameEngine.Runner.Avalonia.Old.csproj", "{B25F4AB2-4F4E-4670-A098-E538678FF714}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Maui", "GameEngine.Runner.Maui\GameEngine.Runner.Maui.csproj", "{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Core.Tests", "GameEngine.Core.Tests\GameEngine.Core.Tests.csproj", "{F6C30C62-5567-4A34-8E6F-7ECDB504F138}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia", "GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj", "{D33E9D0A-08DF-4368-8915-4FC9F7B7825F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia.Android", "GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.Android\GameEngine.Runner.Avalonia.Android.csproj", "{CBA8DA8A-2684-4739-B014-8BE309ED9F5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia.Desktop", "GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.Desktop\GameEngine.Runner.Avalonia.Desktop.csproj", "{676B8869-BD0C-4705-BA29-1B32600474DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia.iOS", "GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.iOS\GameEngine.Runner.Avalonia.iOS.csproj", "{9787F602-4EAF-49B6-B200-ED1517F0DA52}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Runner.Avalonia.Browser", "GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.Browser\GameEngine.Runner.Avalonia.Browser.csproj", "{4551A6E0-E278-4536-8282-78EE5BACD091}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runners", "Runners", "{36B589DE-30C2-4A39-B775-C667B0169AA8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Editor", "Editor", "{98E054F8-59C0-4AF1-ADB9-C8193E96A7F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,17 +64,44 @@ Global
 		{B25F4AB2-4F4E-4670-A098-E538678FF714}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B25F4AB2-4F4E-4670-A098-E538678FF714}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{F6C30C62-5567-4A34-8E6F-7ECDB504F138}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6C30C62-5567-4A34-8E6F-7ECDB504F138}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6C30C62-5567-4A34-8E6F-7ECDB504F138}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6C30C62-5567-4A34-8E6F-7ECDB504F138}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D33E9D0A-08DF-4368-8915-4FC9F7B7825F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D33E9D0A-08DF-4368-8915-4FC9F7B7825F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D33E9D0A-08DF-4368-8915-4FC9F7B7825F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D33E9D0A-08DF-4368-8915-4FC9F7B7825F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBA8DA8A-2684-4739-B014-8BE309ED9F5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBA8DA8A-2684-4739-B014-8BE309ED9F5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBA8DA8A-2684-4739-B014-8BE309ED9F5C}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{CBA8DA8A-2684-4739-B014-8BE309ED9F5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBA8DA8A-2684-4739-B014-8BE309ED9F5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBA8DA8A-2684-4739-B014-8BE309ED9F5C}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{676B8869-BD0C-4705-BA29-1B32600474DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{676B8869-BD0C-4705-BA29-1B32600474DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{676B8869-BD0C-4705-BA29-1B32600474DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{676B8869-BD0C-4705-BA29-1B32600474DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9787F602-4EAF-49B6-B200-ED1517F0DA52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9787F602-4EAF-49B6-B200-ED1517F0DA52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4551A6E0-E278-4536-8282-78EE5BACD091}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4551A6E0-E278-4536-8282-78EE5BACD091}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0271AA5E-0A4D-414F-BCB1-411A173DFAB7} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
+		{49183132-3ABC-4B60-AFD4-07D656B27199} = {98E054F8-59C0-4AF1-ADB9-C8193E96A7F9}
+		{CFDB4E41-2B03-4F95-BD87-45A359332E62} = {98E054F8-59C0-4AF1-ADB9-C8193E96A7F9}
+		{B25F4AB2-4F4E-4670-A098-E538678FF714} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
+		{E4D6CDD5-0694-4B8C-B0E7-34D43B04576A} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
+		{D33E9D0A-08DF-4368-8915-4FC9F7B7825F} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
+		{CBA8DA8A-2684-4739-B014-8BE309ED9F5C} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
+		{676B8869-BD0C-4705-BA29-1B32600474DD} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
+		{9787F602-4EAF-49B6-B200-ED1517F0DA52} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
+		{4551A6E0-E278-4536-8282-78EE5BACD091} = {36B589DE-30C2-4A39-B775-C667B0169AA8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3A357D28-DD41-485B-A787-C79ABB230D34}
