@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ApplicationId>com.CompanyName.GameEngine.Runner.Avalonia</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+	<AndroidResource Include="Icon.png">
+		<Link>Resources\drawable\Icon.png</Link>
+	</AndroidResource>
+  </ItemGroup>
+
+	<ItemGroup>
+		<!--<AndroidAsset Include="../../GameEngine.Demo/**/*.png" Link ="Assets\game\$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />-->
+
+		<AndroidAsset Include="../../GameEngine.Demo/assets/**/*.*"
+              Link="Assets\game\%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
+
+		<AndroidAsset Include="../../GameEngine.Demo/assets.txt" Link ="Assets\assets.txt" />
+
+	</ItemGroup>
+
+
+	<ItemGroup>
+    <PackageReference Include="Avalonia.Android" Version="11.2.3" />
+    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj" />
+  </ItemGroup>
+
+
+</Project>
