@@ -16,6 +16,16 @@ namespace GameEngine.Core.Systems
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
             var validEntities = entities.Where(e => e.HasComponent<CBoundingBox>()).ToList();
 
+            // Gravity
+            foreach (var entity in entities.Where(e => e.HasComponent<CGravity>()))
+            {
+                var transform = entity.GetComponent<CTransform>();
+                var gravity = entity.GetComponent<CGravity>();
+
+                transform.Velocity.Y += gravity.Acceleration * deltaTime;
+            }
+
+
             foreach (var entity in validEntities)
             {
                 var transform = entity.GetComponent<CTransform>();
