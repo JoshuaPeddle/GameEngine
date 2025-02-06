@@ -43,7 +43,7 @@ namespace GameEngine.Core
 
         public async Task Start()
         {
-            stopwatch.Start();
+            stopwatch.Start(); 
             lastUpdateTime = 0;
 
             while (true)
@@ -71,7 +71,7 @@ namespace GameEngine.Core
             currentScene = scene;
             currentScene.Initialize(entityManager, inputManager, Systems.TryGet<AudioSystem>(), ResetScene);
             var renderSystem = Systems.Get<RenderSystem>();
-            renderSystem.SetRenderDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
+            renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
         }
 
         public void ResetScene()

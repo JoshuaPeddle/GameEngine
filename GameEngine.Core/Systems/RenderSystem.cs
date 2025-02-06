@@ -83,7 +83,25 @@ namespace GameEngine.Core.Systems
             canvas.Translate(leftoverX, leftoverY);
             canvas.Scale(finalScale, finalScale);
 
-            // 4. Now draw your entities as if everything is at logical coords.
+            // 4. Apply camera transformation if available.
+            // We assume the camera entity has the tag "camera"
+            var cameraEntity = entityManager.GetEntityWithTag("camera");
+            if (cameraEntity != null && cameraEntity.HasComponent<CCamera>())
+            {
+                var camera = cameraEntity.GetComponent<CCamera>();
+
+                // Here we translate the world so that the camera's position is at the center
+                // of our virtual space and then scale by the camera's zoom factor.
+                // The order of operations is:
+                //   a) Translate so that camera.Position becomes the origin.
+                //   b) Scale by Camera.Zoom (zoom in or out).
+                //   c) Translate back to put the camera at the center of the virtual space.
+                canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
+                canvas.Scale(camera.Zoom, camera.Zoom);
+                canvas.Translate(-((float)camera.Position.X), -((float)camera.Position.Y));
+            }
+
+            // 5. Draw the entities in world space.
             DrawEntities(canvas);
 
             // 5. Restore so that subsequent UI draws (like FPS counter) are in pixel space
@@ -140,10 +158,10 @@ namespace GameEngine.Core.Systems
             canvas.RotateDegrees(rotationAngle);
 
             SKRect destRect = new SKRect(
-                (float)-(animationSize.X / 2),
-                (float)-(animationSize.Y / 2),
-                (float)animationSize.X / 2,
-                (float)animationSize.Y / 2
+                -(float)(animationSize.X / 2),
+                -(float)(animationSize.Y / 2),
+                (float)(animationSize.X / 2),
+                (float)(animationSize.Y / 2)
             );
             var paint = new SKPaint
             {
@@ -160,9 +178,7 @@ namespace GameEngine.Core.Systems
         private static Vec2 FindEntityCenter(Entity entity)
         {
             var transform = entity.GetComponent<CTransform>();
-            var hasBoundingBox = entity.HasComponent<CBoundingBox>();
-
-            if (hasBoundingBox)
+            if (entity.HasComponent<CBoundingBox>())
             {
                 var boundingBox = entity.GetComponent<CBoundingBox>();
                 return new Vec2(transform.Position.X + (boundingBox.Width / 2),
@@ -219,7 +235,7 @@ namespace GameEngine.Core.Systems
 
         }
 
-        public void SetRenderDimensions(float width, float height)
+        public void SetVirtualDimensions(float width, float height)
         {
             options.VirtualWidth = width;
             options.VirtualHeight = height;
@@ -228,6 +244,7 @@ namespace GameEngine.Core.Systems
 
     public class RenderOptions
     {
+        public static RenderOptions Default => new();
         public float VirtualWidth { get; set; } = 1600; 
         public float VirtualHeight { get; set; } = 1600; 
         public bool DrawBoundingBoxes { get; set; } = true;
@@ -236,9 +253,7 @@ namespace GameEngine.Core.Systems
         public bool DrawFps { get; set; } = false;
         public SKColor BoundingBoxColor { get; set; } = SKColor.Parse("#FF0000");
         public int FpsSmoothingSamples { get; set; } = 1;
-        public static RenderOptions Default => new();
         public ScalingStrategy ScalingStrategy { get; set; } = ScalingStrategy.Letterbox;
-
     }
 
     public enum ScalingStrategy

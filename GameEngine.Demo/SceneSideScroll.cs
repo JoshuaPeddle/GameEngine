@@ -31,18 +31,30 @@ namespace GameEngine.Demo
             inputManager.ActionMapper.MapActionToComponent<CInput>("Left", player, (input, isActive) => input.Left = isActive);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Right", player, (input, isActive) => input.Right = isActive);
 
-            CreateFloor(entityManager);
-        }
-
-        private void CreateFloor(EntityManager entityManager)
-        {
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 1000; i++)
             {
                 var floor = entityManager.CreateEntity("floor");
-                floor.AddComponent(new CTransform(new Vec2(40*i, 760+(i*18))));
+                floor.AddComponent(new CTransform(new Vec2(40 * i, 760)));
                 floor.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
                 floor.AddComponent(new CBoundingBox(new Vec2(40, 40), false, true));
             }
+
+            var camera = entityManager.CreateEntity("camera");
+            var cameraComponent = new CCamera();    
+            cameraComponent.Zoom = 2.0f;
+            cameraComponent.Position = new Vec2(0, 500);
+            camera.AddComponent(cameraComponent);
+        }
+
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
+        {
+            var camera = entityManager.GetEntityWithTag("camera");
+            var cameraTransform = camera.GetComponent<CCamera>();
+
+            var player = entityManager.GetEntityWithTag("player");
+            var playerTransform = player.GetComponent<CTransform>();
+
+            cameraTransform.Position = new Vec2(playerTransform.Position.X, 300);
         }
     }
 }

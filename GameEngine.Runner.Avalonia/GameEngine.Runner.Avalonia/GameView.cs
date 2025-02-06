@@ -20,12 +20,10 @@ namespace GameEngine.Runner.Avalonia
         private readonly Engine _gameEngine;
         private readonly SimpleReactiveGlobalHook _keyboardHook;
 
-        public static string Test;
-
         public GameView()
         {
             _gameEngine = new Engine(InvalidateVisual);
-            _gameEngine.ChangeScene(new SceneSnake());
+            _gameEngine.ChangeScene(new SceneSideScroll());
             _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
             ConfigureKeyEvents();
             _keyboardHook.RunAsync();
@@ -90,13 +88,9 @@ namespace GameEngine.Runner.Avalonia
             var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
             if (leaseFeature == null)
                 return;
-
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-            canvas.Save();
             _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
-
-            canvas.Restore();
         }
     }
 }

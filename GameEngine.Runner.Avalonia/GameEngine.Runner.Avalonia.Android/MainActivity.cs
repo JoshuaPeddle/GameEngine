@@ -2,10 +2,6 @@
 using Android.Content.PM;
 using Avalonia;
 using Avalonia.Android;
-using Avalonia.Controls;
-using Avalonia.Controls.Platform;
-using Avalonia.Platform.Storage;
-using Java.IO;
 using System.IO;
 
 namespace GameEngine.Runner.Avalonia.Android
@@ -34,11 +30,7 @@ namespace GameEngine.Runner.Avalonia.Android
 
             var text = new StreamReader(assets).ReadToEnd();
 
-            App.Test = "Yee";
-
-            GameView.Test = text;
-
-            GameEngine.Core.Assets._fileFetcher = LoadFile;
+            Core.Assets._fileFetcher = LoadFile;
 
             return base.CustomizeAppBuilder(builder)
                 .WithInterFont();
@@ -53,7 +45,5 @@ namespace GameEngine.Runner.Avalonia.Android
 
             return Assets.Open("game/" + path);
         }
-
-
     }
 }
