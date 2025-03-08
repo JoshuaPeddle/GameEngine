@@ -4,9 +4,9 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-	<PublishAot>true</PublishAot>
+	<!--<PublishAot>true</PublishAot>
 	<BuiltInComInteropSupport>false</BuiltInComInteropSupport>
-	<TrimMode>link</TrimMode>
+	<TrimMode>link</TrimMode>-->
   </PropertyGroup>
 
   <ItemGroup>
