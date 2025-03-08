@@ -4,9 +4,17 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+	<PublishAot>true</PublishAot>
+	<BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+	<TrimMode>link</TrimMode>
   </PropertyGroup>
-  
+
   <ItemGroup>
+	<TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
+	<!--<TrimmerRootAssembly Include="Avalonia.Themes.Default" />-->
+  </ItemGroup>
+
+	<ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
