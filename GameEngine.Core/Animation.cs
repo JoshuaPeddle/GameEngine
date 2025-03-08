@@ -9,6 +9,7 @@ namespace GameEngine.Core
         private readonly float delay; // Delay between frames in milliseconds
         private readonly int frameWidth;
         private readonly int frameHeight;
+        private readonly SKRect[] _cachedFrames;
 
         public Animation(SKBitmap texture, int frames, float delayMs)
         {
@@ -17,15 +18,19 @@ namespace GameEngine.Core
             this.delay = delayMs;
             frameWidth = texture.Width / frames;
             frameHeight = texture.Height;
+            _cachedFrames = new SKRect[frames];
+            for (int i = 0; i < frames; i++)
+            {
+                int x = i * frameWidth;
+                _cachedFrames[i] = new SKRect(x, 0, x + frameWidth, frameHeight);
+            }
         }
 
         public SKBitmap Texture => texture;
         public SKRect GetSourceRect(double elapsedTime)
         {
-            int animationFrame = (int)(elapsedTime / delay) % frames;
-            int x = animationFrame * frameWidth;
-            int y = 0;
-            return new SKRect(x, y, x + frameWidth, y + frameHeight);
+            int frameIndex = (int)(elapsedTime / delay) % frames;
+            return _cachedFrames[frameIndex]; // No allocation!
         }
     }
 }

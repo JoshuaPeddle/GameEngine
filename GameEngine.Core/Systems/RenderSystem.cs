@@ -12,6 +12,33 @@ namespace GameEngine.Core.Systems
 
         private double _fps;
 
+        private readonly static SKPaint _animationPaint = new SKPaint
+        {
+            FilterQuality = SKFilterQuality.High,
+            IsAntialias = true
+        };
+
+        private readonly static SKPaint _boundingBoxPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = true
+        };
+
+        private readonly static SKPaint _debugPointPaint = new SKPaint
+        {
+            Color = SKColors.Red,
+            StrokeWidth = 1
+        };
+
+        private readonly static SKPaint _fpsPaint = new SKPaint
+        {
+            Color = SKColors.Black,
+            TextSize = 24,
+            IsAntialias = true
+        };
+
+
         public RenderSystem(EntityManager entityManager, RenderOptions options)
         {
             this.entityManager = entityManager;
@@ -137,7 +164,7 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        private static SKPaint DrawAnimation(SKCanvas canvas, Entity entity)
+        private static void DrawAnimation(SKCanvas canvas, Entity entity)
         {
             var animation = entity.GetComponent<CAnimation>();
             SKBitmap texture = animation.Texture;
@@ -163,16 +190,11 @@ namespace GameEngine.Core.Systems
                 (float)(animationSize.X / 2),
                 (float)(animationSize.Y / 2)
             );
-            var paint = new SKPaint
-            {
-                FilterQuality = SKFilterQuality.High,
-                IsAntialias = true
-            };
+
             var samplingSettings = new SKSamplingOptions(SKFilterMode.Nearest);
-            canvas.DrawBitmap(texture, sourceRect, destRect, paint);
+            canvas.DrawBitmap(texture, sourceRect, destRect, _animationPaint);
 
             canvas.Restore();
-            return paint;
         }
 
         private static Vec2 FindEntityCenter(Entity entity)
@@ -192,11 +214,7 @@ namespace GameEngine.Core.Systems
 
         private static void DrawEntityCenterDebugPoints(SKCanvas canvas, Vec2 position)
         {
-            canvas.DrawPoint((float)position.X, (float)position.Y, new SKPaint
-            {
-                Color = SKColors.Red,
-                StrokeWidth = 1
-            });
+            canvas.DrawPoint((float)position.X, (float)position.Y, _debugPointPaint);
         }
 
         private void DrawBoundingBox(SKCanvas canvas, Entity entity)
@@ -210,28 +228,15 @@ namespace GameEngine.Core.Systems
                 (float)transform.Position.X + (float)boundingBox.Width,
                 (float)transform.Position.Y + (float)boundingBox.Height);
 
-            canvas.DrawRect(rect, new SKPaint
-            {
-                Color = options.BoundingBoxColor,
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 2,
-                IsAntialias = true
-            });
+            canvas.DrawRect(rect, _boundingBoxPaint);
         }
 
         private static void DrawFpsCounter(SKCanvas canvas, double fps)
         {
-            using var paint = new SKPaint
-            {
-                Color = SKColors.Black,
-                TextSize = 24,
-                IsAntialias = true
-            };
-
             string fpsText = $"FPS: {fps:0.0}";
             float margin = 10;
             // Coordinates now are in *actual* pixels
-            canvas.DrawText(fpsText, margin, margin + paint.TextSize, paint);
+            canvas.DrawText(fpsText, margin, margin + _fpsPaint.TextSize, _fpsPaint);
 
         }
 
