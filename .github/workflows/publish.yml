@@ -7,8 +7,8 @@ on:
         description: 'Release version (optional). Leave blank for auto-generated version.'
         required: false
         default: ''  
-  pull_request:
-    branches: [ "master" ]
+  # pull_request:
+  #   branches: [ "master" ]
 
 jobs:
   publish:
