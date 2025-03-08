@@ -9,23 +9,52 @@ namespace GameEngine.Demo
     {
         Assets assets = new Assets("assets.txt");
 
-        public override int VirtualWidth =>  800;
+        public override int VirtualWidth =>  4000;
         public override int VirtualHeight => 800;
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
         {
-            CreateFloor(entityManager);
-        }
+            inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.AddAction(GeKeys.D, "Right");
 
-        private void CreateFloor(EntityManager entityManager)
-        {
-            for (int i = 0; i < 20; i++)
+            var player = entityManager.CreateEntity("player");
+            player.AddComponent(new CTransform(new Vec2(40, 700)));
+            player.AddComponent(new CAnimation(assets.GetAnimation("Mario")));
+            player.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
+            player.AddComponent<CGravity>();
+            player.AddComponent<CMovement>();
+            var playerInput = player.AddComponent<CInput>();
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Up", player, (input, isActive) => input.Up = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Down", player, (input, isActive) => input.Down = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Left", player, (input, isActive) => input.Left = isActive);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Right", player, (input, isActive) => input.Right = isActive);
+
+            for (int i = 0; i < 1000; i++)
             {
                 var floor = entityManager.CreateEntity("floor");
-                floor.AddComponent(new CTransform(new Vec2(40*i, 760)));
+                floor.AddComponent(new CTransform(new Vec2(40 * i, 760)));
                 floor.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
                 floor.AddComponent(new CBoundingBox(new Vec2(40, 40), false, true));
             }
+
+            var camera = entityManager.CreateEntity("camera");
+            var cameraComponent = new CCamera();    
+            cameraComponent.Zoom = 2.0f;
+            cameraComponent.Position = new Vec2(0, 500);
+            camera.AddComponent(cameraComponent);
+        }
+
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
+        {
+            var camera = entityManager.GetEntityWithTag("camera");
+            var cameraTransform = camera.GetComponent<CCamera>();
+
+            var player = entityManager.GetEntityWithTag("player");
+            var playerTransform = player.GetComponent<CTransform>();
+
+            cameraTransform.Position = new Vec2(playerTransform.Position.X, 300);
         }
     }
 }

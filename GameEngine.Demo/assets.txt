@@ -16,6 +16,7 @@ Animation SnakeFood TexSnakeFood 1 0
 Animation Wall TexSnakeBody 1 0
 Animation QuadBlock TexQuadBlock 1 0
 Animation BrickBlock TexBrickBlock 1 0
+Animation Mario TexBrickBlock 1 0
 
 Sound Hit sounds/hit.wav
 Sound Level1 sounds/level1.wav
