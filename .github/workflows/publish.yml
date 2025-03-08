@@ -1,0 +1,68 @@
+name: .NET
+
+on: 
+  workflow_dispatch: {}
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  publish:
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj
+
+    - name: Build
+      run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -c Release --no-restore
+
+    - name: Publish Linux
+      run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r linux-x64 -c Release
+
+    - name: Publish Windows
+      run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r win-x64 -c Release
+
+    - name: Zip Linux Release
+      run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net8.0/linux-x64/publish
+
+    - name: Zip Windows Release
+      run: zip -r windows_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net8.0/win-x64/publish
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: 1.0.0   
+        release_name: 'Release 1.0.0'
+        body: 'Release of the build.'
+        draft: false
+        prerelease: false
+
+    - name: Upload Linux Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./linux_artifact.zip
+        asset_name: linux_artifact.zip
+        asset_content_type: application/zip
+
+    - name: Upload Windows Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./windows_artifact.zip
+        asset_name: windows_artifact.zip
+        asset_content_type: application/zip
