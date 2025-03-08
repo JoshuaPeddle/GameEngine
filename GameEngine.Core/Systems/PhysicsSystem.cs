@@ -21,36 +21,20 @@ namespace GameEngine.Core.Systems
         private const double epsilon = 0.0001;
         public List<CollisionEvent> CollisionEvents { get; private set; } = [];
 
-        private readonly List<Entity> _validEntities = new List<Entity>();
-        private readonly List<Entity> _entitiesWithGravity = new List<Entity>();
-        private readonly List<Entity> _entitiesToCheck = new List<Entity>();
+        private readonly List<Entity> _validEntities = [];
+        private readonly List<Entity> _entitiesWithGravity = [];
+        private readonly List<Entity> _entitiesToCheck = [];
 
         public void Update(EntityManager entityManager, double deltaTime)
         {
-            CollisionEvents.Clear();
-            _validEntities.Clear();
-            _entitiesWithGravity.Clear();
+            ResetEntityLists();
+            PopulateEntityLists(entityManager);
+            ProcessGravity(deltaTime);
+            ProcessCollisions();
+        }
 
-            var entities = entityManager.GetEntitiesWithComponent<CTransform>();
-            foreach (var entity in entities)
-            {
-                if (entity.HasComponent<CBoundingBox>())
-                {
-                    _validEntities.Add(entity);
-                }
-                if (entity.HasComponent<CGravity>())
-                {
-                    _entitiesWithGravity.Add(entity);
-                }
-            }
-
-            foreach (var entity in _entitiesWithGravity)
-            {
-                var transform = entity.GetComponent<CTransform>();
-                var gravity = entity.GetComponent<CGravity>();
-                transform.Velocity.Y += gravity.Acceleration * deltaTime;
-            }
-
+        private void ProcessCollisions()
+        {
             foreach (var entity in _validEntities)
             {
                 var transform = entity.GetComponent<CTransform>();
@@ -62,10 +46,8 @@ namespace GameEngine.Core.Systems
 
                 foreach (var potentialEntity in _validEntities)
                 {
-                    if (potentialEntity.Id != entity.Id)
-                    {
-                        _entitiesToCheck.Add(potentialEntity);
-                    }
+                    if (entity.Id >= potentialEntity.Id || entity.Id == potentialEntity.Id) continue;
+                    _entitiesToCheck.Add(potentialEntity);
                 }
 
                 foreach (var entityToCheck in _entitiesToCheck)
@@ -87,6 +69,39 @@ namespace GameEngine.Core.Systems
             }
         }
 
+        private void ProcessGravity(double deltaTime)
+        {
+            Parallel.ForEach(_entitiesWithGravity, entity =>
+            {
+                var transform = entity.GetComponent<CTransform>();
+                var gravity = entity.GetComponent<CGravity>();
+                transform.Velocity += new Vec2(0, gravity.Acceleration * deltaTime);
+            });
+        }
+
+        private void PopulateEntityLists(EntityManager entityManager)
+        {
+            var entities = entityManager.GetEntitiesWithComponent<CTransform>();
+            foreach (var entity in entities)
+            {
+                if (entity.HasComponent<CBoundingBox>())
+                {
+                    _validEntities.Add(entity);
+                }
+                if (entity.HasComponent<CGravity>())
+                {
+                    _entitiesWithGravity.Add(entity);
+                }
+            }
+        }
+
+        private void ResetEntityLists()
+        {
+            CollisionEvents.Clear();
+            _validEntities.Clear();
+            _entitiesWithGravity.Clear();
+        }
+
         private void ResolveCollision(CTransform transform, CTransform transformToCheck, Vec2 overlap)
         {
             if (overlap.X < overlap.Y)
@@ -104,13 +119,13 @@ namespace GameEngine.Core.Systems
             double deltaX = transform.Position.X - transform.PreviousPosition.X;
             if (Math.Abs(deltaX) > epsilon)
             {
-                transform.Position.X += (deltaX > 0) ? -overlapX : overlapX;
+                transform.Position += new Vec2((deltaX > 0) ? -overlapX : overlapX, 0);
             }
             else
             {
-                transform.Position.X += (transform.Position.X < transformToCheck.Position.X) ? -overlapX : overlapX;
+                transform.Position += new Vec2((transform.Position.X < transformToCheck.Position.X) ? -overlapX : overlapX, 0);
             }
-            transform.Velocity.X = 0;
+            transform.Velocity = new Vec2(0, transform.Velocity.Y);
         }
 
         private void HandleYAxisCollision(CTransform transform, CTransform transformToCheck, double overlapY)
@@ -118,13 +133,13 @@ namespace GameEngine.Core.Systems
             double deltaY = transform.Position.Y - transform.PreviousPosition.Y;
             if (Math.Abs(deltaY) > epsilon)
             {
-                transform.Position.Y += (deltaY > 0) ? -overlapY : overlapY;
+                transform.Position += new Vec2(0, (deltaY > 0) ? -overlapY : overlapY);
             }
             else
             {
-                transform.Position.Y += (transform.Position.Y < transformToCheck.Position.Y) ? -overlapY : overlapY;
+                transform.Position += new Vec2(0, (transform.Position.Y < transformToCheck.Position.Y) ? -overlapY : overlapY);
             }
-            transform.Velocity.Y = 0;
+            transform.Velocity = new Vec2(transform.Velocity.X, 0);
         }
     }
 }

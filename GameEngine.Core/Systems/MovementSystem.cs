@@ -27,19 +27,19 @@ namespace GameEngine.Core.Systems
                     }
                     if (input.Up)
                     {
-                        transform.Velocity.Y -= playerSpeedTransform;
+                        transform.Velocity -= new Vec2(0, playerSpeedTransform);
                     }
                     if (input.Down)
                     {
-                        transform.Velocity.Y += playerSpeedTransform;
+                        transform.Velocity += new Vec2(0, playerSpeedTransform);
                     }
                     if (input.Left)
                     {
-                        transform.Velocity.X -= playerSpeedTransform;
+                        transform.Velocity -= new Vec2(playerSpeedTransform, 0);
                     }
                     if (input.Right)
                     {
-                        transform.Velocity.X += playerSpeedTransform;
+                        transform.Velocity += new Vec2(playerSpeedTransform, 0);
                     }
 
                     float maxSpeed = 250f;
