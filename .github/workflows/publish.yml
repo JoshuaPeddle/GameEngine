@@ -1,0 +1,66 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on: 
+  workflow_dispatch: {}
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  publish:
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj
+
+    - name: Build
+      run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj -c Release --no-restore
+
+    - name: Publish Linux
+      run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj -r linux-x64 -c Release
+
+    - name: Publish Windows
+      run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj -r win-x64 -c Release
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0   
+        release_name: 'Release v1.0.0'
+        body: 'Release of the build.'
+        draft: false
+        prerelease: false
+
+    - name: Upload Linux Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GameEngine.Runner.Avalonia/bin/Release/net*/linux-x64/publish.zip 
+        asset_name: linux_artifact.zip
+        asset_content_type: application/zip
+
+    - name: Upload Windows Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GameEngine.Runner.Avalonia/bin/Release/net*/win-x64/publish.zip 
+        asset_name: windows_artifact.zip
+        asset_content_type: application/zip
+
