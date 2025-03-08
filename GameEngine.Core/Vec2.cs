@@ -1,6 +1,6 @@
 ﻿namespace GameEngine.Core
 {
-    public class Vec2
+    public struct Vec2
     {
         private double x;
         private double y;
