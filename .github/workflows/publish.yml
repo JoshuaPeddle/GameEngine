@@ -9,7 +9,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,5 +31,35 @@ jobs:
     - name: Publish Windows
       run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj -r win-x64 -c Release
 
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0   
+        release_name: 'Release v1.0.0'
+        body: 'Release of the build.'
+        draft: false
+        prerelease: false
 
+    - name: Upload Linux Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GameEngine.Runner.Avalonia/bin/Release/net*/linux-x64/publish.zip 
+        asset_name: linux_artifact.zip
+        asset_content_type: application/zip
+
+    - name: Upload Windows Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./GameEngine.Runner.Avalonia/bin/Release/net*/win-x64/publish.zip 
+        asset_name: windows_artifact.zip
+        asset_content_type: application/zip
 
