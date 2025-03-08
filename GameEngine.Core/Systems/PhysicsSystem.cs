@@ -21,36 +21,20 @@ namespace GameEngine.Core.Systems
         private const double epsilon = 0.0001;
         public List<CollisionEvent> CollisionEvents { get; private set; } = [];
 
-        private readonly List<Entity> _validEntities = new List<Entity>();
-        private readonly List<Entity> _entitiesWithGravity = new List<Entity>();
-        private readonly List<Entity> _entitiesToCheck = new List<Entity>();
+        private readonly List<Entity> _validEntities = [];
+        private readonly List<Entity> _entitiesWithGravity = [];
+        private readonly List<Entity> _entitiesToCheck = [];
 
         public void Update(EntityManager entityManager, double deltaTime)
         {
-            CollisionEvents.Clear();
-            _validEntities.Clear();
-            _entitiesWithGravity.Clear();
+            ResetEntityLists();
+            PopulateEntityLists(entityManager);
+            ProcessGravity(deltaTime);
+            ProcessCollisions();
+        }
 
-            var entities = entityManager.GetEntitiesWithComponent<CTransform>();
-            foreach (var entity in entities)
-            {
-                if (entity.HasComponent<CBoundingBox>())
-                {
-                    _validEntities.Add(entity);
-                }
-                if (entity.HasComponent<CGravity>())
-                {
-                    _entitiesWithGravity.Add(entity);
-                }
-            }
-
-            foreach (var entity in _entitiesWithGravity)
-            {
-                var transform = entity.GetComponent<CTransform>();
-                var gravity = entity.GetComponent<CGravity>();
-                transform.Velocity.Y += gravity.Acceleration * deltaTime;
-            }
-
+        private void ProcessCollisions()
+        {
             foreach (var entity in _validEntities)
             {
                 var transform = entity.GetComponent<CTransform>();
@@ -70,6 +54,8 @@ namespace GameEngine.Core.Systems
 
                 foreach (var entityToCheck in _entitiesToCheck)
                 {
+                    if (entity.Id >= entityToCheck.Id || entity.Id == entityToCheck.Id) continue;
+
                     var transformToCheck = entityToCheck.GetComponent<CTransform>();
                     var boundingBoxToCheck = entityToCheck.GetComponent<CBoundingBox>();
 
@@ -85,6 +71,39 @@ namespace GameEngine.Core.Systems
                     }
                 }
             }
+        }
+
+        private void ProcessGravity(double deltaTime)
+        {
+            Parallel.ForEach(_entitiesWithGravity, entity =>
+            {
+                var transform = entity.GetComponent<CTransform>();
+                var gravity = entity.GetComponent<CGravity>();
+                transform.Velocity.Y += gravity.Acceleration * deltaTime;
+            });
+        }
+
+        private void PopulateEntityLists(EntityManager entityManager)
+        {
+            var entities = entityManager.GetEntitiesWithComponent<CTransform>();
+            foreach (var entity in entities)
+            {
+                if (entity.HasComponent<CBoundingBox>())
+                {
+                    _validEntities.Add(entity);
+                }
+                if (entity.HasComponent<CGravity>())
+                {
+                    _entitiesWithGravity.Add(entity);
+                }
+            }
+        }
+
+        private void ResetEntityLists()
+        {
+            CollisionEvents.Clear();
+            _validEntities.Clear();
+            _entitiesWithGravity.Clear();
         }
 
         private void ResolveCollision(CTransform transform, CTransform transformToCheck, Vec2 overlap)
