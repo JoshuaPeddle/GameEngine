@@ -46,16 +46,12 @@ namespace GameEngine.Core.Systems
 
                 foreach (var potentialEntity in _validEntities)
                 {
-                    if (potentialEntity.Id != entity.Id)
-                    {
-                        _entitiesToCheck.Add(potentialEntity);
-                    }
+                    if (entity.Id >= potentialEntity.Id || entity.Id == potentialEntity.Id) continue;
+                    _entitiesToCheck.Add(potentialEntity);
                 }
 
                 foreach (var entityToCheck in _entitiesToCheck)
                 {
-                    if (entity.Id >= entityToCheck.Id || entity.Id == entityToCheck.Id) continue;
-
                     var transformToCheck = entityToCheck.GetComponent<CTransform>();
                     var boundingBoxToCheck = entityToCheck.GetComponent<CBoundingBox>();
 
