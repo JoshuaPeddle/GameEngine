@@ -75,7 +75,7 @@ namespace GameEngine.Core.Systems
             {
                 var transform = entity.GetComponent<CTransform>();
                 var gravity = entity.GetComponent<CGravity>();
-                transform.Velocity.Y += gravity.Acceleration * deltaTime;
+                transform.Velocity += new Vec2(0, gravity.Acceleration * deltaTime);
             });
         }
 
@@ -119,13 +119,13 @@ namespace GameEngine.Core.Systems
             double deltaX = transform.Position.X - transform.PreviousPosition.X;
             if (Math.Abs(deltaX) > epsilon)
             {
-                transform.Position.X += (deltaX > 0) ? -overlapX : overlapX;
+                transform.Position += new Vec2((deltaX > 0) ? -overlapX : overlapX, 0);
             }
             else
             {
-                transform.Position.X += (transform.Position.X < transformToCheck.Position.X) ? -overlapX : overlapX;
+                transform.Position += new Vec2((transform.Position.X < transformToCheck.Position.X) ? -overlapX : overlapX, 0);
             }
-            transform.Velocity.X = 0;
+            transform.Velocity = new Vec2(0, transform.Velocity.Y);
         }
 
         private void HandleYAxisCollision(CTransform transform, CTransform transformToCheck, double overlapY)
@@ -133,13 +133,13 @@ namespace GameEngine.Core.Systems
             double deltaY = transform.Position.Y - transform.PreviousPosition.Y;
             if (Math.Abs(deltaY) > epsilon)
             {
-                transform.Position.Y += (deltaY > 0) ? -overlapY : overlapY;
+                transform.Position += new Vec2(0, (deltaY > 0) ? -overlapY : overlapY);
             }
             else
             {
-                transform.Position.Y += (transform.Position.Y < transformToCheck.Position.Y) ? -overlapY : overlapY;
+                transform.Position += new Vec2(0, (transform.Position.Y < transformToCheck.Position.Y) ? -overlapY : overlapY);
             }
-            transform.Velocity.Y = 0;
+            transform.Velocity = new Vec2(transform.Velocity.X, 0);
         }
     }
 }

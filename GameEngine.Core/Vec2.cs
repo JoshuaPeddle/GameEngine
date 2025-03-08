@@ -1,35 +1,33 @@
 ﻿namespace GameEngine.Core
 {
-    public struct Vec2
+    public readonly struct Vec2 : IEquatable<Vec2>
     {
-        private double x;
-        private double y;
+        public readonly double X;
+        public readonly double Y;
 
         public Vec2(double x, double y)
         {
-            this.x = x;
-            this.y = y;
+           X = x;
+           Y = y;
         }
 
-        public double X { get => x; set => x = value; }
-        public double Y { get => y; set => y = value; }
 
-        public static Vec2 operator +(Vec2 a, Vec2 b)
+        public static Vec2 operator +(in Vec2 a, in Vec2 b)
         {
             return new Vec2(a.X + b.X, a.Y + b.Y);
         }
 
-        public static Vec2 operator -(Vec2 a, Vec2 b)
+        public static Vec2 operator -(in Vec2 a, in Vec2 b)
         {
             return new Vec2(a.X - b.X, a.Y - b.Y);
         }
 
-        public static Vec2 operator *(Vec2 a, double b)
+        public static Vec2 operator *(in Vec2 a, double b)
         {
             return new Vec2(a.X * b, a.Y * b);
         }
 
-        public static Vec2 operator /(Vec2 a, double b)
+        public static Vec2 operator /(in Vec2 a, double b)
         {
             return new Vec2(a.X / b, a.Y / b);
         }
@@ -39,22 +37,22 @@
             return new Vec2(a * b.X, a * b.Y);
         }
 
-        public static Vec2 operator /(double a, Vec2 b)
+        public static Vec2 operator /(double a, in Vec2 b)
         {
             return new Vec2(a / b.X, a / b.Y);
         }
 
-        public static Vec2 operator -(Vec2 a)
+        public static Vec2 operator -(in Vec2 a)
         {
             return new Vec2(-a.X, -a.Y);
         }
 
-        public static bool operator ==(Vec2 a, Vec2 b)
+        public static bool operator ==(in Vec2 a, in Vec2 b)
         {
             return a.X == b.X && a.Y == b.Y;
         }
 
-        public static bool operator !=(Vec2 a, Vec2 b)
+        public static bool operator !=(in Vec2 a, in Vec2 b)
         {
             return a.X != b.X || a.Y != b.Y;
         }
@@ -62,13 +60,13 @@
         public override bool Equals(object? obj)
         {
             return obj is Vec2 d &&
-                   x == d.x &&
-                   y == d.y;
+                   X == d.X &&
+                   Y == d.Y;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(x, y);
+            return HashCode.Combine(X, Y);
         }
 
         public override string ToString()
@@ -86,17 +84,17 @@
             return this / Magnitude();
         }
 
-        public double Dot(Vec2 other)
+        public double Dot(in Vec2 other)
         {
             return (X * other.X) + (Y * other.Y);
         }
 
-        public double Cross(Vec2 other)
+        public double Cross(in Vec2 other)
         {
             return (X * other.Y) - (Y * other.X);
         }
 
-        public Vec2 Project(Vec2 other)
+        public Vec2 Project(in Vec2 other)
         {
             return other * (Dot(other) / other.Dot(other));
         }
@@ -117,6 +115,13 @@
         public Vec2 Clone()
         {
             return new Vec2(X, Y);
+        }
+
+        public bool Equals(Vec2 other)
+        {
+            return 
+               X == other.X &&
+               Y == other.Y;
         }
 
         public static Vec2 Zero => new(0, 0);
