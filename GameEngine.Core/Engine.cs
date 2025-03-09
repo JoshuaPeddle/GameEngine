@@ -15,10 +15,12 @@ namespace GameEngine.Core
 
         private Scene? currentScene;
         private double lastUpdateTime = 0;
+        private bool _audioEnabled;
 
-        public Engine(Action? invalidateAction = null)
+        public Engine(Action? invalidateAction = null, bool audioEnabled = true)
         {
             InvalidateAction = invalidateAction;
+            _audioEnabled = audioEnabled;
             InitializeSystems();
         }
 
@@ -38,9 +40,8 @@ namespace GameEngine.Core
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
                 }));
-#if !ANDROID
-            //Systems.Add(new AudioSystem());
-#endif
+            if (_audioEnabled ) 
+                Systems.Add(new AudioSystem());
         }
 
         public async Task Start()
@@ -50,7 +51,7 @@ namespace GameEngine.Core
 
             while (true)
             {
-                await Task.Delay(10);
+                await Task.Delay(1);
                 Update(CalculateDeltaTime());
                 InvalidateAction?.Invoke();
             }
