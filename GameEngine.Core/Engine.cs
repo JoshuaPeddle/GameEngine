@@ -15,10 +15,12 @@ namespace GameEngine.Core
 
         private Scene? currentScene;
         private double lastUpdateTime = 0;
+        private bool _audioEnabled;
 
-        public Engine(Action? invalidateAction = null)
+        public Engine(Action? invalidateAction = null, bool audioEnabled = true)
         {
             InvalidateAction = invalidateAction;
+            _audioEnabled = audioEnabled;
             InitializeSystems();
         }
 
@@ -38,7 +40,8 @@ namespace GameEngine.Core
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
                 }));
-            Systems.Add(new AudioSystem());
+            if (_audioEnabled ) 
+                Systems.Add(new AudioSystem());
         }
 
         public async Task Start()
