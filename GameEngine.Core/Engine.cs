@@ -38,7 +38,9 @@ namespace GameEngine.Core
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
                 }));
-            Systems.Add(new AudioSystem());
+#if !ANDROID
+            //Systems.Add(new AudioSystem());
+#endif
         }
 
         public async Task Start()
@@ -48,7 +50,7 @@ namespace GameEngine.Core
 
             while (true)
             {
-                await Task.Delay(1);
+                await Task.Delay(10);
                 Update(CalculateDeltaTime());
                 InvalidateAction?.Invoke();
             }
