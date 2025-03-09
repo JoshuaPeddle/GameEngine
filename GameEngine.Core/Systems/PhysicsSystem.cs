@@ -1,4 +1,5 @@
 ﻿using GameEngine.Core.Components;
+using System.Collections.Generic;
 
 namespace GameEngine.Core.Systems
 {
@@ -23,7 +24,7 @@ namespace GameEngine.Core.Systems
 
         private readonly List<Entity> _validEntities = [];
         private readonly List<Entity> _entitiesWithGravity = [];
-        private readonly List<Entity> _entitiesToCheck = [];
+        private readonly ParallelOptions  parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(Environment.ProcessorCount / 5, 1)};
 
         public void Update(EntityManager entityManager, double deltaTime)
         {
@@ -35,43 +36,37 @@ namespace GameEngine.Core.Systems
 
         private void ProcessCollisions()
         {
-            foreach (var entity in _validEntities)
+            Parallel.ForEach(_validEntities, parallelOptions, entity =>
             {
                 var transform = entity.GetComponent<CTransform>();
-                if (transform.Position == transform.PreviousPosition)
-                    continue;
-
-                var boundingBox = entity.GetComponent<CBoundingBox>();
-                _entitiesToCheck.Clear();
-
-                foreach (var potentialEntity in _validEntities)
+                if (transform.Position != transform.PreviousPosition)
                 {
-                    if (entity.Id >= potentialEntity.Id || entity.Id == potentialEntity.Id) continue;
-                    _entitiesToCheck.Add(potentialEntity);
-                }
+                    var boundingBox = entity.GetComponent<CBoundingBox>();
 
-                foreach (var entityToCheck in _entitiesToCheck)
-                {
-                    var transformToCheck = entityToCheck.GetComponent<CTransform>();
-                    var boundingBoxToCheck = entityToCheck.GetComponent<CBoundingBox>();
-
-                    Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
-                    if (overlap.X > 0.0 && overlap.Y > 0.0)
+                    foreach (var entityToCheck in _validEntities)
                     {
-                        CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
+                        if (entity.Id >= entityToCheck.Id || entity.Id == entityToCheck.Id) continue;
+                        var transformToCheck = entityToCheck.GetComponent<CTransform>();
+                        var boundingBoxToCheck = entityToCheck.GetComponent<CBoundingBox>();
 
-                        if (boundingBoxToCheck.BlockMovement)
+                        Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
+                        if (overlap.X > 0.0 && overlap.Y > 0.0)
                         {
-                            ResolveCollision(transform, transformToCheck, overlap);
+                            CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
+
+                            if (boundingBoxToCheck.BlockMovement)
+                            {
+                                ResolveCollision(transform, transformToCheck, overlap);
+                            }
                         }
                     }
                 }
-            }
+            });
         }
 
         private void ProcessGravity(double deltaTime)
         {
-            Parallel.ForEach(_entitiesWithGravity, entity =>
+            Parallel.ForEach(_entitiesWithGravity, parallelOptions, entity =>
             {
                 var transform = entity.GetComponent<CTransform>();
                 var gravity = entity.GetComponent<CGravity>();
