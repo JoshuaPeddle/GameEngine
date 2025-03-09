@@ -7,8 +7,8 @@ on:
         description: 'Release version (optional). Leave blank for auto-generated version.'
         required: false
         default: ''  
-  # pull_request:
-  #   branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
   publish:
@@ -22,6 +22,15 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+        
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
 
     - name: Restore dependencies
       run: dotnet restore GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj
@@ -35,12 +44,22 @@ jobs:
     - name: Publish Windows
       run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r win-x64 -c Release
 
+    # Add Android Build Step
+    - name: Build Android
+      run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj -c Release -f net8.0-android
+
+    # Zip Artifacts
     - name: Zip Linux Release
       run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net8.0/linux-x64/publish
 
     - name: Zip Windows Release
       run: zip -r windows_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net8.0/win-x64/publish
 
+    # Zip Android APK
+    - name: Zip Android Release
+      run: zip android_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release/net8.0-android/*-Signed.apk
+
+    # Determine Release Version and Create Release
     - name: Determine Release Version
       id: version
       run: |
@@ -64,6 +83,7 @@ jobs:
         draft: false
         prerelease: false
 
+    # Upload Artifacts
     - name: Upload Linux Artifact
       uses: actions/upload-release-asset@v1
       env:
@@ -82,4 +102,15 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./windows_artifact.zip
         asset_name: windows_artifact.zip
+        asset_content_type: application/zip
+
+    # Upload Android Artifact
+    - name: Upload Android Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./android_artifact.zip
+        asset_name: android_artifact.zip
         asset_content_type: application/zip
