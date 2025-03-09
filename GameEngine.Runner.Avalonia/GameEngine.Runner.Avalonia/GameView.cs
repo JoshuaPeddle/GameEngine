@@ -22,7 +22,10 @@ namespace GameEngine.Runner.Avalonia
 
         public GameView()
         {
-            _gameEngine = new Engine(InvalidateVisual);
+            if (OperatingSystem.IsAndroid())
+                _gameEngine = new Engine(InvalidateVisual, audioEnabled: false);
+            else
+                _gameEngine = new Engine(InvalidateVisual);
             _gameEngine.ChangeScene(new SceneSideScroll());
             _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
             ConfigureKeyEvents();
