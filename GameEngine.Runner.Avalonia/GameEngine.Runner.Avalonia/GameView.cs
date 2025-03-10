@@ -17,19 +17,24 @@ namespace GameEngine.Runner.Avalonia
 {
     public class GameView : Control
     {
-        private readonly Engine _gameEngine;
+        public static Engine _gameEngine;
         private readonly SimpleReactiveGlobalHook _keyboardHook;
 
         public GameView()
         {
-            if (OperatingSystem.IsAndroid())
+            if (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser())
                 _gameEngine = new Engine(InvalidateVisual, audioEnabled: false);
             else
                 _gameEngine = new Engine(InvalidateVisual);
-            _gameEngine.ChangeScene(new SceneSideScroll());
-            _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
-            ConfigureKeyEvents();
-            _keyboardHook.RunAsync();
+            _gameEngine.ChangeScene(new SceneSnake());
+
+            if (!OperatingSystem.IsBrowser())
+            {
+                _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
+                ConfigureKeyEvents();
+                _keyboardHook.RunAsync();
+            }
+
             _gameEngine.Start();
         }
 

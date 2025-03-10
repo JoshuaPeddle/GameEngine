@@ -1,17 +1,18 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using GameEngine.Runner.Avalonia.ViewModels;
 using GameEngine.Runner.Avalonia.Views;
+using System.IO;
+using System;
 using System.Linq;
 
 namespace GameEngine.Runner.Avalonia
 {
     public partial class App : Application
     {
-        public static string Test;
+        public static Func<string, Stream>? _fileFetcher;
 
         public override void Initialize()
         {
@@ -20,6 +21,9 @@ namespace GameEngine.Runner.Avalonia
 
         public override void OnFrameworkInitializationCompleted()
         {
+            if (_fileFetcher != null)
+                Core.Assets._fileFetcher = _fileFetcher;
+
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
@@ -37,7 +41,6 @@ namespace GameEngine.Runner.Avalonia
                     DataContext = new MainViewModel()
                 };
             }
-
             base.OnFrameworkInitializationCompleted();
         }
 
