@@ -191,7 +191,6 @@ namespace GameEngine.Core.Systems
                 (float)(animationSize.Y / 2)
             );
 
-            var samplingSettings = new SKSamplingOptions(SKFilterMode.Nearest);
             canvas.DrawBitmap(texture, sourceRect, destRect, _animationPaint);
 
             canvas.Restore();

@@ -16,22 +16,7 @@ namespace GameEngine.Runner.Avalonia.Android
     {
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
-            //Stream input = Assets.Open("Resources/asset.txt");
-
-
-            var list3 = Assets.List("");
-            var list2= Assets.List("game");
-
-            var list4 = Assets.List("game/images");
-
-            var list5 = Assets.List("game/sounds");
-
-            var assets = Assets.Open("assets.txt");
-
-            var text = new StreamReader(assets).ReadToEnd();
-
-            Core.Assets._fileFetcher = LoadFile;
-
+            App._fileFetcher = LoadFile;
             return base.CustomizeAppBuilder(builder)
                 .WithInterFont();
         }
