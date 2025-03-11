@@ -3,39 +3,35 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-	<!--<PublishAot>true</PublishAot>
+    <!--<PublishAot>true</PublishAot>
 	<BuiltInComInteropSupport>false</BuiltInComInteropSupport>
 	<TrimMode>link</TrimMode>-->
   </PropertyGroup>
-
   <ItemGroup>
-	<TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
-	<!--<TrimmerRootAssembly Include="Avalonia.Themes.Default" />-->
+    <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
+    <!--<TrimmerRootAssembly Include="Avalonia.Themes.Default" />-->
   </ItemGroup>
-
-	<ItemGroup>
+  <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.2.1" />
-    <PackageReference Include="Avalonia.Skia" Version="11.2.1" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.1" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.1" />
-	<PackageReference Include="SharpHook.Reactive" Version="5.3.8" />
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Skia" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="SharpHook.Reactive" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.2.1">
+    <PackageReference Include="Avalonia.Diagnostics">
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>none</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-	<PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="SkiaSharp" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\GameEngine.Core\GameEngine.Core.csproj" />
     <ProjectReference Include="..\..\GameEngine.Demo\GameEngine.Demo.csproj" />
