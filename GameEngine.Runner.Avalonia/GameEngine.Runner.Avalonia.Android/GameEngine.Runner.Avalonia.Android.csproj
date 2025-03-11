@@ -10,32 +10,21 @@
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
   </PropertyGroup>
-	
-
-	<ItemGroup>
-	<AndroidResource Include="Icon.png">
-		<Link>Resources\drawable\Icon.png</Link>
-	</AndroidResource>
+  <ItemGroup>
+    <AndroidResource Include="Icon.png">
+      <Link>Resources\drawable\Icon.png</Link>
+    </AndroidResource>
   </ItemGroup>
-
-	<ItemGroup>
-		<!--<AndroidAsset Include="../../GameEngine.Demo/**/*.png" Link ="Assets\game\$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />-->
-
-		<AndroidAsset Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets\game\%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
-
-		<AndroidAsset Include="../../GameEngine.Demo/assets.txt" Link="Assets\assets.txt" />
-
-	</ItemGroup>
-
-
-	<ItemGroup>
-    <PackageReference Include="Avalonia.Android" Version="11.2.1" />
-    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.1" />
+  <ItemGroup>
+    <!--<AndroidAsset Include="../../GameEngine.Demo/**/*.png" Link ="Assets\game\$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />-->
+    <AndroidAsset Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets\game\%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
+    <AndroidAsset Include="../../GameEngine.Demo/assets.txt" Link="Assets\assets.txt" />
   </ItemGroup>
-
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" />
+    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj" />
   </ItemGroup>
-
-
 </Project>

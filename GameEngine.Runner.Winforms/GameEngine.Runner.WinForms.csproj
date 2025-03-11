@@ -1,27 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
-	<EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="3.116.1" />
-    <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.116.1" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.Views.WindowsForms" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Demo\GameEngine.Demo.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="libegl.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>

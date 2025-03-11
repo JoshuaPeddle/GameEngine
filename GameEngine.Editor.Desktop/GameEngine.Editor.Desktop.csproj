@@ -8,12 +8,11 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="Avalonia.Desktop" Version="11.2.5" />
-    <PackageReference Include="SkiaSharp" Version="3.116.1" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="Avalonia.Skia" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Editor\GameEngine.Editor.csproj" />
   </ItemGroup>

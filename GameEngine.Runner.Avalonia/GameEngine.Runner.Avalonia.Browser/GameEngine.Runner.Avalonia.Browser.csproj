@@ -6,17 +6,14 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>5d9292ac-f3f7-4ac4-868d-040fd4f514d6</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="Avalonia.Browser" Version="11.2.1" />
+    <PackageReference Include="Avalonia.Browser" />
   </ItemGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj" /> 
+    <ProjectReference Include="..\GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj" />
   </ItemGroup>
-
   <ItemGroup>
-	<AvaloniaResource Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets\game\%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
-	<AvaloniaResource Include="../../GameEngine.Demo/assets.txt" Link="Assets\assets.txt" />
+    <AvaloniaResource Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets\game\%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
+    <AvaloniaResource Include="../../GameEngine.Demo/assets.txt" Link="Assets\assets.txt" />
   </ItemGroup>
 </Project>

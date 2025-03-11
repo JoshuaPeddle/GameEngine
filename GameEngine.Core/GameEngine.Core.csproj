@@ -1,20 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-	<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-	<Nullable>enable</Nullable>
-	<ImplicitUsings>enable</ImplicitUsings>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
   <ItemGroup>
-	<PackageReference Include="ppy.SDL2-CS" Version="1.0.741-alpha" />
-	<PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="ppy.SDL2-CS" />
+    <PackageReference Include="SkiaSharp" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="SDL2_mixer.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>
