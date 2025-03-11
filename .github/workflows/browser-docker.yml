@@ -1,34 +1,65 @@
+# name: Docker Image CI
+
+# on:
+#   # push:
+#   #   branches: [ "master" ]
+#   pull_request:
+#     branches: [ "master" ]
+#   workflow_dispatch: {}
+
+# jobs:
+
+#   build:
+
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - uses: actions/checkout@v4
+#     - name: Build the Docker image
+#       run: docker build . --file Avalonia.Browser.Dockerfile --tag joshuapeddle/gameengine-web:$(date +%s) --tag joshuapeddle/gameengine-web:latest 
+
+#     - name: Login to Docker Hub
+#       uses: docker/login-action@v3
+#       with:
+#           username: ${{ secrets.DOCKERHUB_USERNAME }}
+#           password: ${{ secrets.DOCKERHUB_TOKEN }} 
+
+#     - name: Push the Docker image
+#       run: docker push joshuapeddle/gameengine-web  --all-tags
+  
+        
 name: Docker Image CI
 
 on:
-  # push:
-  #   branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
   workflow_dispatch: {}
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Avalonia.Browser.Dockerfile --tag joshuapeddle/gameengine-web:$(date +%s) --tag joshuapeddle/gameengine-web:latest 
+      - uses: actions/checkout@v4
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }} 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Push the Docker image
-      run: docker push joshuapeddle/gameengine-web  --all-tags
-  
-        
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+           username: ${{ secrets.DOCKERHUB_USERNAME }}
+           password: ${{ secrets.DOCKERHUB_TOKEN }} 
 
+      - name: Build and push multi-platform image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: Avalonia.Browser.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            joshuapeddle/gameengine-web:latest
+            joshuapeddle/gameengine-web:$(date +%s)
 
   
   
