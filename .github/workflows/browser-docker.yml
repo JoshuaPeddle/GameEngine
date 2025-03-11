@@ -41,6 +41,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up timestamp
+        run: echo "TIMESTAMP=$(date +%s)" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -59,7 +62,7 @@ jobs:
           push: true
           tags: |
             joshuapeddle/gameengine-web:latest
-            joshuapeddle/gameengine-web:$(date +%s)
+            joshuapeddle/gameengine-web:${{ env.TIMESTAMP }}
 
   
   
