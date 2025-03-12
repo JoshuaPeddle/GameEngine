@@ -10,7 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Preserve Avalonia types for reflection -->
-    <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
     <!--<TrimmerRootAssembly Include="Avalonia.Themes.Default" />-->
   </ItemGroup>
   <PropertyGroup>
