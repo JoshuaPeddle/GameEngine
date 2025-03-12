@@ -1,9 +1,11 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
+FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-RUN apt update && apt install python3 which -y
-RUN dotnet workload install wasm-tools wasm-experimental
+RUN apt update && apt install python3 -y
+# which qemu-user-static -y 
+
+RUN dotnet workload install wasm-tools
 
 COPY Directory.Packages.props Directory.Packages.props
 COPY GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser
@@ -12,7 +14,7 @@ COPY GameEngine.Core GameEngine.Core
 COPY GameEngine.Demo GameEngine.Demo
 
 RUN dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser/GameEngine.Runner.Avalonia.Browser.csproj -c Release
-RUN dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser/GameEngine.Runner.Avalonia.Browser.csproj -c Release -o /app/publish 
+RUN dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser/GameEngine.Runner.Avalonia.Browser.csproj -c Release -o /app/publish
 
 FROM nginx:alpine AS runtime
 RUN rm -rf /usr/share/nginx/html/*
