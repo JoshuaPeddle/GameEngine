@@ -1,14 +1,17 @@
 name: .NET publish
 
 on: 
+  push:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       release_version:
         description: 'Release version (optional). Leave blank for auto-generated version.'
         required: false
         default: ''  
-#  pull_request:
-#    branches: [ "master" ]
+  pull_request: # TODO: Remove
+    branches: [ "master" ]
 
 jobs:
   publish:
@@ -47,22 +50,18 @@ jobs:
     - name: Publish Windows
       run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r win-x64 -c Release
 
-    # Add Android Build Step
     - name: Build Android
       run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj -c Release -f net8.0-android
 
-    # Zip Artifacts
     - name: Zip Linux Release
       run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net8.0/linux-x64/publish
 
     - name: Zip Windows Release
       run: zip -r windows_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net8.0/win-x64/publish
 
-    # Zip Android APK
     - name: Zip Android Release
       run: zip android_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release/net8.0-android/*-Signed.apk
 
-    # Determine Release Version and Create Release
     - name: Determine Release Version
       id: version
       run: |
@@ -86,7 +85,6 @@ jobs:
         draft: false
         prerelease: false
 
-    # Upload Artifacts
     - name: Upload Linux Artifact
       uses: actions/upload-release-asset@v1
       env:
@@ -107,7 +105,6 @@ jobs:
         asset_name: windows_artifact.zip
         asset_content_type: application/zip
 
-    # Upload Android Artifact
     - name: Upload Android Artifact
       uses: actions/upload-release-asset@v1
       env:
@@ -117,3 +114,23 @@ jobs:
         asset_path: ./android_artifact.zip
         asset_name: android_artifact.zip
         asset_content_type: application/zip
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }} 
+
+    - name: Build and push multi-platform image
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        file: Avalonia.Browser.Dockerfile
+        platforms: linux/arm64,linux/amd64
+        push: true
+        tags: |
+          joshuapeddle/gameengine-web:latest
+          joshuapeddle/gameengine-web:${{ env.VERSION }}
