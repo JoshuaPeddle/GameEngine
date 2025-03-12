@@ -10,8 +10,9 @@ on:
         description: 'Release version (optional). Leave blank for auto-generated version.'
         required: false
         default: ''  
-  pull_request: # TODO: Remove
-    branches: [ "master" ]
+# Only enabled when debugging pipeline in a PR
+#  pull_request: # TODO: Remove
+#    branches: [ "master" ]
 
 jobs:
   publish:
