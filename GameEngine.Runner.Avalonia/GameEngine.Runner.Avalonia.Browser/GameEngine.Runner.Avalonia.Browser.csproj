@@ -6,6 +6,12 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>5d9292ac-f3f7-4ac4-868d-040fd4f514d6</UserSecretsId>
   </PropertyGroup>
+
+  <PropertyGroup>
+	<RunAOTCompilation>true</RunAOTCompilation>
+	<WasmStripILAfterAOT>true</WasmStripILAfterAOT>
+  </PropertyGroup>
+	
   <ItemGroup>
     <PackageReference Include="Avalonia.Browser" />
   </ItemGroup>

@@ -46,7 +46,6 @@ internal sealed partial class Program
         App._fileFetcher = LoadFile;
 
         return BuildAvaloniaApp()
-            .WithInterFont()
             .StartBrowserAppAsync("out");
     }
 

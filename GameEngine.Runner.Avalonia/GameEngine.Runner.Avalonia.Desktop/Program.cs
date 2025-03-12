@@ -24,7 +24,6 @@ namespace GameEngine.Runner.Avalonia.Desktop
                     RenderingMode = [X11RenderingMode.Vulkan] 
                 })
                 .UsePlatformDetect()
-                .WithInterFont()
                 .LogToTrace();
     }
 }

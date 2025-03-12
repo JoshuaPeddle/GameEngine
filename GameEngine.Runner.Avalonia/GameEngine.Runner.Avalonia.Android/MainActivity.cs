@@ -17,8 +17,7 @@ namespace GameEngine.Runner.Avalonia.Android
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
             App._fileFetcher = LoadFile;
-            return base.CustomizeAppBuilder(builder)
-                .WithInterFont();
+            return base.CustomizeAppBuilder(builder);
         }
 
         public Stream LoadFile(string path)
