@@ -1,16 +1,21 @@
-﻿namespace GameEngine.Core
+﻿using System.Collections.Concurrent;
+
+namespace GameEngine.Core
 {
     public class InputManager
     {
         public ActionMapper ActionMapper { get; }
 
-        private Dictionary<GeKeys, string> actionMap = [];
-        private Dictionary<string, bool> actionStates = [];
-        private Dictionary<string, Action<bool>> actionBindings = []; // Maps actions to update functions
+        private ConcurrentDictionary<GeKeys, string> actionMap;
+        private ConcurrentDictionary<string, bool> actionStates;
+        private ConcurrentDictionary<string, Action<bool>> actionBindings;
 
         public InputManager()
         {
             ActionMapper = new ActionMapper(this);
+            actionMap = [];
+            actionStates = [];
+            actionBindings = [];
         }
 
         public void AddAction(GeKeys key, string actionName)
@@ -26,9 +31,9 @@
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
-                actionMap.Remove(key);
-                actionStates.Remove(actionName);
-                actionBindings.Remove(actionName);
+                actionMap.Remove(key, out _);
+                actionStates.TryRemove(actionName, out _);
+                actionBindings.TryRemove(actionName, out _);
             }
         }
 

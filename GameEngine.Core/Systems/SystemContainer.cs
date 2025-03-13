@@ -1,8 +1,10 @@
-﻿namespace GameEngine.Core.Systems
+﻿using System.Collections.Concurrent;
+
+namespace GameEngine.Core.Systems
 {
-    public class SystemContainer
+    public class SystemContainer : IDisposable
     {
-        public List<ISystem> Systems { get; } = new List<ISystem>();
+        public ConcurrentBag<ISystem> Systems { get; } = new ConcurrentBag<ISystem>();
 
         public SystemContainer() { }
 
@@ -27,6 +29,17 @@
         public bool Contains<T>() where T : ISystem
         {
             return Systems.Any(s => s.GetType() == typeof(T));
+        }
+
+        public void Dispose()
+        {
+            foreach (var system in Systems)
+            {
+                if (system is IDisposable disposable)
+                    disposable.Dispose();
+            }
+            Systems.Clear();
+            GC.SuppressFinalize(this);
         }
     }
 }

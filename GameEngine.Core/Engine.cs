@@ -7,14 +7,14 @@ namespace GameEngine.Core
     {
         public Action? InvalidateAction { get; }
 
-        public readonly SystemContainer Systems = new();
+        public SystemContainer Systems;
 
-        private readonly EntityManager entityManager = new();
-        private readonly InputManager inputManager = new();
-        private readonly Stopwatch stopwatch = new();
+        private EntityManager entityManager;
+        private InputManager inputManager;
+        private readonly Stopwatch stopwatch = new Stopwatch();
 
         private Scene? currentScene;
-        private double lastUpdateTime = 0;
+        private double lastUpdateTime;
         private bool _audioEnabled;
 
         public Engine(Action? invalidateAction = null, bool audioEnabled = true)
@@ -26,6 +26,11 @@ namespace GameEngine.Core
 
         private void InitializeSystems()
         {
+            inputManager = new InputManager();
+            entityManager = new EntityManager();
+            Systems = new SystemContainer();
+            lastUpdateTime = 0;
+
             Systems.Add(new InputSystem(inputManager));
             Systems.Add(new MovementSystem());
             Systems.Add(new PhysicsSystem());
@@ -72,15 +77,21 @@ namespace GameEngine.Core
         public void ChangeScene(Scene scene)
         {
             currentScene = scene;
+            Systems.Dispose();
+            stopwatch.Restart();
+            InitializeSystems();
             currentScene.Initialize(entityManager, inputManager, Systems.TryGet<AudioSystem>(), ResetScene);
             var renderSystem = Systems.Get<RenderSystem>();
             renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
         }
 
-        public void ResetScene()
+        public void ResetScene(Scene? scene = null)
         {
             entityManager.Clear();
-            ChangeScene(currentScene!);
+            if (scene != null)
+                ChangeScene(scene);
+            else
+                ChangeScene(currentScene!);
         }
 
         private double CalculateDeltaTime()

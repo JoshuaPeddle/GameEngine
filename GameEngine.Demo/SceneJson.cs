@@ -14,7 +14,7 @@ namespace GameEngine.Demo
         private AudioSystem? _audioPlayer;
         private ComponentFactory? componentFactory;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
             componentFactory = new ComponentFactory(assets);
             _audioPlayer = audioPlayer;
