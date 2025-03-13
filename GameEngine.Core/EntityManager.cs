@@ -69,17 +69,12 @@
             return [];
         }
 
-        public List<Entity> GetEntitiesWithTag(string tag)
-        {
-            return entities.Where(e => e.Tag == tag).ToList();
-        }
-
         public Entity? GetEntityWithTag(string tag)
         {
             return entities.FirstOrDefault(e => e.Tag == tag);
         }
 
-        public List<Entity> GetEntitiesWithComponent<T>() where T : Component
+        public IReadOnlyList<Entity> GetEntitiesWithComponent<T>() where T : Component
         {
             if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
             {

@@ -9,15 +9,13 @@ namespace GameEngine.Core.Systems
             double deltaSeconds = deltaMs / 1000f;
             double moveSpeed = 600; // TODO: Move somewhere else
 
-            var entities = entityManager.GetEntitiesWithComponent<CTransform>();
-            var validEntities = entities.Where(e => e.HasComponent<CMovement>()).ToList();
-            foreach (var entity in validEntities)
+            var entities = entityManager.GetEntitiesWithComponent<CMovement>();
+
+            foreach (var entity in entities)
             {
                 var transform = entity.GetComponent<CTransform>();
-                if (entity.HasComponent<CInput>())
+                if (entity.TryGetComponent<CInput>(out var input))
                 {
-                    var input = entity.GetComponent<CInput>();
-
                     double playerSpeedTransform = moveSpeed * deltaSeconds;
 
                     if (!input.Any)

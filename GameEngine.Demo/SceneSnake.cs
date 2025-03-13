@@ -84,7 +84,7 @@ namespace GameEngine.Demo
 
         public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTimeMs)
         {
-            var snakeHead = entityManager.GetEntitiesWith<CSnake>()[0];
+            var snakeHead = entityManager.GetEntitiesWithComponent<CSnake>()[0];
             var cSnake = snakeHead.GetComponent<CSnake>();
 
             cSnake.TimeSinceLastMove += (float)(deltaTimeMs / 1000.0);

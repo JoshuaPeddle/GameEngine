@@ -32,23 +32,15 @@ namespace GameEngine.Core
             return overlap.X > 0 && overlap.Y > 0;
         }
 
-        private static Vec2 CalculateOverlap(Vec2 position1, Vec2 size1, Vec2 position2, Vec2 size2)
+        private static Vec2 CalculateOverlap(in Vec2 position1, in Vec2 size1, in Vec2 position2, in Vec2 size2)
         {
-            double left1 = position1.X;
-            double right1 = position1.X + size1.X;
-            double top1 = position1.Y;
-            double bottom1 = position1.Y + size1.Y;
+            double overlapX = Math.Max(0,
+                Math.Min(position1.X + size1.X, position2.X + size2.X) -
+                Math.Max(position1.X, position2.X));
 
-            double left2 = position2.X;
-            double right2 = position2.X + size2.X;
-            double top2 = position2.Y;
-            double bottom2 = position2.Y + size2.Y;
-
-            double overlapX = Math.Min(right1, right2) - Math.Max(left1, left2);
-            double overlapY = Math.Min(bottom1, bottom2) - Math.Max(top1, top2);
-
-            overlapX = Math.Max(0, overlapX);
-            overlapY = Math.Max(0, overlapY);
+            double overlapY = Math.Max(0,
+                Math.Min(position1.Y + size1.Y, position2.Y + size2.Y) -
+                Math.Max(position1.Y, position2.Y));
 
             return new Vec2(overlapX, overlapY);
         }

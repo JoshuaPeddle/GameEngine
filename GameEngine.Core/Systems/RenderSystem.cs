@@ -113,10 +113,8 @@ namespace GameEngine.Core.Systems
             // 4. Apply camera transformation if available.
             // We assume the camera entity has the tag "camera"
             var cameraEntity = entityManager.GetEntityWithTag("camera");
-            if (cameraEntity != null && cameraEntity.HasComponent<CCamera>())
+            if (cameraEntity != null && cameraEntity.TryGetComponent<CCamera>(out var camera))
             {
-                var camera = cameraEntity.GetComponent<CCamera>();
-
                 // Here we translate the world so that the camera's position is at the center
                 // of our virtual space and then scale by the camera's zoom factor.
                 // The order of operations is:
@@ -147,20 +145,19 @@ namespace GameEngine.Core.Systems
             {
                 // The existing logic is fine because from this point forward,
                 // your (x, y) are in "virtual" coordinates, and Skia is scaling them.
-                if (options.DrawAnimations && entity.HasComponent<CAnimation>())
+                if (options.DrawAnimations && entity.TryGetComponent<CAnimation>(out var cAnimation))
                 {
-                    DrawAnimation(canvas, entity);
+                    DrawAnimation(canvas, entity, cAnimation);
                 }
 
-                if (entity.HasComponent<CText>())
+                if (entity.TryGetComponent<CText>(out var text))
                 {
-                    var text = entity.GetComponent<CText>();
                     canvas.DrawText(text.Text, (float)entity.GetComponent<CTransform>().Position.X, (float)entity.GetComponent<CTransform>().Position.Y, text.Paint);
                 }
 
-                if (options.DrawBoundingBoxes && entity.HasComponent<CBoundingBox>())
+                if (options.DrawBoundingBoxes && entity.TryGetComponent<CBoundingBox>(out var boundingBox))
                 {
-                    DrawBoundingBox(canvas, entity);
+                    DrawBoundingBox(canvas, entity, boundingBox);
                 }
 
                 if (options.DrawEntityCenters)
@@ -170,9 +167,8 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        private static void DrawAnimation(SKCanvas canvas, Entity entity)
+        private static void DrawAnimation(SKCanvas canvas, Entity entity, CAnimation animation)
         {
-            var animation = entity.GetComponent<CAnimation>();
             SKBitmap texture = animation.Texture;
             SKRect sourceRect = animation.GetSourceRect();
 
@@ -205,9 +201,8 @@ namespace GameEngine.Core.Systems
         private static Vec2 FindEntityCenter(Entity entity)
         {
             var transform = entity.GetComponent<CTransform>();
-            if (entity.HasComponent<CBoundingBox>())
+            if (entity.TryGetComponent<CBoundingBox>(out var boundingBox))
             {
-                var boundingBox = entity.GetComponent<CBoundingBox>();
                 return new Vec2(transform.Position.X + (boundingBox.Width / 2),
                                 transform.Position.Y + (boundingBox.Height / 2));
             }
@@ -222,10 +217,9 @@ namespace GameEngine.Core.Systems
             canvas.DrawPoint((float)position.X, (float)position.Y, _debugPointPaint);
         }
 
-        private void DrawBoundingBox(SKCanvas canvas, Entity entity)
+        private void DrawBoundingBox(SKCanvas canvas, Entity entity, CBoundingBox boundingBox)
         {
             var transform = entity.GetComponent<CTransform>();
-            var boundingBox = entity.GetComponent<CBoundingBox>();
 
             var rect = new SKRect(
                 (float)transform.Position.X,
