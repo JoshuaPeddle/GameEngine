@@ -7,13 +7,15 @@ namespace GameEngine.Demo
 {
     public class SceneSideScroll : Scene
     {
-        Assets assets = new Assets("assets.txt");
+        Assets? assets;
 
         public override int VirtualWidth =>  4000;
         public override int VirtualHeight => 800;
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
+            assets ??= new Assets("assets.txt");
+
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.A, "Left");

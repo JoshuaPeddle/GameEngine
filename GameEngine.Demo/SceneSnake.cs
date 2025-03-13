@@ -8,7 +8,7 @@ namespace GameEngine.Demo
 {
     public class SceneSnake : Scene
     {
-        Assets assets = new("assets.txt");
+        Assets assets;
         private Action<Scene> _resetScene;
 
         int _width = 20;
@@ -19,6 +19,8 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
+            assets ??= new("assets.txt");
+
             var snakeHead = entityManager.CreateEntity("SnakeHead");
             snakeHead.AddComponent(new CTransform(new Vec2(40, 80)));
             snakeHead.AddComponent<CInput>();

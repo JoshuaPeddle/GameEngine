@@ -1,5 +1,5 @@
 ﻿using GameEngine.Core.Components;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace GameEngine.Core.Systems
 {
@@ -7,20 +7,20 @@ namespace GameEngine.Core.Systems
     {
         public readonly Entity A;
         public readonly Entity B;
-        public readonly Vec2 Overlap;
+        //public readonly Vec2 Overlap;
 
         public CollisionEvent(Entity a, Entity b, Vec2 overlap)
         {
             A = a;
             B = b;
-            Overlap = overlap;
+            //Overlap = overlap;
         }
     }
 
     public class PhysicsSystem : ISystem
     {
         private const double epsilon = 0.0001;
-        public List<CollisionEvent> CollisionEvents { get; private set; } = [];
+        public ConcurrentBag<CollisionEvent> CollisionEvents { get; private set; } = [];
 
         private readonly List<(Entity, CBoundingBox)> _validEntities = [];
         private readonly List<(Entity, CGravity)> _entitiesWithGravity = [];
@@ -55,9 +55,7 @@ namespace GameEngine.Core.Systems
                             CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
 
                             if (boundingBoxToCheck.BlockMovement)
-                            {
                                 ResolveCollision(transform, transformToCheck, overlap);
-                            }
                         }
                     }
                 }
@@ -80,14 +78,10 @@ namespace GameEngine.Core.Systems
             foreach (var entity in entities)
             {
                 if (entity.TryGetComponent<CBoundingBox>(out var boundingBox))
-                {
-                    _validEntities.Add((entity, boundingBox));
-                }
+                    _validEntities.Add((entity, boundingBox!));
 
                 if (entity.TryGetComponent<CGravity>(out var gravity))
-                {
-                    _entitiesWithGravity.Add((entity, gravity));
-                }
+                    _entitiesWithGravity.Add((entity, gravity!));
             }
         }
 
@@ -101,26 +95,18 @@ namespace GameEngine.Core.Systems
         private void ResolveCollision(CTransform transform, CTransform transformToCheck, Vec2 overlap)
         {
             if (overlap.X < overlap.Y)
-            {
                 HandleXAxisCollision(transform, transformToCheck, overlap.X);
-            }
             else
-            {
                 HandleYAxisCollision(transform, transformToCheck, overlap.Y);
-            }
         }
 
         private void HandleXAxisCollision(CTransform transform, CTransform transformToCheck, double overlapX)
         {
             double deltaX = transform.Position.X - transform.PreviousPosition.X;
             if (Math.Abs(deltaX) > epsilon)
-            {
                 transform.Position += new Vec2((deltaX > 0) ? -overlapX : overlapX, 0);
-            }
             else
-            {
                 transform.Position += new Vec2((transform.Position.X < transformToCheck.Position.X) ? -overlapX : overlapX, 0);
-            }
             transform.Velocity = new Vec2(0, transform.Velocity.Y);
         }
 
@@ -128,13 +114,9 @@ namespace GameEngine.Core.Systems
         {
             double deltaY = transform.Position.Y - transform.PreviousPosition.Y;
             if (Math.Abs(deltaY) > epsilon)
-            {
                 transform.Position += new Vec2(0, (deltaY > 0) ? -overlapY : overlapY);
-            }
             else
-            {
                 transform.Position += new Vec2(0, (transform.Position.Y < transformToCheck.Position.Y) ? -overlapY : overlapY);
-            }
             transform.Velocity = new Vec2(transform.Velocity.X, 0);
         }
     }
