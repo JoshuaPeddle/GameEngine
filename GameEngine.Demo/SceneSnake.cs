@@ -9,7 +9,7 @@ namespace GameEngine.Demo
     public class SceneSnake : Scene
     {
         Assets assets = new("assets.txt");
-        private Action _resetScene;
+        private Action<Scene> _resetScene;
 
         int _width = 20;
         int _height = 20;
@@ -17,7 +17,7 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 800;
         public override int VirtualHeight => 800;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
             var snakeHead = entityManager.CreateEntity("SnakeHead");
             snakeHead.AddComponent(new CTransform(new Vec2(40, 80)));
@@ -106,12 +106,12 @@ namespace GameEngine.Demo
                     else if ((tagA == "SnakeHead" && tagB == "Wall") ||
                              (tagB == "SnakeHead" && tagA == "Wall"))
                     {
-                        _resetScene();
+                        _resetScene(this);
                     }
                     else if ((tagA == "SnakeHead" && tagB == "SnakeBody") ||
                              (tagB == "SnakeHead" && tagA == "SnakeBody"))
                     {
-                        _resetScene();
+                        _resetScene(this);
                     }
                 }
 

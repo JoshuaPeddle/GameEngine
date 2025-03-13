@@ -12,7 +12,7 @@ namespace GameEngine.Demo
         private Entity? playerEntity;
         private Entity? grenadeEntity;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
