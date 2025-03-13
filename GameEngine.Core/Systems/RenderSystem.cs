@@ -152,6 +152,12 @@ namespace GameEngine.Core.Systems
                     DrawAnimation(canvas, entity);
                 }
 
+                if (entity.HasComponent<CText>())
+                {
+                    var text = entity.GetComponent<CText>();
+                    canvas.DrawText(text.Text, (float)entity.GetComponent<CTransform>().Position.X, (float)entity.GetComponent<CTransform>().Position.Y, text.Paint);
+                }
+
                 if (options.DrawBoundingBoxes && entity.HasComponent<CBoundingBox>())
                 {
                     DrawBoundingBox(canvas, entity);
