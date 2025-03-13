@@ -1,4 +1,5 @@
-﻿using static GameEngine.Core.Exceptions;
+﻿using System.Collections.Concurrent;
+using static GameEngine.Core.Exceptions;
 
 namespace GameEngine.Core
 {
@@ -7,7 +8,7 @@ namespace GameEngine.Core
         public int Id = 0;
         public bool Active = true;
         public string Tag = "default";
-        public Dictionary<Type, Component> Components = [];
+        public ConcurrentDictionary<Type, Component> Components = [];
 
         private readonly EntityManager entityManager;
 
@@ -45,7 +46,7 @@ namespace GameEngine.Core
                 component = (T)comp;
                 return true;
             }
-            component = null;
+            component = default;
             return false;
         }
 
@@ -58,9 +59,18 @@ namespace GameEngine.Core
             throw new ComponentNotFoundException<T>(this);
         }
 
+        public T? TryGetComponent<T>() where T : Component
+        {
+            if (Components.TryGetValue(typeof(T), out var comp))
+            {
+                return (T)comp;
+            }
+            return default;
+        }
+
         public void RemoveComponent<T>() where T : Component
         {
-            if (Components.Remove(typeof(T)))
+            if (Components.Remove(typeof(T), out _))
             {
                 entityManager.RemoveEntityFromComponentMap(typeof(T), this);
             }
@@ -68,7 +78,7 @@ namespace GameEngine.Core
 
         public void RemoveComponent(Component component)
         {
-            if (Components.Remove(component.GetType()))
+            if (Components.Remove(component.GetType(), out _))
             {
                 entityManager.RemoveEntityFromComponentMap(component.GetType(), this);
             }

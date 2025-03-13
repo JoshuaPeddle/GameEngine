@@ -22,8 +22,8 @@ namespace GameEngine.Core.Systems
         private const double epsilon = 0.0001;
         public List<CollisionEvent> CollisionEvents { get; private set; } = [];
 
-        private readonly List<Entity> _validEntities = [];
-        private readonly List<Entity> _entitiesWithGravity = [];
+        private readonly List<(Entity, CBoundingBox)> _validEntities = [];
+        private readonly List<(Entity, CGravity)> _entitiesWithGravity = [];
         private readonly ParallelOptions  parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(Environment.ProcessorCount / 5, 1)};
 
         public void Update(EntityManager entityManager, double deltaTime)
@@ -36,18 +36,18 @@ namespace GameEngine.Core.Systems
 
         private void ProcessCollisions()
         {
-            Parallel.ForEach(_validEntities, parallelOptions, entity =>
+            Parallel.ForEach(_validEntities, parallelOptions, entityPair =>
             {
+                var entity = entityPair.Item1;
+                var boundingBox = entityPair.Item2;
+
                 var transform = entity.GetComponent<CTransform>();
                 if (transform.Position != transform.PreviousPosition)
                 {
-                    var boundingBox = entity.GetComponent<CBoundingBox>();
-
-                    foreach (var entityToCheck in _validEntities)
+                    foreach ((var entityToCheck, var boundingBoxToCheck) in _validEntities)
                     {
                         if (entity.Id >= entityToCheck.Id || entity.Id == entityToCheck.Id) continue;
                         var transformToCheck = entityToCheck.GetComponent<CTransform>();
-                        var boundingBoxToCheck = entityToCheck.GetComponent<CBoundingBox>();
 
                         Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
                         if (overlap.X > 0.0 && overlap.Y > 0.0)
@@ -68,8 +68,8 @@ namespace GameEngine.Core.Systems
         {
             Parallel.ForEach(_entitiesWithGravity, parallelOptions, entity =>
             {
-                var transform = entity.GetComponent<CTransform>();
-                var gravity = entity.GetComponent<CGravity>();
+                var transform = entity.Item1.GetComponent<CTransform>();
+                var gravity = entity.Item2;
                 transform.Velocity += new Vec2(0, gravity.Acceleration * deltaTime);
             });
         }
@@ -79,13 +79,14 @@ namespace GameEngine.Core.Systems
             var entities = entityManager.GetEntitiesWithComponent<CTransform>();
             foreach (var entity in entities)
             {
-                if (entity.HasComponent<CBoundingBox>())
+                if (entity.TryGetComponent<CBoundingBox>(out var boundingBox))
                 {
-                    _validEntities.Add(entity);
+                    _validEntities.Add((entity, boundingBox));
                 }
-                if (entity.HasComponent<CGravity>())
+
+                if (entity.TryGetComponent<CGravity>(out var gravity))
                 {
-                    _entitiesWithGravity.Add(entity);
+                    _entitiesWithGravity.Add((entity, gravity));
                 }
             }
         }
