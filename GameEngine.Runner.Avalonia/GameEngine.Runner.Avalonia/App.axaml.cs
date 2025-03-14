@@ -7,6 +7,8 @@ using GameEngine.Runner.Avalonia.Views;
 using System.IO;
 using System;
 using System.Linq;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
 
 namespace GameEngine.Runner.Avalonia
 {
@@ -40,8 +42,25 @@ namespace GameEngine.Runner.Avalonia
                 {
                     DataContext = new MainViewModel()
                 };
+                singleViewPlatform.MainView.AttachedToVisualTree += (_, _) =>
+                TopLevel.GetTopLevel(singleViewPlatform.MainView)!.BackRequested += OnBackRequested;
             }
             base.OnFrameworkInitializationCompleted();
+        }
+
+        private void OnBackRequested(object? sender, RoutedEventArgs e)
+        {
+            // Reload the MainView with a new instance of the MainView
+            if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
+            {
+                singleViewPlatform.MainView = new MainView
+                {
+                    DataContext = new MainViewModel()
+                };
+                singleViewPlatform.MainView.AttachedToVisualTree += (_, _) =>
+                TopLevel.GetTopLevel(singleViewPlatform.MainView)!.BackRequested += OnBackRequested;
+            }
+            e.Handled = true;
         }
 
         private void DisableAvaloniaDataAnnotationValidation()
