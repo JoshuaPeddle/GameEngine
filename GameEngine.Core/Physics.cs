@@ -34,13 +34,19 @@ namespace GameEngine.Core
 
         private static Vec2 CalculateOverlap(in Vec2 position1, in Vec2 size1, in Vec2 position2, in Vec2 size2)
         {
-            double overlapX = Math.Max(0,
-                Math.Min(position1.X + size1.X, position2.X + size2.X) -
-                Math.Max(position1.X, position2.X));
+            double p1MaxX = position1.X + size1.X;
+            double p1MaxY = position1.Y + size1.Y;
+            double p2MaxX = position2.X + size2.X;
+            double p2MaxY = position2.Y + size2.Y;
 
-            double overlapY = Math.Max(0,
-                Math.Min(position1.Y + size1.Y, position2.Y + size2.Y) -
-                Math.Max(position1.Y, position2.Y));
+            double minMaxX = p1MaxX < p2MaxX ? p1MaxX : p2MaxX;
+            double maxMinX = position1.X > position2.X ? position1.X : position2.X;
+            double minMaxY = p1MaxY < p2MaxY ? p1MaxY : p2MaxY;
+            double maxMinY = position1.Y > position2.Y ? position1.Y : position2.Y;
+
+            // Calculate overlaps
+            double overlapX = minMaxX > maxMinX ? minMaxX - maxMinX : 0;
+            double overlapY = minMaxY > maxMinY ? minMaxY - maxMinY : 0;
 
             return new Vec2(overlapX, overlapY);
         }
