@@ -8,7 +8,7 @@ namespace GameEngine.Demo
 {
     public class Scene2 : Scene
     {
-        private readonly Assets assets = new("assets.txt");
+        private Assets? assets;
 
         private Entity? playerEntity;
         private Entity? secondEntity;
@@ -16,6 +16,8 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
+            assets ??= new("assets.txt");
+
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.A, "Left");

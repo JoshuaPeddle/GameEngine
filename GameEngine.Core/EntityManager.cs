@@ -83,6 +83,34 @@
             return [];
         }
 
+        public IReadOnlyList<(Entity, T)> GetEntitiesWithComponents<T>() where T : Component
+        {
+            if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
+            {
+                var result = new List<(Entity, T)>(entitySet.Count);
+                foreach (var entity in entitySet)
+                {
+                    result.Add((entity, entity.GetComponent<T>()));
+                }
+                return result;
+            }
+            return [];
+        }
+
+        public IReadOnlyList<(Entity, T1, T2)> GetEntitiesWithComponents<T1, T2>() where T1 : Component where T2 : Component
+        {
+            if (componentEntityMap.TryGetValue(typeof(T1), out var entitySet))
+            {
+                var result = new List<(Entity, T1, T2)>(entitySet.Count);
+                foreach (var entity in entitySet)
+                {
+                    result.Add((entity, entity.GetComponent<T1>(), entity.GetComponent<T2>()));
+                }
+                return result;
+            }
+            return [];
+        }
+
         public void Clear()
         {
             entities.Clear();

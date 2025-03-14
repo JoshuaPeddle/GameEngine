@@ -10,12 +10,14 @@ namespace GameEngine.Demo
 {
     public class SceneJson : Scene
     {
-        private readonly Assets assets = new("assets.txt");
+        private Assets? assets;
         private AudioSystem? _audioPlayer;
         private ComponentFactory? componentFactory;
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
+            assets ??= new("assets.txt");
+
             componentFactory = new ComponentFactory(assets);
             _audioPlayer = audioPlayer;
 

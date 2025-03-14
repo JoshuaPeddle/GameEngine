@@ -12,23 +12,30 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 800;
         public override int VirtualHeight => scenes.Count * 100 + 100;
 
-        readonly List<Scene> scenes =
-            [
-                new SceneBasic(),
-                new SceneSnake(),
-                new SceneSideScroll(),
-                new SceneJson(),
-                new SceneEmpty(),
-                new Scene2(),
-            ];
+        readonly List<Lazy<Scene>> scenes = new List<Lazy<Scene>>
+        {
+            new Lazy<Scene>(() => new SceneBasic()),
+            new Lazy<Scene>(() => new SceneSnake()),
+            new Lazy<Scene>(() => new SceneSideScroll()),
+            new Lazy<Scene>(() => new SceneJson()),
+            new Lazy<Scene>(() => new SceneEmpty()),
+            new Lazy<Scene>(() => new Scene2()),
+        };
+
+        readonly List<string> sceneNames = ["SceneBasic", "SceneSnake", "SceneSideScroll", "SceneJson", "SceneEmpty", "Scene2"];
+
+
+        public static Type GetInnerType<T>(Lazy<T> lazy)
+        {
+            return typeof(T);
+        }
+
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.Space, "Go");
-
-            var sceneNames = scenes.Select(scene => scene.GetType().Name).ToList();
 
             for (int i = 0; i < sceneNames.Count; i++)
             {
@@ -58,7 +65,7 @@ namespace GameEngine.Demo
                 if (isActive)
                 {
                     var selectedScene = scenes[(int)(transform.Position.Y - 100) / 100];
-                    ResetScene(selectedScene);
+                    ResetScene(selectedScene.Value);
                 }
             }, oneShot: true);
         }
