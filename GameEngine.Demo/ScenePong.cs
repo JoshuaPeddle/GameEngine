@@ -26,7 +26,7 @@ namespace GameEngine.Demo
             paddle1.AddComponent(new CAnimation(assets.GetAnimation("Paddle")));
             paddle1.AddComponent(new CTransform(new Vec2(25, 250)));
             paddle1.AddComponent(new CBoundingBox(new Vec2(20, 100), blockVision: true, blockMove: true));
-            paddle1.AddComponent<CMovement>();
+            paddle1.AddComponent(new CMovement(800));
             paddle1.AddComponent<CInput>();
             inputManager.ActionMapper.MapActionToComponent<CInput>("Up", paddle1, (input, isActive) => input.Up = isActive);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Down", paddle1, (input, isActive) => input.Down = isActive);
