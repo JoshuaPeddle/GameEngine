@@ -3,7 +3,6 @@ using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace GameEngine.Demo
 {
@@ -12,24 +11,18 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 800;
         public override int VirtualHeight => scenes.Count * 100 + 100;
 
-        readonly List<Lazy<Scene>> scenes = new List<Lazy<Scene>>
-        {
+        readonly List<Lazy<Scene>> scenes =
+        [
             new Lazy<Scene>(() => new SceneBasic()),
             new Lazy<Scene>(() => new SceneSnake()),
             new Lazy<Scene>(() => new SceneSideScroll()),
             new Lazy<Scene>(() => new SceneJson()),
             new Lazy<Scene>(() => new SceneEmpty()),
             new Lazy<Scene>(() => new Scene2()),
-        };
+            new Lazy<Scene>(() => new ScenePong()),
+        ];
 
-        readonly List<string> sceneNames = ["SceneBasic", "SceneSnake", "SceneSideScroll", "SceneJson", "SceneEmpty", "Scene2"];
-
-
-        public static Type GetInnerType<T>(Lazy<T> lazy)
-        {
-            return typeof(T);
-        }
-
+        readonly List<string> sceneNames = ["SceneBasic", "SceneSnake", "SceneSideScroll", "SceneJson", "SceneEmpty", "Scene2", "ScenePong"];
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
@@ -51,13 +44,23 @@ namespace GameEngine.Demo
             inputManager.ActionMapper.MapActionToComponent<CTransform>("Up", cursor, (transform, isActive) =>
             {
                 if (isActive)
-                    transform.Position = new Vec2(transform.Position.X, transform.Position.Y - 100);
+                {
+                    int currentIndex = (int)(transform.Position.Y - 100) / 100;
+                    int newIndex = currentIndex - 1;
+                    if (newIndex < 0)
+                        newIndex = scenes.Count - 1; // Wrap to bottom
+                    transform.Position = new Vec2(transform.Position.X, 100 + newIndex * 100);
+                }
             }, oneShot: true);
 
             inputManager.ActionMapper.MapActionToComponent<CTransform>("Down", cursor, (transform, isActive) =>
             {
                 if (isActive)
-                    transform.Position = new Vec2(transform.Position.X, transform.Position.Y + 100);
+                {
+                    int currentIndex = (int)(transform.Position.Y - 100) / 100;
+                    int newIndex = (currentIndex + 1) % scenes.Count; // Wrap to top
+                    transform.Position = new Vec2(transform.Position.X, 100 + newIndex * 100);
+                }
             }, oneShot: true);
 
             inputManager.ActionMapper.MapActionToComponent<CTransform>("Go", cursor, (transform, isActive) =>

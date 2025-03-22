@@ -42,20 +42,17 @@ namespace GameEngine.Core.Systems
                 var boundingBox = entityPair.Item2;
                 var transform = entityPair.Item3;
 
-                if (transform.Position != transform.PreviousPosition)
+                foreach ((var entityToCheck, var boundingBoxToCheck, var transformToCheck) in _validEntities)
                 {
-                    foreach ((var entityToCheck, var boundingBoxToCheck, var transformToCheck) in _validEntities)
+                    if (entity.Id >= entityToCheck.Id || entity.Id == entityToCheck.Id) continue;
+
+                    Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
+                    if (overlap.X > 0.0 && overlap.Y > 0.0)
                     {
-                        if (entity.Id >= entityToCheck.Id || entity.Id == entityToCheck.Id) continue;
+                        CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
 
-                        Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
-                        if (overlap.X > 0.0 && overlap.Y > 0.0)
-                        {
-                            CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
-
-                            if (boundingBoxToCheck.BlockMovement)
-                                ResolveCollision(transform, transformToCheck, overlap);
-                        }
+                        if (boundingBoxToCheck.BlockMovement)
+                            ResolveCollision(transform, transformToCheck, overlap);
                     }
                 }
             });
