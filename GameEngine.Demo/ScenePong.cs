@@ -8,18 +8,22 @@ namespace GameEngine.Demo
 {
     public class ScenePong : Scene
     {
+        private Assets? assets;
         public override int VirtualWidth => 800;
         public override int VirtualHeight => 600;
 
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene?> ResetScene)
         {
+            assets ??= new("assets.txt");
+
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.A, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
 
             var paddle1 = entityManager.CreateEntity("paddle1");
+            paddle1.AddComponent(new CAnimation(assets.GetAnimation("Paddle")));
             paddle1.AddComponent(new CTransform(new Vec2(25, 250)));
             paddle1.AddComponent(new CBoundingBox(new Vec2(20, 100), blockVision: true, blockMove: true));
             paddle1.AddComponent<CMovement>();
@@ -28,28 +32,34 @@ namespace GameEngine.Demo
             inputManager.ActionMapper.MapActionToComponent<CInput>("Down", paddle1, (input, isActive) => input.Down = isActive);
 
             var paddle2 = entityManager.CreateEntity("paddle2");
+            paddle2.AddComponent(new CAnimation(assets.GetAnimation("Paddle")));
             paddle2.AddComponent(new CTransform(new Vec2(775, 250)));
             paddle2.AddComponent(new CBoundingBox(new Vec2(20, 100), true, true));
             paddle2.AddComponent(new CMovement(450));
             paddle2.AddComponent<CInput>();
 
             var wallTop = entityManager.CreateEntity("wallTop");
+            wallTop.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal")));
             wallTop.AddComponent(new CTransform(new Vec2(20, 0)));
             wallTop.AddComponent(new CBoundingBox(new Vec2(780, 20), true, true));
 
             var wallBottom = entityManager.CreateEntity("wallBottom");
+            wallBottom.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal")));
             wallBottom.AddComponent(new CTransform(new Vec2(20, 580)));
             wallBottom.AddComponent(new CBoundingBox(new Vec2(780, 20), true, true));
 
             var wallLeft = entityManager.CreateEntity("wallLeft");
+            wallLeft.AddComponent(new CAnimation(assets.GetAnimation("WallVertical")));
             wallLeft.AddComponent(new CTransform(new Vec2(0, 0)));
             wallLeft.AddComponent(new CBoundingBox(new Vec2(20, 600), true, true));
 
             var wallRight = entityManager.CreateEntity("wallRight");
+            wallRight.AddComponent(new CAnimation(assets.GetAnimation("WallVertical")));
             wallRight.AddComponent(new CTransform(new Vec2(800, 0)));
             wallRight.AddComponent(new CBoundingBox(new Vec2(20, 600), true, true));
 
             var ball = entityManager.CreateEntity("ball");
+            ball.AddComponent(new CAnimation(assets.GetAnimation("Ball")));
             ball.AddComponent(new CTransform(new Vec2(400, 300), new Vec2(-200, 15)));
             ball.AddComponent(new CBoundingBox(new Vec2(20, 20), true, false));
             ball.AddComponent(new CBall());
