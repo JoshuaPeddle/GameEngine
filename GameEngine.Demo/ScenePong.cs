@@ -56,7 +56,7 @@ namespace GameEngine.Demo
             ball.AddComponent(new CMovement());
 
             var score = entityManager.CreateEntity("score");
-            score.AddComponent(new CTransform(new Vec2(400, 50)));
+            score.AddComponent(new CTransform(new Vec2(400, 80)));
             score.AddComponent<CText>(new CScore());
         }
 
@@ -256,10 +256,10 @@ namespace GameEngine.Demo
 
             private void UpdateScoreText()
             {
-                Text = $"{_player1} | {_player2}";
+                Text = $"{_player1}   {_player2}";
             }
 
-            public CScore() : base("0 | 0", 24)
+            public CScore() : base("0   0", 24)
             {
                 Paint.Color = SKColors.Black;
                 Paint.TextSize = 48;

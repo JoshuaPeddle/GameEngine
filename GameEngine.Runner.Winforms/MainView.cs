@@ -24,7 +24,7 @@ namespace GameEngine
             skglControl1.KeyDown += KeyPressed;
             skglControl1.KeyUp += KeyReleased;
 
-            _gameEngine.ChangeScene(new SceneSnake());
+            _gameEngine.ChangeScene(new SceneMenu());
             _gameEngine.Start(); // Dont await this, it will block the UI thread
         }
 
