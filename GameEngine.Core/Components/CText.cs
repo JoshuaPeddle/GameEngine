@@ -4,14 +4,17 @@ namespace GameEngine.Core.Components
 {
     public class CText : Component
     {
+        public string Text { get; set; }
+        public int Size { get; set; }
+
+        public CText() { }
+
         public CText(string text, int size)
         {
             Text = text;
             Size = size;
         }
 
-        public string Text { get; }
-        public int Size { get; }
         public SKPaint Paint { get; set; } = new SKPaint
         {
             Color = SKColors.Black,

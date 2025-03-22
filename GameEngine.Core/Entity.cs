@@ -34,6 +34,13 @@ namespace GameEngine.Core
             return component;
         }
 
+        public T AddComponent<T>(Component component) where T : Component, new()
+        {
+            Components[typeof(T)] = component;
+            entityManager.AddEntityToComponentMap(typeof(T), this);
+            return (T)component;
+        }
+
         public bool HasComponent<T>() where T : Component
         {
             return Components.ContainsKey(typeof(T));
