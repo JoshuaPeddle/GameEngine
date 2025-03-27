@@ -40,7 +40,7 @@ namespace GameEngine.Core.Systems
                     }
                 }
 
-                float maxSpeed = 250f;
+                double maxSpeed = cMovvement.MaxSpeed;
                 if (transform.Velocity.Length() > maxSpeed)
                 {
                     transform.Velocity = transform.Velocity.Normalize() * maxSpeed;

@@ -24,7 +24,6 @@ namespace GameEngine.Core.Systems
 
         private readonly List<(Entity, CBoundingBox, CTransform)> _validEntities = [];
         private readonly List<(Entity, CGravity, CTransform)> _entitiesWithGravity = [];
-        private readonly ParallelOptions  parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(Environment.ProcessorCount / 5, 1)};
 
         public void Update(EntityManager entityManager, double deltaTime)
         {

@@ -12,7 +12,9 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 800;
         public override int VirtualHeight => 600;
 
+        private const int BallXSpeed = 600;
 
+        private int _wallThickness = 30;
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene?> ResetScene)
         {
             assets ??= new("assets.txt");
@@ -24,46 +26,46 @@ namespace GameEngine.Demo
 
             var paddle1 = entityManager.CreateEntity("paddle1");
             paddle1.AddComponent(new CAnimation(assets.GetAnimation("Paddle")));
-            paddle1.AddComponent(new CTransform(new Vec2(25, 250)));
+            paddle1.AddComponent(new CTransform(new Vec2(35, 250)));
             paddle1.AddComponent(new CBoundingBox(new Vec2(20, 100), blockVision: true, blockMove: true));
-            paddle1.AddComponent(new CMovement(800));
+            paddle1.AddComponent(new CMovement(1300, 600));
             paddle1.AddComponent<CInput>();
             inputManager.ActionMapper.MapActionToComponent<CInput>("Up", paddle1, (input, isActive) => input.Up = isActive);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Down", paddle1, (input, isActive) => input.Down = isActive);
 
             var paddle2 = entityManager.CreateEntity("paddle2");
             paddle2.AddComponent(new CAnimation(assets.GetAnimation("Paddle")));
-            paddle2.AddComponent(new CTransform(new Vec2(775, 250)));
+            paddle2.AddComponent(new CTransform(new Vec2(745, 250)));
             paddle2.AddComponent(new CBoundingBox(new Vec2(20, 100), true, true));
             paddle2.AddComponent(new CMovement(450));
             paddle2.AddComponent<CInput>();
 
             var wallTop = entityManager.CreateEntity("wallTop");
             wallTop.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal")));
-            wallTop.AddComponent(new CTransform(new Vec2(20, 0)));
-            wallTop.AddComponent(new CBoundingBox(new Vec2(780, 20), true, true));
+            wallTop.AddComponent(new CTransform(new Vec2(_wallThickness, 0)));
+            wallTop.AddComponent(new CBoundingBox(new Vec2(800 - _wallThickness*2, _wallThickness), true, true));
 
             var wallBottom = entityManager.CreateEntity("wallBottom");
             wallBottom.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal")));
-            wallBottom.AddComponent(new CTransform(new Vec2(20, 580)));
-            wallBottom.AddComponent(new CBoundingBox(new Vec2(780, 20), true, true));
+            wallBottom.AddComponent(new CTransform(new Vec2(_wallThickness, 600 - _wallThickness)));
+            wallBottom.AddComponent(new CBoundingBox(new Vec2(800 - _wallThickness*2, _wallThickness), true, true));
 
             var wallLeft = entityManager.CreateEntity("wallLeft");
             wallLeft.AddComponent(new CAnimation(assets.GetAnimation("WallVertical")));
             wallLeft.AddComponent(new CTransform(new Vec2(0, 0)));
-            wallLeft.AddComponent(new CBoundingBox(new Vec2(20, 600), true, true));
+            wallLeft.AddComponent(new CBoundingBox(new Vec2(_wallThickness, 600), true, true));
 
             var wallRight = entityManager.CreateEntity("wallRight");
             wallRight.AddComponent(new CAnimation(assets.GetAnimation("WallVertical")));
-            wallRight.AddComponent(new CTransform(new Vec2(800, 0)));
-            wallRight.AddComponent(new CBoundingBox(new Vec2(20, 600), true, true));
+            wallRight.AddComponent(new CTransform(new Vec2(800 - _wallThickness, 0)));
+            wallRight.AddComponent(new CBoundingBox(new Vec2(_wallThickness, 600), true, true));
 
             var ball = entityManager.CreateEntity("ball");
             ball.AddComponent(new CAnimation(assets.GetAnimation("Ball")));
-            ball.AddComponent(new CTransform(new Vec2(400, 300), new Vec2(-200, 15)));
+            ball.AddComponent(new CTransform(new Vec2(400, 300), new Vec2(-BallXSpeed, 0)));
             ball.AddComponent(new CBoundingBox(new Vec2(20, 20), true, false));
             ball.AddComponent(new CBall());
-            ball.AddComponent(new CMovement());
+            ball.AddComponent(new CMovement(BallXSpeed, BallXSpeed));
 
             var score = entityManager.CreateEntity("score");
             score.AddComponent(new CTransform(new Vec2(400, 80)));
@@ -167,7 +169,10 @@ namespace GameEngine.Demo
 
                     double newBallYVelocity = ballTransform.Velocity.Y + (paddleYVelocity * yVelocityTransferFactor);
 
-                    ballTransform.Velocity = new Vec2(-ballTransform.Velocity.X, newBallYVelocity);
+                    if(ballTransform.Velocity.X < 0)
+                        ballTransform.Velocity = new Vec2(BallXSpeed, newBallYVelocity);
+                    else
+                        ballTransform.Velocity = new Vec2(-BallXSpeed, newBallYVelocity);
                 }
             }
         }
@@ -223,7 +228,12 @@ namespace GameEngine.Demo
         private static void ResetBall(CTransform ballTransform, CBall cBall)
         {
             ballTransform.Position = new Vec2(400, 300);
-            ballTransform.Velocity = new Vec2(-200, 15);
+
+            var random = new Random();
+            if (random.Next(0, 2) == 0)
+                ballTransform.Velocity = new Vec2(BallXSpeed, 15);
+            else
+                ballTransform.Velocity = new Vec2(-BallXSpeed, 15);
             cBall.LastHitPaddle = "";
             cBall.LastHitWall = "";
         }
