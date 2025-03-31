@@ -20,9 +20,10 @@ namespace GameEngine.Demo
             new Lazy<Scene>(() => new SceneEmpty()),
             new Lazy<Scene>(() => new Scene2()),
             new Lazy<Scene>(() => new ScenePong()),
+            new Lazy<Scene>(() => new ScenePointer()),
         ];
 
-        readonly List<string> sceneNames = ["SceneBasic", "SceneSnake", "SceneSideScroll", "SceneJson", "SceneEmpty", "Scene2", "ScenePong"];
+        readonly List<string> sceneNames = ["SceneBasic", "SceneSnake", "SceneSideScroll", "SceneJson", "SceneEmpty", "Scene2", "ScenePong", "ScenePointer"];
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {

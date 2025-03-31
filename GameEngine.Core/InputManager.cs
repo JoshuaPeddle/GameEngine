@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using static GameEngine.Core.Pointer;
 
 namespace GameEngine.Core
 {
@@ -9,6 +10,7 @@ namespace GameEngine.Core
         private ConcurrentDictionary<GeKeys, string> actionMap;
         private ConcurrentDictionary<string, bool> actionStates;
         private ConcurrentDictionary<string, Action<bool>> actionBindings;
+        private ConcurrentDictionary<PointerEventType, Action<PointerEvent>> pointerActionBindings;
 
         public InputManager()
         {
@@ -16,6 +18,7 @@ namespace GameEngine.Core
             actionMap = [];
             actionStates = [];
             actionBindings = [];
+            pointerActionBindings = [];
         }
 
         public void AddAction(GeKeys key, string actionName)
@@ -45,6 +48,11 @@ namespace GameEngine.Core
             }
         }
 
+        public void BindPointerAction(PointerEventType actionName, Action<PointerEvent> onAction)
+        {
+            pointerActionBindings[actionName] = onAction;
+        }
+
         public void HandleKeyPress(GeKeys key)
         {
             if (actionMap.TryGetValue(key, out string? actionName))
@@ -58,6 +66,14 @@ namespace GameEngine.Core
             if (actionMap.TryGetValue(key, out string? actionName))
             {
                 actionStates[actionName] = false;
+            }
+        }
+
+        public void HandlePointerEvent(PointerEventType eventType, PointerEvent pointerEvent)
+        {
+            if (pointerActionBindings.TryGetValue(eventType, out Action<PointerEvent>? action))
+            {
+                action(pointerEvent);
             }
         }
 
@@ -117,5 +133,20 @@ namespace GameEngine.Core
                 previouslyActive = isActive;
             });
         }
+
+        public void MapPointerActionToComponent<T>(
+             PointerEventType eventType,
+             Entity entity,
+             Action<T, PointerEvent> updateAction
+        ) where T : Component
+        {
+            var component = entity.GetComponent<T>();
+
+            inputManager.BindPointerAction(eventType, pointerEvent =>
+            {
+                updateAction(component, pointerEvent);
+            });
+        }
+
     }
 }
