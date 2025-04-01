@@ -40,5 +40,10 @@ namespace GameEngine.Core.Systems
         {
             inputManager?.HandlePointerEvent(PointerEventType.Release, pointerEvent);
         }
+
+        public void SetRealDimensions(int width, int height)
+        {
+            inputManager.RealResolution = new Vec2(width, height);
+        }
     }
 }

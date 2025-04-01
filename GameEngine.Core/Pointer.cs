@@ -11,7 +11,7 @@
 
         public class PointerEvent
         {
-            public Vec2 Position { get; }
+            public Vec2 Position { get; set; }
             public PointerEvent(Vec2 position)
             {
                 Position = position;

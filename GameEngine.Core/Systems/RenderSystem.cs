@@ -178,13 +178,13 @@ namespace GameEngine.Core.Systems
 
             var entityCenter = FindEntityCenter(entity);
 
-            float rotationAngle = entity.GetComponent<CTransform>().Rotation;
+            var rotationAngle = entity.GetComponent<CTransform>().Rotation;
 
             canvas.Save();
 
             canvas.Translate((float)entityCenter.X, (float)entityCenter.Y);
 
-            canvas.RotateDegrees(rotationAngle);
+            canvas.RotateDegrees((float)rotationAngle);
 
             SKRect destRect = new SKRect(
                 -(float)(animationSize.X / 2),

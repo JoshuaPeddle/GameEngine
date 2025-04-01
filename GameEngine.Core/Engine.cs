@@ -40,7 +40,7 @@ namespace GameEngine.Core
                 new RenderOptions()
                 { 
                     DrawAnimations = true,
-                    DrawBoundingBoxes = false,
+                    DrawBoundingBoxes = true,
                     DrawEntityCenters = false,
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
@@ -73,6 +73,7 @@ namespace GameEngine.Core
             entityManager.Update();
             var physicsSystem = Systems.Get<PhysicsSystem>();
             currentScene?.Update(entityManager, physicsSystem, deltaTime);
+            currentScene?.Update(entityManager, Systems, deltaTime);
 
         }
 
@@ -103,5 +104,12 @@ namespace GameEngine.Core
             lastUpdateTime = currentTime;
             return deltaTime * 1000;
         }
+
+        public void SizeChanged(int width, int height)
+        {
+            var inputSystem = Systems.Get<InputSystem>();
+            inputSystem.SetRealDimensions(width, height);
+        }
+
     }
 }

@@ -47,6 +47,11 @@ namespace GameEngine.Runner.Avalonia
             this.PointerMoved += OnPointerMoved;
             this.PointerReleased += OnPointerReleased;
 
+            this.SizeChanged += (sender, args) =>
+            {
+                _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
+            };
+
             _gameEngine.Start();
         }
 
