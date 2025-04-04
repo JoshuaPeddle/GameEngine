@@ -48,29 +48,13 @@ namespace GameEngine.Core
 
     public class ScaledAnimation : Animation
     {
-        private readonly Vec2 _scaleSize;
-
         public ScaledAnimation(SKBitmap texture, int frames, float delayMs, Vec2 scaleSize)
             : base(texture, frames, delayMs)
         {
-            _scaleSize = scaleSize;
-            RescaleTexture();
-        }
-
-        private void RescaleTexture()
-        {
-            var scaledBitmap = texture.Resize(new SKImageInfo((int)_scaleSize.X, (int)_scaleSize.Y), SKFilterQuality.High);
-            //texture.Dispose();
+            var scaledBitmap = texture.Resize(new SKImageInfo((int)scaleSize.X, (int)scaleSize.Y), SKFilterQuality.High);
             texture = scaledBitmap;
             frameWidth = texture.Width / frames;
             frameHeight = texture.Height;
-        }
-
-        public new SKRect GetSourceRect(double elapsedTime)
-        {
-            _cachedFrames ??= InitializeFrames(frames);
-            int frameIndex = (int)(elapsedTime / delay) % frames;
-            return _cachedFrames[frameIndex];
         }
     }
 }

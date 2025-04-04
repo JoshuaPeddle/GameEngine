@@ -87,17 +87,15 @@ namespace GameEngine.Core
 
         public void HandlePointerEvent(PointerEventType eventType, PointerEvent pointerEvent)
         {
+            bool resolutionsValid = _realResolution.X > 0 && _realResolution.Y > 0 &&
+                                       VirtualResolution.X > 0 && VirtualResolution.Y > 0;
+
+            if (!resolutionsValid) { throw new InvalidOperationException("Real and Virtual dimensions must be set to handle pointer events."); }
+
             if (pointerActionBindings.TryGetValue(eventType, out List<Action<PointerEvent>>? actions))
             {
                 foreach (var action in actions)
                 {
-                    if (_realResolution.X <= 0 || _realResolution.Y <= 0 ||
-                        VirtualResolution.X <= 0 || VirtualResolution.Y <= 0)
-                    {
-                        action(pointerEvent);
-                        return;
-                    }
-
                     double scaleX = _realResolution.X / VirtualResolution.X;
                     double scaleY = _realResolution.Y / VirtualResolution.Y;
 
