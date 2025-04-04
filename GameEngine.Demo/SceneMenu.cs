@@ -11,18 +11,18 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 800;
         public override int VirtualHeight => scenes.Count * 100 + 100;
 
-        readonly List<Lazy<Scene>> scenes =
+        readonly List<(string,Lazy<Scene>)> scenes =
         [
-            new Lazy<Scene>(() => new SceneBasic()),
-            new Lazy<Scene>(() => new SceneSnake()),
-            new Lazy<Scene>(() => new SceneSideScroll()),
-            new Lazy<Scene>(() => new SceneJson()),
-            new Lazy<Scene>(() => new SceneEmpty()),
-            new Lazy<Scene>(() => new Scene2()),
-            new Lazy<Scene>(() => new ScenePong()),
+            ("Basic", new Lazy<Scene>(() => new SceneBasic())),
+            ("Snake", new Lazy<Scene>(() => new SceneSnake())),
+            ("Side Scroll", new Lazy<Scene>(() => new SceneSideScroll())),
+            ("Json", new Lazy<Scene>(() => new SceneJson())),
+            ("Empty", new Lazy<Scene>(() => new SceneEmpty())),
+            ("Scene2", new Lazy<Scene>(() => new Scene2())),
+            ("Pong", new Lazy<Scene>(() => new ScenePong())),
+            ("BrickBreaker", new Lazy<Scene>(() => new SceneBrickBreaker())),
+            ("Pointer", new Lazy<Scene>(() => new ScenePointer())),
         ];
-
-        readonly List<string> sceneNames = ["SceneBasic", "SceneSnake", "SceneSideScroll", "SceneJson", "SceneEmpty", "Scene2", "ScenePong"];
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
@@ -30,11 +30,11 @@ namespace GameEngine.Demo
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.Space, "Go");
 
-            for (int i = 0; i < sceneNames.Count; i++)
+            for (int i = 0; i < scenes.Count; i++)
             {
                 var entity = entityManager.CreateEntity("scene" + i);
                 entity.AddComponent(new CTransform(new Vec2(400, 100 + i * 100)));
-                entity.AddComponent(new CText(sceneNames[i], 24));
+                entity.AddComponent(new CText(scenes[i].Item1, 24));
             }
 
             var cursor = entityManager.CreateEntity("cursor");
@@ -68,7 +68,7 @@ namespace GameEngine.Demo
                 if (isActive)
                 {
                     var selectedScene = scenes[(int)(transform.Position.Y - 100) / 100];
-                    ResetScene(selectedScene.Value);
+                    ResetScene(selectedScene.Item2.Value);
                 }
             }, oneShot: true);
         }

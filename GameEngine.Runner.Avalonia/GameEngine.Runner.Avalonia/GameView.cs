@@ -14,6 +14,7 @@ using SharpHook.Reactive;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using static GameEngine.Core.Pointer;
 
 namespace GameEngine.Runner.Avalonia
 {
@@ -42,24 +43,35 @@ namespace GameEngine.Runner.Avalonia
                 _keyboardHook.RunAsync();
             }
 
-            this.PointerPressed += OnPointerPressed;
-            this.PointerMoved += OnPointerMoved;
-            this.PointerReleased += OnPointerReleased;
+            PointerPressed += OnPointerPressed;
+            PointerMoved += OnPointerMoved;
+            PointerReleased += OnPointerReleased;
+
+            Loaded += OnSizeChanged;
+            SizeChanged += OnSizeChanged;
 
             _gameEngine.Start();
+        }
+
+
+        private void OnSizeChanged(object? sender, EventArgs args)
+        {
+            _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
         }
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
             var point = e.GetPosition(this);
             _pointerStartPosition = point;
+            _gameEngine.Systems.Get<InputSystem>().PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
         }
 
         private void OnPointerMoved(object? sender, PointerEventArgs e)
         {
             if (_pointerStartPosition.HasValue)
             {
-                var currentPosition = e.GetPosition(this);
+                var point = e.GetPosition(this);
+                _gameEngine.Systems.Get<InputSystem>().PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
             }
         }
 
@@ -68,6 +80,8 @@ namespace GameEngine.Runner.Avalonia
             if (_pointerStartPosition.HasValue)
             {
                 var endPosition = e.GetPosition(this);
+                _gameEngine.Systems.Get<InputSystem>().PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
+                
                 var startPosition = _pointerStartPosition.Value;
 
                 var deltaX = endPosition.X - startPosition.X;

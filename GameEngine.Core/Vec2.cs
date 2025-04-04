@@ -47,6 +47,16 @@
             return new Vec2(-a.X, -a.Y);
         }
 
+        public static bool operator >(in Vec2 a, in Vec2 b)
+        {
+            return a.Length() > b.Length();
+        }
+
+        public static bool operator <(in Vec2 a, in Vec2 b)
+        {
+            return a.Length() < b.Length();
+        }
+
         public static bool operator ==(in Vec2 a, in Vec2 b)
         {
             return a.X == b.X && a.Y == b.Y;
@@ -126,5 +136,12 @@
 
         public static Vec2 Zero => new(0, 0);
         public static Vec2 One => new(1, 1);
+
+        public double Angle => Math.Atan2(Y, X);
+
+        public Vec2 Round(int digits)
+        {
+            return new Vec2(Math.Round(X, digits), Math.Round(Y, digits));
+        }
     }
 }

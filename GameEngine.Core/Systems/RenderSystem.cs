@@ -12,33 +12,6 @@ namespace GameEngine.Core.Systems
 
         private double _fps;
 
-        private readonly static SKPaint _animationPaint = new SKPaint
-        {
-            FilterQuality = SKFilterQuality.High,
-            IsAntialias = true
-        };
-
-        private readonly static SKPaint _boundingBoxPaint = new SKPaint
-        {
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 2,
-            IsAntialias = true
-        };
-
-        private readonly static SKPaint _debugPointPaint = new SKPaint
-        {
-            Color = SKColors.Red,
-            StrokeWidth = 1
-        };
-
-        private readonly static SKPaint _fpsPaint = new SKPaint
-        {
-            Color = SKColors.Black,
-            TextSize = 24,
-            IsAntialias = true
-        };
-
-
         public RenderSystem(EntityManager entityManager, RenderOptions options)
         {
             this.entityManager = entityManager;
@@ -178,13 +151,13 @@ namespace GameEngine.Core.Systems
 
             var entityCenter = FindEntityCenter(entity);
 
-            float rotationAngle = entity.GetComponent<CTransform>().Rotation;
+            var rotationAngle = entity.GetComponent<CTransform>().Rotation;
 
             canvas.Save();
 
             canvas.Translate((float)entityCenter.X, (float)entityCenter.Y);
 
-            canvas.RotateDegrees(rotationAngle);
+            canvas.RotateDegrees((float)rotationAngle);
 
             SKRect destRect = new SKRect(
                 -(float)(animationSize.X / 2),
@@ -244,6 +217,32 @@ namespace GameEngine.Core.Systems
             options.VirtualWidth = width;
             options.VirtualHeight = height;
         }
+
+        private readonly static SKPaint _animationPaint = new SKPaint
+        {
+            FilterQuality = SKFilterQuality.High,
+            IsAntialias = true
+        };
+
+        private readonly static SKPaint _boundingBoxPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = true
+        };
+
+        private readonly static SKPaint _debugPointPaint = new SKPaint
+        {
+            Color = SKColors.Red,
+            StrokeWidth = 1
+        };
+
+        private readonly static SKPaint _fpsPaint = new SKPaint
+        {
+            Color = SKColors.Black,
+            TextSize = 24,
+            IsAntialias = true
+        };
     }
 
     public class RenderOptions
