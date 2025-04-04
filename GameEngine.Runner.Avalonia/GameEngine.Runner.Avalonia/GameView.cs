@@ -43,16 +43,20 @@ namespace GameEngine.Runner.Avalonia
                 _keyboardHook.RunAsync();
             }
 
-            this.PointerPressed += OnPointerPressed;
-            this.PointerMoved += OnPointerMoved;
-            this.PointerReleased += OnPointerReleased;
+            PointerPressed += OnPointerPressed;
+            PointerMoved += OnPointerMoved;
+            PointerReleased += OnPointerReleased;
 
-            this.SizeChanged += (sender, args) =>
-            {
-                _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
-            };
+            Loaded += OnSizeChanged;
+            SizeChanged += OnSizeChanged;
 
             _gameEngine.Start();
+        }
+
+
+        private void OnSizeChanged(object? sender, EventArgs args)
+        {
+            _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
         }
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)

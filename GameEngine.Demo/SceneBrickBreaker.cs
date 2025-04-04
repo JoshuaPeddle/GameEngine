@@ -75,29 +75,22 @@ namespace GameEngine.Demo
         public override void Update(EntityManager entityManager, SystemContainer systems, double deltaTime)
         {
             var aimer = entityManager.GetEntityWithTag("aimer");
-            var cAimer = aimer.GetComponent<CAimer>();
-            var ball = entityManager.GetEntityWithTag("ball");
-
-            var ballTransform = ball.GetComponent<CTransform>();
             var aimerTransform = aimer.GetComponent<CTransform>();
-            var aimerAnimation = aimer.GetComponent<CAnimation>();
 
+            var ball = entityManager.GetEntityWithTag("ball");
+            var ballTransform = ball.GetComponent<CTransform>();
 
             aimerTransform.Position = ballTransform.Position;
+
+            var cAimer = aimer.GetComponent<CAimer>();
 
             if (!cAimer.PressPosition.Equals(Vec2.Zero))
             {
                 Vec2 direction;
                 if (cAimer.MovePosition > new Vec2(0,0))
-                {
                     direction = cAimer.MovePosition - ballTransform.Position;
-                }
                 else
-                {
                     direction = cAimer.PressPosition - ballTransform.Position;
-                }
-                //direction = direction * 2;
-                //direction = new Vec2(-direction.X, direction.Y);
                 double angleDegrees = direction.Angle * (180 / Math.PI);
 
                 aimerTransform.Rotation = angleDegrees - 90;
@@ -105,7 +98,6 @@ namespace GameEngine.Demo
                 if (!cAimer.ReleasePosition.Equals(Vec2.Zero))
                 {
                     Vec2 moveDirection = (cAimer.ReleasePosition - ballTransform.Position).Normalize();
-                    //moveDirection = new Vec2(-moveDirection.X, moveDirection.Y);
                     var ballMovement = ball.GetComponent<CMovement>();
                     ballTransform.Velocity = moveDirection * ballMovement.Speed;
 

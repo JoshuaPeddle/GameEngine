@@ -64,8 +64,6 @@ namespace GameEngine.Core
 
         private void Update(double deltaTime)
         {
-       
-
             foreach (ISystem system in Systems.Systems)
             {
                 system.Update(entityManager, deltaTime);
@@ -82,9 +80,12 @@ namespace GameEngine.Core
             currentScene = scene;
             Systems.Dispose();
             stopwatch.Restart();
+            var realResolution = inputManager.RealResolution;
             InitializeSystems();
             currentScene.Initialize(entityManager, inputManager, Systems.TryGet<AudioSystem>(), ResetScene);
             var renderSystem = Systems.Get<RenderSystem>();
+            inputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);
+            inputManager.RealResolution = realResolution;
             renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
         }
 
