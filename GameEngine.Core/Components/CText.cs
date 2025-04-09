@@ -5,14 +5,14 @@ namespace GameEngine.Core.Components
     public class CText : Component
     {
         public string Text { get; set; }
-        public int Size { get; set; }
+        public float Size => Paint.TextSize;
 
         public CText() { }
 
         public CText(string text, int size)
         {
             Text = text;
-            Size = size;
+            Paint.TextSize = size;
         }
 
         public SKPaint Paint { get; set; } = new SKPaint

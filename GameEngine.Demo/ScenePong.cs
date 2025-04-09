@@ -85,6 +85,7 @@ namespace GameEngine.Demo
         private void HandlePlayer2(EntityManager entityManager)
         {
             var paddle2 = entityManager.GetEntityWithTag("paddle2");
+            if (paddle2 == null) return;
             var paddle2Transform = paddle2.GetComponent<CTransform>();
             var paddle2Input = paddle2.GetComponent<CInput>();
             var paddle2BoundingBox = paddle2.GetComponent<CBoundingBox>();

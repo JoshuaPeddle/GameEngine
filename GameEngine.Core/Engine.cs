@@ -40,7 +40,7 @@ namespace GameEngine.Core
                 new RenderOptions()
                 { 
                     DrawAnimations = true,
-                    DrawBoundingBoxes = true,
+                    DrawBoundingBoxes = false,
                     DrawEntityCenters = false,
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
@@ -68,11 +68,11 @@ namespace GameEngine.Core
             {
                 system.Update(entityManager, deltaTime);
             }
-            entityManager.Update();
+         
             var physicsSystem = Systems.Get<PhysicsSystem>();
             currentScene?.Update(entityManager, physicsSystem, deltaTime);
             currentScene?.Update(entityManager, Systems, deltaTime);
-
+            entityManager.Update();
         }
 
         public void ChangeScene(Scene scene)
