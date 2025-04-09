@@ -18,7 +18,9 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 600;
         public override int VirtualHeight => 1000;
 
-        private const int _wallThickness = 10;
+        private const int _wallThickness = 20;
+
+        private double? ballStartX;
 
         private GameStates GameState { get; set; } = GameStates.Aiming;
 
@@ -74,7 +76,7 @@ namespace GameEngine.Demo
         {
             var ball1 = entityManager.CreateEntity("ball");
             ball1.AddComponent(new CAnimation(assets.GetAnimation("Ball")));
-            ball1.AddComponent(new CTransform(new Vec2(VirtualWidth / 2, VirtualHeight - 60)));
+            ball1.AddComponent(new CTransform(new Vec2(ballStartX ?? VirtualWidth / 2, VirtualHeight - 60)));
             ball1.AddComponent(new CBoundingBox(new Vec2(20, 20), blockVision: false, blockMove: false));
             ball1.AddComponent(new CMovement(1300, 600));
             ball1.AddComponent(new CBall());
@@ -178,6 +180,7 @@ namespace GameEngine.Demo
                     {
                         ball.Active = false;
                         cBall.LastHit = "";
+                        ballStartX = ballTransform.Position.X;
                         GameState = GameStates.BallOutPlay; 
                     }
                 }
@@ -208,7 +211,7 @@ namespace GameEngine.Demo
                 double angleDegrees = direction.Angle * (180 / Math.PI);
 
 
-                if (angleDegrees >= -23 || angleDegrees <= -157) return;
+                if (angleDegrees >= -15 || angleDegrees <= -165) return;
 
                 aimerTransform.Rotation = angleDegrees - 90;
 
@@ -217,7 +220,7 @@ namespace GameEngine.Demo
                     var releaseAngle = cAimer.ReleasePosition - ballTransform.Position;
                     var releaseAngleDegrees = releaseAngle.Angle * (180 / Math.PI);
 
-                    if (releaseAngleDegrees >= -23 || releaseAngleDegrees <= -157) return;
+                    if (releaseAngleDegrees >= -15 || releaseAngleDegrees <= -165) return;
 
                     Vec2 moveDirection = (direction).Normalize();
                     var ballMovement = ball.GetComponent<CMovement>();
