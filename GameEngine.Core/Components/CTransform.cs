@@ -6,7 +6,7 @@
         public Vec2 PreviousPosition = new(0.0f, 0.0f);
         public Vec2 Scale = new(1.0f, 1.0f);
         public Vec2 Velocity = new(0.0f, 0.0f);
-        public float Rotation = 0; // in degrees
+        public double Rotation = 0; // in degrees
 
         public CTransform(Vec2 position)
         {

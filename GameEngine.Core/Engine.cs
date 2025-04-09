@@ -40,7 +40,7 @@ namespace GameEngine.Core
                 new RenderOptions()
                 { 
                     DrawAnimations = true,
-                    DrawBoundingBoxes = false,
+                    DrawBoundingBoxes = true,
                     DrawEntityCenters = false,
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
@@ -64,8 +64,6 @@ namespace GameEngine.Core
 
         private void Update(double deltaTime)
         {
-       
-
             foreach (ISystem system in Systems.Systems)
             {
                 system.Update(entityManager, deltaTime);
@@ -73,6 +71,7 @@ namespace GameEngine.Core
             entityManager.Update();
             var physicsSystem = Systems.Get<PhysicsSystem>();
             currentScene?.Update(entityManager, physicsSystem, deltaTime);
+            currentScene?.Update(entityManager, Systems, deltaTime);
 
         }
 
@@ -81,9 +80,12 @@ namespace GameEngine.Core
             currentScene = scene;
             Systems.Dispose();
             stopwatch.Restart();
+            var realResolution = inputManager.RealResolution;
             InitializeSystems();
             currentScene.Initialize(entityManager, inputManager, Systems.TryGet<AudioSystem>(), ResetScene);
             var renderSystem = Systems.Get<RenderSystem>();
+            inputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);
+            inputManager.RealResolution = realResolution;
             renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
         }
 
@@ -103,5 +105,12 @@ namespace GameEngine.Core
             lastUpdateTime = currentTime;
             return deltaTime * 1000;
         }
+
+        public void SizeChanged(int width, int height)
+        {
+            var inputSystem = Systems.Get<InputSystem>();
+            inputSystem.SetRealDimensions(width, height);
+        }
+
     }
 }
