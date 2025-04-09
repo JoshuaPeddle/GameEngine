@@ -89,6 +89,7 @@ namespace GameEngine.Demo
         public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
         {
             var entity = entityManager.GetEntityWithTag("entity");
+            if (entity == null) return;
             var cPointer = entity.GetComponent<CPointer>();
             var cText = entity.GetComponent<CText>();
             cText.Text = $"Press: {cPointer.PressPosition.Round(1)} Move: {cPointer.MovePosition.Round(1)}  Release: {cPointer.ReleasePosition.Round(1)}";

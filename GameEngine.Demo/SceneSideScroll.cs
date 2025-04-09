@@ -51,6 +51,8 @@ namespace GameEngine.Demo
         public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
         {
             var camera = entityManager.GetEntityWithTag("camera");
+            if (camera == null)
+                return;
             var cameraTransform = camera.GetComponent<CCamera>();
 
             var player = entityManager.GetEntityWithTag("player");
