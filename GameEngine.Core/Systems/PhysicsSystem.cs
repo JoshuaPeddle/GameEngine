@@ -7,13 +7,13 @@ namespace GameEngine.Core.Systems
     {
         public readonly Entity A;
         public readonly Entity B;
-        //public readonly Vec2 Overlap;
+        public readonly Vec2 Overlap;
 
         public CollisionEvent(Entity a, Entity b, Vec2 overlap)
         {
             A = a;
             B = b;
-            //Overlap = overlap;
+            Overlap = overlap;
         }
     }
 

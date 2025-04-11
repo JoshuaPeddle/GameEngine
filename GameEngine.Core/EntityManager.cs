@@ -88,7 +88,7 @@
             return [];
         }
 
-        public IReadOnlyList<(Entity, T)> GetEntitiesWithComponents<T>() where T : Component
+        public List<(Entity, T)> GetEntitiesWithComponents<T>() where T : Component
         {
             if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
             {

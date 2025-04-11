@@ -58,7 +58,7 @@ namespace GameEngine.Demo
             var player = entityManager.GetEntityWithTag("player");
             var playerTransform = player.GetComponent<CTransform>();
 
-            cameraTransform.Position = new Vec2(playerTransform.Position.X, 300);
+            cameraTransform.Position = new Vec2(playerTransform.Position.X, playerTransform.Position.Y);
         }
     }
 }

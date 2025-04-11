@@ -23,20 +23,23 @@ namespace GameEngine.Core.Systems
             if (deltaTime <= 0)
                 return;
 
-            double currentFps = 1000.0 / deltaTime;
-
-            if (options.FpsSmoothingSamples <= 1)
+            if (options.DrawFps)
             {
-                _fps = currentFps;
-                return;
+                double currentFps = 1000.0 / deltaTime;
+
+                if (options.FpsSmoothingSamples <= 1)
+                {
+                    _fps = currentFps;
+                    return;
+                }
+
+                _fpsSamples.Add(currentFps);
+
+                if (_fpsSamples.Count > options.FpsSmoothingSamples)
+                    _fpsSamples.RemoveAt(0);
+
+                _fps = _fpsSamples.Average();
             }
-
-            _fpsSamples.Add(currentFps);
-
-            if (_fpsSamples.Count > options.FpsSmoothingSamples)
-                _fpsSamples.RemoveAt(0);
-
-            _fps = _fpsSamples.Average();
         }
 
         public void DrawEntitiesToCanvas(SKCanvas canvas)
@@ -97,10 +100,14 @@ namespace GameEngine.Core.Systems
                 canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
                 canvas.Scale(camera.Zoom, camera.Zoom);
                 canvas.Translate(-((float)camera.Position.X), -((float)camera.Position.Y));
-            }
 
-            // 5. Draw the entities in world space.
-            DrawEntities(canvas);
+                DrawEntities(canvas, camera);
+            }
+            else
+            {
+                DrawEntities(canvas);
+            }
+               
 
             // 5. Restore so that subsequent UI draws (like FPS counter) are in pixel space
             canvas.Restore();
@@ -111,36 +118,81 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        private void DrawEntities(SKCanvas canvas)
+        private void DrawEntities(SKCanvas canvas, CCamera? camera = null)
         {
-            var entities = entityManager.GetEntitiesWithComponent<CTransform>();
+            List<(Entity, CTransform)> entities = entityManager.GetEntitiesWithComponents<CTransform>();
+            if (camera != null)
+                entities = GetVisibleEntities(entities, camera);
+
             foreach (var entity in entities)
             {
                 // The existing logic is fine because from this point forward,
                 // your (x, y) are in "virtual" coordinates, and Skia is scaling them.
-                if (options.DrawAnimations && entity.TryGetComponent<CAnimation>(out var cAnimation))
+                if (options.DrawAnimations && entity.Item1.TryGetComponent<CAnimation>(out var cAnimation))
                 {
-                    DrawAnimation(canvas, entity, cAnimation);
+                    DrawAnimation(canvas, entity.Item1, entity.Item2, cAnimation);
                 }
 
-                if (entity.TryGetComponent<CText>(out var text))
+                if (entity.Item1.TryGetComponent<CText>(out var text))
                 {
-                    canvas.DrawText(text.Text, (float)entity.GetComponent<CTransform>().Position.X, (float)entity.GetComponent<CTransform>().Position.Y, text.Paint);
+                    canvas.DrawText(text.Text, (float)entity.Item2.Position.X, (float)entity.Item2.Position.Y, text.Paint);
                 }
 
-                if (options.DrawBoundingBoxes && entity.TryGetComponent<CBoundingBox>(out var boundingBox))
+                if (options.DrawBoundingBoxes && entity.Item1.TryGetComponent<CBoundingBox>(out var boundingBox))
                 {
-                    DrawBoundingBox(canvas, entity, boundingBox);
+                    DrawBoundingBox(canvas, entity.Item1, boundingBox);
                 }
 
                 if (options.DrawEntityCenters)
                 {
-                    DrawEntityCenterDebugPoints(canvas, FindEntityCenter(entity));
+                    DrawEntityCenterDebugPoints(canvas, FindEntityCenter(entity.Item1));
                 }
             }
         }
 
-        private static void DrawAnimation(SKCanvas canvas, Entity entity, CAnimation animation)
+        private List<(Entity, CTransform)> GetVisibleEntities(List<(Entity, CTransform)> entities, CCamera camera)
+        {
+
+            float viewWidth = options.VirtualWidth / camera.Zoom;
+            float viewHeight = options.VirtualHeight / camera.Zoom;
+
+            float halfWidth = viewWidth / 2;
+            float halfHeight = viewHeight / 2;
+
+
+            var cameraBounds = new SKRect(
+                (float)camera.Position.X  - halfWidth,
+                (float)camera.Position.Y ,
+                (float)camera.Position.X + halfWidth + 0,
+                (float)camera.Position.Y + halfHeight
+            );
+
+            var visibleEntities = new List<(Entity, CTransform)>(entities.Count);
+
+            foreach (var entity in entities)
+            {
+                var transform = entity.Item2;
+                if (entity.Item1.TryGetComponent<CBoundingBox>(out var boundingBox))
+                {
+                    var entityRect = new SKRect(
+                        (float)transform.Position.X,
+                        (float)transform.Position.Y,
+                        (float)(transform.Position.X + boundingBox.Width),
+                        (float)(transform.Position.Y + boundingBox.Height)
+                    );
+
+                    if (cameraBounds.IntersectsWith(entityRect))
+                        visibleEntities.Add(entity);
+                }
+                else if (cameraBounds.Contains((float)transform.Position.X, (float)transform.Position.Y))
+                {
+                    visibleEntities.Add(entity);
+                }
+            }
+            return visibleEntities;
+        }
+
+        private static void DrawAnimation(SKCanvas canvas, Entity entity, CTransform transform, CAnimation animation)
         {
             SKBitmap texture = animation.Texture;
             SKRect sourceRect = animation.GetSourceRect();
@@ -151,7 +203,7 @@ namespace GameEngine.Core.Systems
 
             var entityCenter = FindEntityCenter(entity);
 
-            var rotationAngle = entity.GetComponent<CTransform>().Rotation;
+            var rotationAngle = transform.Rotation;
 
             canvas.Save();
 
