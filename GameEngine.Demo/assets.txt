@@ -10,6 +10,7 @@ Texture TexBall images/snake/ball.png
 Texture TexPaddle images/snake/paddle.png
 Texture TexWallHorizontal images/snake/wallHorizontal.png
 Texture TexWallVertical images/snake/wallVertical.png
+Texture TexAimer images/aimer.png
 
 Animation Grenade TexGrenade 4 250
 Animation JeepBack TexJeep 1 1
@@ -25,6 +26,7 @@ Animation Ball TexBall 1 1
 Animation Paddle TexPaddle 1 1
 Animation WallHorizontal TexWallHorizontal 1 1
 Animation WallVertical TexWallVertical 1 1
+Animation Aimer TexAimer 1 1
 
 Sound Hit sounds/hit.wav
 Sound Level1 sounds/level1.wav

@@ -52,7 +52,7 @@ namespace GameEngine.Demo
 
             var aimer = entityManager.CreateEntity("aimer");
             aimer.AddComponent(new CTransform(new Vec2(VirtualWidth / 2, VirtualHeight - 100)));
-            aimer.AddComponent(new CAnimation(assets.GetAnimation("WallVertical").AsScaledAnimation(new Vec2(5, 160))));
+            aimer.AddComponent(new CAnimation(assets.GetAnimation("Aimer")));
             aimer.AddComponent(new CBoundingBox(new Vec2(20, 20), blockVision: false, blockMove: false));
             var cAimer = new CAimer();
             aimer.AddComponent(cAimer);
@@ -90,7 +90,7 @@ namespace GameEngine.Demo
             }
             else if (GameState == GameStates.BallInPlay)
             {
-                HandleCollisions(entityManager, systems);
+                HandleCollisions(systems);
             }
             else if (GameState == GameStates.BallOutPlay)
             {
@@ -101,17 +101,16 @@ namespace GameEngine.Demo
             }
         }
 
-        private void HandleCollisions(EntityManager entityManager, SystemContainer systems)
+        private void HandleCollisions(SystemContainer systems)
         {
             foreach (var collision in systems.Get<PhysicsSystem>().CollisionEvents)
             {
-                var hitBlock = HandleBallBlockCollision(collision, entityManager);
-                if (hitBlock) break;
-                HandleBallWallCollision(collision, entityManager);
+                HandleBallBlockCollision(collision);
+                HandleBallWallCollision(collision);
             }
         }
 
-        private static bool HandleBallBlockCollision(CollisionEvent collision, EntityManager entityManager)
+        private static bool HandleBallBlockCollision(CollisionEvent collision)
         {
             bool aIsBall = collision.A.Tag.StartsWith("ball");
             bool aIsBlock = collision.A.Tag.StartsWith("block");
@@ -127,29 +126,19 @@ namespace GameEngine.Demo
   
                 cBall.LastHit = block.Tag;
                 var ballTransform = ball.GetComponent<CTransform>();
-                var blockTransform = block.GetComponent<CTransform>();
 
-                var ballPos = ballTransform.Position;
-                var blockPos = blockTransform.Position;
-                var blockSize = block.GetComponent<CBoundingBox>().Size;
-
-                var ballCenter = new Vec2(ballPos.X + 10, ballPos.Y + 10); 
-                var blockCenter = new Vec2(blockPos.X + blockSize.X / 2, blockPos.Y + blockSize.Y / 2);
-
-                var difference = ballCenter - blockCenter;
-
-                if (Math.Abs(difference.X) > Math.Abs(difference.Y))
+                if (Math.Abs(collision.Overlap.X) < Math.Abs(collision.Overlap.Y))
                     ballTransform.Velocity = new Vec2(-ballTransform.Velocity.X, ballTransform.Velocity.Y);
                 else
                     ballTransform.Velocity = new Vec2(ballTransform.Velocity.X, -ballTransform.Velocity.Y);
-              
+
                 block.Active = false;
                 return true; 
             }
             return false; 
         }
 
-        private void HandleBallWallCollision(CollisionEvent collision, EntityManager entityManager)
+        private void HandleBallWallCollision(CollisionEvent collision)
         {
             bool aIsBall = collision.A.Tag.StartsWith("ball");
             bool aIsWall = collision.A.Tag.StartsWith("wall");
@@ -211,8 +200,6 @@ namespace GameEngine.Demo
                 double angleDegrees = direction.Angle * (180 / Math.PI);
 
 
-                if (angleDegrees >= -15 || angleDegrees <= -165) return;
-
                 aimerTransform.Rotation = angleDegrees - 90;
 
                 if (!cAimer.ReleasePosition.Equals(Vec2.Zero))
@@ -220,7 +207,7 @@ namespace GameEngine.Demo
                     var releaseAngle = cAimer.ReleasePosition - ballTransform.Position;
                     var releaseAngleDegrees = releaseAngle.Angle * (180 / Math.PI);
 
-                    if (releaseAngleDegrees >= -15 || releaseAngleDegrees <= -165) return;
+                    if (releaseAngleDegrees >= -10 || releaseAngleDegrees <= -170) return;
 
                     Vec2 moveDirection = (direction).Normalize();
                     var ballMovement = ball.GetComponent<CMovement>();
@@ -241,12 +228,10 @@ namespace GameEngine.Demo
             var blockSpacing = 0;
             var topPadding = VirtualHeight / 20;
 
-            // Create a Random instance for the 50/50 chance
             var random = new Random();
 
             for (int i = 0; i < 8; i++)
             {
-                // 50/50 chance to create a block (random.Next(0, 2) returns 0 or 1)
                 if (random.Next(0, 2) == 0)
                 {
                     var block = entityManager.CreateEntity("block");
