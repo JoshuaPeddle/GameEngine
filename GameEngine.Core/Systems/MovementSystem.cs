@@ -8,7 +8,7 @@ namespace GameEngine.Core.Systems
         {
             double deltaSeconds = deltaMs / 1000f;
 
-            var entities = entityManager.GetEntitiesWithComponents<CMovement, CTransform>();
+            var entities = entityManager.GetEntitiesWithComponentsUnsafe<CMovement, CTransform>();
 
             foreach ((var entity, var cMovvement, var transform) in entities)
             {

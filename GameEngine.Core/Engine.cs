@@ -56,9 +56,9 @@ namespace GameEngine.Core
 
             while (true)
             {
-                await Task.Delay(1);
-                Update(CalculateDeltaTime());
+                var task = Task.Run(() => Update(CalculateDeltaTime()));
                 InvalidateAction?.Invoke();
+                await task;
             }
         }
 

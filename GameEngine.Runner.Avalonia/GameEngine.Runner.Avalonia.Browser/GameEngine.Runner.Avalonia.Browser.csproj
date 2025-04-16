@@ -10,6 +10,7 @@
   <PropertyGroup>
 	<RunAOTCompilation>true</RunAOTCompilation>
 	<WasmStripILAfterAOT>true</WasmStripILAfterAOT>
+	<WasmEmableThreads>true</WasmEmableThreads>
   </PropertyGroup>
 	
   <ItemGroup>

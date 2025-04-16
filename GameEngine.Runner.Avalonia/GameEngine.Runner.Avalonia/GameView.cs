@@ -174,16 +174,18 @@ namespace GameEngine.Runner.Avalonia
     {
         public Rect Bounds { get; set; }
         private readonly Engine _engine;
+        private readonly RenderSystem _renderSystem;
 
         public CustomDrawOp(Rect bounds, Engine engine)
         {
             Bounds = bounds;
             _engine = engine;
+            _renderSystem = _engine.Systems.Get<RenderSystem>(); // Initialize once
         }
 
         public void Dispose() { }
 
-        public bool Equals(ICustomDrawOperation? other) => false;
+        public bool Equals(ICustomDrawOperation? other) => ReferenceEquals(this, other);
 
         public bool HitTest(Point p) => Bounds.Contains(p);
 
@@ -192,9 +194,11 @@ namespace GameEngine.Runner.Avalonia
             var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
             if (leaseFeature == null)
                 return;
+
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-            _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+
+            _renderSystem.DrawEntitiesToCanvas(canvas);
         }
     }
 }

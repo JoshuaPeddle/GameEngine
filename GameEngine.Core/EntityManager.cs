@@ -25,9 +25,11 @@
             }
             entitiesToAdd.Clear();
 
-            var inactiveEntities = entities.Where(e => !e.Active).ToList();
-            foreach (var entity in inactiveEntities)
+            for (int i = entities.Count - 1; i >= 0; i--)
             {
+                Entity? entity = entities[i];
+                if (entity.Active) continue;
+
                 entities.Remove(entity);
                 foreach (var componentType in entity.Components.Keys)
                 {
@@ -71,7 +73,14 @@
 
         public Entity? GetEntityWithTag(string tag)
         {
-            return entities.FirstOrDefault(e => e.Tag == tag);
+            foreach (var entity in entities)
+            {
+                if (entity.Tag == tag)
+                {
+                    return entity;
+                }
+            }
+            return null;
         }
 
         public List<Entity> GetEntitiesWithTag(string tag)
@@ -102,7 +111,7 @@
             return [];
         }
 
-        public IReadOnlyList<(Entity, T1, T2)> GetEntitiesWithComponents<T1, T2>() where T1 : Component where T2 : Component
+        public IReadOnlyList<(Entity, T1, T2)> GetEntitiesWithComponentsUnsafe<T1, T2>() where T1 : Component where T2 : Component
         {
             if (componentEntityMap.TryGetValue(typeof(T1), out var entitySet))
             {
@@ -110,10 +119,36 @@
                 foreach (var entity in entitySet)
                 {
                     result.Add((entity, entity.GetComponent<T1>(), entity.GetComponent<T2>()));
-                }
-                return result;
             }
+            return result;
+        }
             return [];
+        }
+
+        public IReadOnlyList<(Entity, T1, T2)> GetEntitiesWithComponents<T1, T2>() where T1 : Component where T2 : Component
+        {
+            if (!componentEntityMap.TryGetValue(typeof(T1), out var entitiesWithT1) ||
+                !componentEntityMap.TryGetValue(typeof(T2), out var entitiesWithT2))
+            {
+                return Array.Empty<(Entity, T1, T2)>();
+            }
+
+            HashSet<Entity> smallerSet = entitiesWithT1.Count <= entitiesWithT2.Count ? entitiesWithT1 : entitiesWithT2;
+            HashSet<Entity> largerSet = smallerSet == entitiesWithT1 ? entitiesWithT2 : entitiesWithT1;
+
+            var result = new List<(Entity, T1, T2)>(smallerSet.Count);
+
+            foreach (var entity in smallerSet)
+            {
+                if (largerSet.Contains(entity) &&
+                    entity.TryGetComponent<T1>(out var component1) &&
+                    entity.TryGetComponent<T2>(out var component2))
+                {
+                    result.Add((entity, component1, component2));
+                }
+            }
+
+            return result;
         }
 
         public void Clear()

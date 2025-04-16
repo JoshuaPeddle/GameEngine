@@ -57,5 +57,26 @@ namespace GameEngine.Demo
                 entity.AddComponent(transform);
             }
         }
+
+        private void Test_AddBunchOfEntitiesFast(EntityManager entityManager)
+        {
+            var boundingBox = new CBoundingBox(new Vec2(20, 20), true, true);
+            var animation = new CAnimation(assets.GetAnimation("Grenade"));
+            for (int i = 0; i < 3000; i++)
+            {
+                var entity = entityManager.CreateEntity("entity" + i);
+                entity.AddComponent(animation);
+
+                var transform = new CTransform(Vec2.Zero);
+                var maxWidth = 800;
+                var maxHeight = 600;
+
+                var random = new Random();
+                entity.AddComponent(boundingBox);
+
+                transform.Position = new Vec2(random.Next(100, maxWidth), random.Next(100, maxHeight));
+                entity.AddComponent(transform);
+            }
+        }
     }
 }

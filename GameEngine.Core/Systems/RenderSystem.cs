@@ -145,7 +145,7 @@ namespace GameEngine.Core.Systems
 
                 if (options.DrawEntityCenters)
                 {
-                    DrawEntityCenterDebugPoints(canvas, FindEntityCenter(entity.Item1));
+                    DrawEntityCenterDebugPoints(canvas, FindEntityCenter(entity.Item1, entity.Item2));
                 }
             }
         }
@@ -201,7 +201,7 @@ namespace GameEngine.Core.Systems
             float frameHeight = sourceRect.Height;
             var animationSize = new Vec2(frameWidth, frameHeight);
 
-            var entityCenter = FindEntityCenter(entity);
+            var entityCenter = FindEntityCenter(entity, transform);
 
             var rotationAngle = transform.Rotation;
 
@@ -223,9 +223,8 @@ namespace GameEngine.Core.Systems
             canvas.Restore();
         }
 
-        private static Vec2 FindEntityCenter(Entity entity)
+        private static Vec2 FindEntityCenter(Entity entity, CTransform transform)
         {
-            var transform = entity.GetComponent<CTransform>();
             if (entity.TryGetComponent<CBoundingBox>(out var boundingBox))
             {
                 return new Vec2(transform.Position.X + (boundingBox.Width / 2),

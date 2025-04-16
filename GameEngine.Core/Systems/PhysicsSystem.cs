@@ -20,7 +20,7 @@ namespace GameEngine.Core.Systems
     public class PhysicsSystem : ISystem
     {
         private const double epsilon = 0.0001;
-        public ConcurrentBag<CollisionEvent> CollisionEvents { get; private set; } = [];
+       public List<CollisionEvent> CollisionEvents { get; private set; } = [];
 
         private readonly List<(Entity, CBoundingBox, CTransform)> _validEntities = [];
         private readonly List<(Entity, CGravity, CTransform)> _entitiesWithGravity = [];
@@ -49,6 +49,7 @@ namespace GameEngine.Core.Systems
                     if (overlap.X > 0.0 && overlap.Y > 0.0)
                     {
                         CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
+                        //                        CollisionEvents.Enqueue(new CollisionEvent(entity, entityToCheck, overlap));
 
                         if (boundingBoxToCheck.BlockMovement)
                             ResolveCollision(transform, transformToCheck, overlap);
@@ -69,8 +70,8 @@ namespace GameEngine.Core.Systems
 
         private void PopulateEntityLists(EntityManager entityManager)
         {
-            _validEntities.AddRange(entityManager.GetEntitiesWithComponents<CBoundingBox, CTransform>());
-            _entitiesWithGravity.AddRange(entityManager.GetEntitiesWithComponents<CGravity, CTransform>());
+            _validEntities.AddRange(entityManager.GetEntitiesWithComponentsUnsafe<CBoundingBox, CTransform>());
+            _entitiesWithGravity.AddRange(entityManager.GetEntitiesWithComponentsUnsafe<CGravity, CTransform>());
         }
 
         private void ResetEntityLists()

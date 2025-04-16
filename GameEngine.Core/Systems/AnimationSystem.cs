@@ -6,11 +6,10 @@ namespace GameEngine.Core.Systems
     {
         public void Update(EntityManager entityManager, double deltaTime)
         {
-            var entities = entityManager.GetEntitiesWithComponent<CAnimation>();
+            var entities = entityManager.GetEntitiesWithComponents<CAnimation>();
             foreach (var entity in entities)
             {
-                var animation = entity.GetComponent<CAnimation>();
-                animation.Update(deltaTime);
+                entity.Item2.Update(deltaTime);
             }
         }
     }
