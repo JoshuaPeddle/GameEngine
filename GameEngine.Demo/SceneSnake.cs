@@ -53,6 +53,11 @@ namespace GameEngine.Demo
                 if (active) csnake.Direction = new Vec2(1, 0);
             }, true);
 
+            var score = entityManager.CreateEntity("Score");
+            score.AddComponent(new CTransform(new Vec2(110, 80)));
+            score.AddComponent(new CBoundingBox(new Vec2(200, 50), false, false));
+            score.AddComponent(new CText("Score: 0", 32));
+
             AddFood(entityManager);
             CreateBoundingEntities(entityManager);
             _resetScene = ResetScene;
@@ -134,6 +139,7 @@ namespace GameEngine.Demo
                     segmentTransform.PreviousPosition = segmentTransform.Position.Clone();
                     segmentTransform.Position = oldPositions[i - 1];
                 }
+
             }
         }
 
@@ -148,6 +154,12 @@ namespace GameEngine.Demo
 
             theFood.Kill();
             GrowSnake(entityManager, cSnake);
+
+            var score = entityManager.GetEntityWithTag("Score");
+            if (score != null && score.TryGetComponent<CText>(out var scoreText))
+            {
+                scoreText.Text = $"Score: {cSnake.Score}";
+            }
 
             AddFood(entityManager);
         }
