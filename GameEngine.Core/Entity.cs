@@ -3,10 +3,10 @@ using static GameEngine.Core.Exceptions;
 
 namespace GameEngine.Core
 {
-    public class Entity
+    public class Entity: IDisposable
     {
         public int Id = 0;
-        public bool Active = true;
+        internal bool Active = true;
         public string Tag = "default";
         public Dictionary<Type, Component> Components = [];
 
@@ -89,6 +89,23 @@ namespace GameEngine.Core
             {
                 entityManager.RemoveEntityFromComponentMap(component.GetType(), this);
             }
+        }
+
+        public void Kill()
+        {
+            Active = false;
+        }
+
+        public void Dispose()
+        {
+            foreach (var component in Components.Values)
+            {
+                if (component is IDisposable disposableComponent)
+                {
+                    disposableComponent.Dispose();
+                }
+            }
+            Components.Clear();
         }
     }
 }

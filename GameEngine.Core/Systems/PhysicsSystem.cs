@@ -35,8 +35,7 @@ namespace GameEngine.Core.Systems
 
         private void ProcessCollisions()
         {
-            Parallel.ForEach(_validEntities, new ParallelOptions { MaxDegreeOfParallelism = 3 }, entityPair =>
-            {
+            foreach (var entityPair in _validEntities) { 
                 var entity = entityPair.Item1;
                 var boundingBox = entityPair.Item2;
                 var transform = entityPair.Item3;
@@ -49,13 +48,12 @@ namespace GameEngine.Core.Systems
                     if (overlap.X > 0.0 && overlap.Y > 0.0)
                     {
                         CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
-                        //                        CollisionEvents.Enqueue(new CollisionEvent(entity, entityToCheck, overlap));
 
                         if (boundingBoxToCheck.BlockMovement)
                             ResolveCollision(transform, transformToCheck, overlap);
                     }
                 }
-            });
+            };
         }
 
         private void ProcessGravity(double deltaTime)

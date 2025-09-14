@@ -146,7 +146,7 @@ namespace GameEngine.Demo
             cSnake.Score++;
             var theFood = collision.A.Tag == "Food" ? collision.A : collision.B;
 
-            theFood.Active = false;
+            theFood.Kill();
             GrowSnake(entityManager, cSnake);
 
             AddFood(entityManager);

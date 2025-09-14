@@ -53,9 +53,11 @@ namespace GameEngine.Runner.Avalonia
             _gameEngine.Start();
         }
 
+        CustomDrawOp? _customDrawOp;
 
         private void OnSizeChanged(object? sender, EventArgs args)
         {
+            _customDrawOp = new CustomDrawOp(new Rect(0, 0, Bounds.Width, Bounds.Height), _gameEngine);
             _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
         }
 
@@ -136,7 +138,7 @@ namespace GameEngine.Runner.Avalonia
 
         public override void Render(DrawingContext context)
         {
-            context.Custom(new CustomDrawOp(new Rect(0, 0, Bounds.Width, Bounds.Height), _gameEngine));
+            context.Custom(_customDrawOp);
         }
 
         public void ConfigureKeyEvents()
@@ -174,13 +176,11 @@ namespace GameEngine.Runner.Avalonia
     {
         public Rect Bounds { get; set; }
         private readonly Engine _engine;
-        private readonly RenderSystem _renderSystem;
 
         public CustomDrawOp(Rect bounds, Engine engine)
         {
             Bounds = bounds;
             _engine = engine;
-            _renderSystem = _engine.Systems.Get<RenderSystem>(); // Initialize once
         }
 
         public void Dispose() { }
@@ -197,8 +197,8 @@ namespace GameEngine.Runner.Avalonia
 
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-
-            _renderSystem.DrawEntitiesToCanvas(canvas);
+            var renderSystem = _engine.Systems.Get<RenderSystem>(); 
+            renderSystem.DrawEntitiesToCanvas(canvas);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace GameEngine.Core
 {
-    public class EntityManager
+    public class EntityManager : IDisposable
     {
         private readonly List<Entity> entities = [];
         private readonly List<Entity> entitiesToAdd = [];
@@ -42,6 +42,7 @@
                         }
                     }
                 }
+                entity.Dispose();
             }
         }
 
@@ -178,6 +179,18 @@
                     componentEntityMap.Remove(componentType);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            foreach (var entity in entities)
+            {
+                entity.Kill();
+            }
+            entities.Clear();
+            entitiesToAdd.Clear();
+            componentEntityMap.Clear();
+
         }
     }
 }

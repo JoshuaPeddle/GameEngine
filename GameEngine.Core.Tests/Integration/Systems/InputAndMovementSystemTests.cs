@@ -23,6 +23,7 @@ namespace GameEngine.Core.Tests.Integration.Systems
             var entity = entityManager.CreateEntity("_");
             entity.AddComponent(new CTransform(new Vec2(0, 0), new Vec2(0, 0)));
             entity.AddComponent<CMovement>();
+            entityManager.Update();
 
             // 3. Add an action to input manager & map it so that pressing W sets velocity
             //    This is purely an example approach. Your actual logic may differ.
@@ -43,7 +44,6 @@ namespace GameEngine.Core.Tests.Integration.Systems
             inputManager.DoActions(); // triggers callback -> sets velocity to (10,0)
 
             movementSystem.Update(entityManager, 100);
-            entityManager.Update();
 
             // 6. Assert that position changed as we expect (10 px/sec for 0.1 seconds = 1 px)
             var transform = entity.GetComponent<CTransform>();

@@ -132,7 +132,7 @@ namespace GameEngine.Demo
                 else
                     ballTransform.Velocity = new Vec2(ballTransform.Velocity.X, -ballTransform.Velocity.Y);
 
-                block.Active = false;
+                block.Kill();
                 return true; 
             }
             return false; 
@@ -167,7 +167,7 @@ namespace GameEngine.Demo
                     }
                     else if (wall.Tag == "wallBottom")
                     {
-                        ball.Active = false;
+                        ball.Kill();
                         cBall.LastHit = "";
                         ballStartX = ballTransform.Position.X;
                         GameState = GameStates.BallOutPlay; 

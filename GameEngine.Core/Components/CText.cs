@@ -2,7 +2,7 @@
 
 namespace GameEngine.Core.Components
 {
-    public class CText : Component
+    public class CText : Component, IDisposable
     {
         public string Text { get; set; }
         public float Size => Paint.TextSize;
@@ -23,5 +23,12 @@ namespace GameEngine.Core.Components
             TextAlign = SKTextAlign.Center,
             TextSize = 24
         };
+
+        public void Dispose()
+        {
+            Paint.Dispose();
+            Paint = null;
+            GC.SuppressFinalize(this);
+        }
     }
 }

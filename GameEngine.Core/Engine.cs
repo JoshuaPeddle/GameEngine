@@ -38,22 +38,21 @@ namespace GameEngine.Core
             Systems.Add(new RenderSystem(
                 entityManager,
                 new RenderOptions()
-                { 
+                {
                     DrawAnimations = true,
                     DrawBoundingBoxes = false,
                     DrawEntityCenters = false,
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
                 }));
-            if (_audioEnabled ) 
+            if (_audioEnabled)
                 Systems.Add(new AudioSystem());
         }
 
         public async Task Start()
         {
-            stopwatch.Start(); 
+            stopwatch.Start();
             lastUpdateTime = 0;
-
             while (true)
             {
                 var task = Task.Run(() => Update(CalculateDeltaTime()));
@@ -68,7 +67,7 @@ namespace GameEngine.Core
             {
                 system.Update(entityManager, deltaTime);
             }
-         
+
             var physicsSystem = Systems.Get<PhysicsSystem>();
             currentScene?.Update(entityManager, physicsSystem, deltaTime);
             currentScene?.Update(entityManager, Systems, deltaTime);
@@ -79,6 +78,7 @@ namespace GameEngine.Core
         {
             currentScene = scene;
             Systems.Dispose();
+            entityManager.Dispose();
             stopwatch.Restart();
             var realResolution = inputManager.RealResolution;
             InitializeSystems();
@@ -111,6 +111,14 @@ namespace GameEngine.Core
             var inputSystem = Systems.Get<InputSystem>();
             inputSystem.SetRealDimensions(width, height);
         }
-
+        void BusyWait(int microseconds)
+        {
+            var sw = Stopwatch.StartNew();
+            long ticks = microseconds * (Stopwatch.Frequency / 1_000_000);
+            while (sw.ElapsedTicks < ticks)
+            {
+                // Busy-wait
+            }
+        }
     }
 }
