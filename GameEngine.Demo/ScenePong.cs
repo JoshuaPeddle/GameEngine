@@ -161,6 +161,7 @@ namespace GameEngine.Demo
                 if (cBall.LastHitPaddle != paddle.Tag)
                 {
                     cBall.LastHitPaddle = paddle.Tag;
+                    cBall.LastHitWall = "";
                     var ballTransform = ball.GetComponent<CTransform>();
                     var paddleTransform = paddle.GetComponent<CTransform>();
 
