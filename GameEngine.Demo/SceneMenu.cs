@@ -16,6 +16,7 @@ namespace GameEngine.Demo
             ("Basic", new Lazy<Scene>(() => new SceneBasic())),
             ("Snake", new Lazy<Scene>(() => new SceneSnake())),
             ("Side Scroll", new Lazy<Scene>(() => new SceneSideScroll())),
+            ("Side Scroll 2", new Lazy<Scene>(() => new SceneSideScroll2())),
             ("Json", new Lazy<Scene>(() => new SceneJson())),
             ("Empty", new Lazy<Scene>(() => new SceneEmpty())),
             ("Scene2", new Lazy<Scene>(() => new Scene2())),

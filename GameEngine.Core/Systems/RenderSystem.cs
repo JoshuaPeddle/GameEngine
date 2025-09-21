@@ -152,7 +152,6 @@ namespace GameEngine.Core.Systems
 
         private List<(Entity, CTransform)> GetVisibleEntities(List<(Entity, CTransform)> entities, CCamera camera)
         {
-
             float viewWidth = options.VirtualWidth / camera.Zoom;
             float viewHeight = options.VirtualHeight / camera.Zoom;
 
@@ -166,6 +165,7 @@ namespace GameEngine.Core.Systems
                 (float)camera.Position.X + halfWidth + 0,
                 (float)camera.Position.Y + halfHeight
             );
+            cameraBounds.Inflate(100, 100);
 
             var visibleEntities = new List<(Entity, CTransform)>(entities.Count);
 
