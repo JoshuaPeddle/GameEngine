@@ -6,7 +6,7 @@ namespace GameEngine.Core.Systems
     public class RenderSystem : ISystem
     {
         private readonly EntityManager entityManager;
-        private readonly RenderOptions options;
+        public readonly RenderOptions options;
 
         private readonly List<double> _fpsSamples = [];
 

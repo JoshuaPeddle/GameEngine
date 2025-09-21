@@ -24,7 +24,7 @@ namespace GameEngine.Core
             InitializeSystems();
         }
 
-        private void InitializeSystems()
+        public void InitializeSystems()
         {
             inputManager = new InputManager();
             entityManager = new EntityManager();

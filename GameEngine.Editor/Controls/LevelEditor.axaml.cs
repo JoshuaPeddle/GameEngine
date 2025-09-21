@@ -1,8 +1,10 @@
 using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Interactivity;
+using GameEngine.Core;
+using GameEngine.Core.Components;
+using GameEngine.Core.Systems;
+using System;
+using System.Threading.Tasks;
 using GameEngine.Editor.ViewModels;
-using System.Reactive;
 
 namespace GameEngine.Editor.Controls
 {
@@ -11,30 +13,27 @@ namespace GameEngine.Editor.Controls
         public LevelEditor()
         {
             InitializeComponent();
-
-            // Attach event handler for tile clicks
-            TileItemsControl.AddHandler(PointerPressedEvent, OnTilePointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
-
-            // Attach event handler for mouse wheel zooming
-            MainScrollViewer.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+            DataContextChanged += OnDataContextChanged;
         }
 
-        private void OnTilePointerPressed(object? sender, PointerPressedEventArgs e)
+        private async void OnDataContextChanged(object? sender, System.EventArgs e)
         {
-            if (e.Source is Border border && border.DataContext is TileViewModel tile)
+            if (DataContext is LevelEditorViewModel vm)
             {
-                tile.PlaceTileCommand.Execute(Unit.Default);
-                e.Handled = true;
-            }
-        }
-
-        private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
-        {
-            if (DataContext is LevelEditorViewModel viewModel)
-            {
-                viewModel.ZoomLevel *= e.Delta.Y > 0 ? 1.1 : 0.9;
-                e.Handled = true;
+                // Kick off initial scene discovery if project path already present
+                await vm.EnsureScenesLoadedAsync();
             }
         }
     }
+
+    class SceneLevelEditor : Scene
+    {
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene?> ResetScene)
+        {
+            var secondEntity = entityManager.CreateEntity("background");
+            secondEntity.AddComponent(new CTransform(new Vec2(500, 300)));
+            secondEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), true, true));
+        }
+    }
+
 }

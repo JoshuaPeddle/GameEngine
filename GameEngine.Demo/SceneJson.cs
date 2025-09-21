@@ -26,14 +26,16 @@ namespace GameEngine.Demo
             inputManager.AddAction(GeKeys.A, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
             inputManager.AddAction(GeKeys.Space, "PlaySound");
-            _audioPlayer.Play("Level1", SoundType.BGM);
+            _audioPlayer?.Play("Level1", SoundType.BGM);
             LoadLevel("levels/level1.json", entityManager, inputManager);
         }
 
 
         private void LoadLevel(string levelFilePath, EntityManager entityManager, InputManager inputManager)
         {
-            var json = File.ReadAllText(levelFilePath);
+            var fileStream = Assets._fileFetcher(levelFilePath);
+
+            var json = new StreamReader(fileStream).ReadToEnd();
             var entitiesData = JsonSerializer.Deserialize<List<JsonElement>>(json) ?? throw new Exception("Invalid level file");
             foreach (var entityData in entitiesData)
             {

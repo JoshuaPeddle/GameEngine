@@ -58,7 +58,11 @@ namespace GameEngine.Demo
 
         private void LoadLevel(string levelFilePath, EntityManager entityManager)
         {
-            var lines = File.ReadAllLines(levelFilePath);
+            var filestream = Assets._fileFetcher(levelFilePath);
+
+            var lines = 
+                new StreamReader(filestream).ReadToEnd()
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var line in lines)
             {

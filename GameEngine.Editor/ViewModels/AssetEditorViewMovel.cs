@@ -16,7 +16,7 @@ namespace GameEngine.Editor.ViewModels
             ProjectEditor = new ProjectEditorViewModel(filePickerService, this);
             TextureEditor = new TextureEditorViewModel(filePickerService, this);
             AnimationEditor = new AnimationEditorViewModel(this);
-            LevelEditor = new LevelEditorViewModel();
+            LevelEditor = new LevelEditorViewModel(this);
         }
 
         public AssetEditorViewModel()
@@ -24,7 +24,7 @@ namespace GameEngine.Editor.ViewModels
             ProjectEditor = new ProjectEditorViewModel();
             TextureEditor = new TextureEditorViewModel();
             AnimationEditor = new AnimationEditorViewModel();
-            LevelEditor = new LevelEditorViewModel();
+            LevelEditor = new LevelEditorViewModel(this);
         }
 
         public ObservableCollection<Texture> SharedTextures { get; } = [];
