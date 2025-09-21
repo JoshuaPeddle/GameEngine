@@ -46,6 +46,14 @@ namespace GameEngine.Editor.ViewModels
             }
         }
 
+        // NEW: Engine running flag
+        private bool _isEngineRunning = true;
+        public bool IsEngineRunning
+        {
+            get => _isEngineRunning;
+            set => this.RaiseAndSetIfChanged(ref _isEngineRunning, value);
+        }
+
         private string? ProjectPath =>
             string.IsNullOrWhiteSpace(AssetEditorViewModel?.ProjectEditor?.ProjectFolderPath)
                 ? null
@@ -115,10 +123,9 @@ namespace GameEngine.Editor.ViewModels
                 if (SelectedScene == null && _scenes.Count > 0)
                     SelectedScene = _scenes[0];
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 StatusMessage = "Error loading scenes";
-                // TODO: log ex
             }
             finally
             {

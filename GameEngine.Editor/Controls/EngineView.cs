@@ -10,6 +10,7 @@ using GameEngine.Core.Systems;
 using GameEngine.Editor.ViewModels;
 using SkiaSharp;
 using System;
+using System.ComponentModel; // NEW
 using System.IO;
 using System.Threading.Tasks;
 
@@ -30,19 +31,26 @@ namespace GameEngine.Editor.Controls
         private void OnDataContextChanged(object? sender, EventArgs e)
         {
             if (_vm != null)
+            {
                 _vm.SceneSelected -= OnSceneSelected;
+                _vm.PropertyChanged -= VmOnPropertyChanged;
+            }
 
             _vm = DataContext as LevelEditorViewModel;
 
             if (_vm != null)
             {
                 _vm.SceneSelected += OnSceneSelected;
-                // Scenes may already be loaded & selected
-                if (_vm.SelectedScene != null && _vm is { })
-                {
-                    // SceneSelected event will fire on setter only; manually trigger if already set
-                    // Re-resolve type from last compilation indirectly handled already in VM
-                }
+                _vm.PropertyChanged += VmOnPropertyChanged;
+            }
+        }
+
+        private void VmOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (_gameEngine == null || _vm == null) return;
+            if (e.PropertyName == nameof(LevelEditorViewModel.IsEngineRunning))
+            {
+                _gameEngine.SetRunning(_vm.IsEngineRunning);
             }
         }
 
@@ -60,6 +68,7 @@ namespace GameEngine.Editor.Controls
                     _gameEngine.Systems.TryGet<RenderSystem>().options.DrawBoundingBoxes = true;
                     InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
                     _gameEngine.InitializeSystems();
+                    _gameEngine.SetRunning(_vm.IsEngineRunning); 
                 }
 
                 var sceneInstance = (Scene)Activator.CreateInstance(sceneType)!;

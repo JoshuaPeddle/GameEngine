@@ -17,6 +17,10 @@ namespace GameEngine.Core
         private double lastUpdateTime;
         private bool _audioEnabled;
 
+        private volatile bool _isRunning = true;
+
+        public bool IsRunning => _isRunning;
+
         public Engine(Action? invalidateAction = null, bool audioEnabled = true)
         {
             InvalidateAction = invalidateAction;
@@ -38,28 +42,40 @@ namespace GameEngine.Core
             Systems.Add(new RenderSystem(
                 entityManager,
                 new RenderOptions()
-                { 
+                {
                     DrawAnimations = true,
                     DrawBoundingBoxes = false,
                     DrawEntityCenters = false,
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
                 }));
-            if (_audioEnabled ) 
+            if (_audioEnabled)
                 Systems.Add(new AudioSystem());
         }
 
         public async Task Start()
         {
-            stopwatch.Start(); 
+            stopwatch.Start();
             lastUpdateTime = 0;
 
             while (true)
             {
                 await Task.Delay(1);
+
+                if (!_isRunning)
+                {
+                    lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
+                    continue;
+                }
+
                 Update(CalculateDeltaTime());
                 InvalidateAction?.Invoke();
             }
+        }
+
+        public void SetRunning(bool running) 
+        {
+            _isRunning = running;
         }
 
         private void Update(double deltaTime)
@@ -68,7 +84,7 @@ namespace GameEngine.Core
             {
                 system.Update(entityManager, deltaTime);
             }
-         
+
             var physicsSystem = Systems.Get<PhysicsSystem>();
             currentScene?.Update(entityManager, physicsSystem, deltaTime);
             currentScene?.Update(entityManager, Systems, deltaTime);
@@ -111,6 +127,5 @@ namespace GameEngine.Core
             var inputSystem = Systems.Get<InputSystem>();
             inputSystem.SetRealDimensions(width, height);
         }
-
     }
 }
