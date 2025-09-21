@@ -1,39 +1,62 @@
 using Avalonia.Controls;
-using GameEngine.Core;
-using GameEngine.Core.Components;
-using GameEngine.Core.Systems;
-using System;
-using System.Threading.Tasks;
+using Avalonia.Input;
 using GameEngine.Editor.ViewModels;
+using System;
 
 namespace GameEngine.Editor.Controls
 {
     public partial class LevelEditor : UserControl
     {
+        private double? _lastRightWidth; // remembers width before collapse
+        private const double CollapseThreshold = 40; // px threshold after drag
+
         public LevelEditor()
         {
             InitializeComponent();
             DataContextChanged += OnDataContextChanged;
         }
 
-        private async void OnDataContextChanged(object? sender, System.EventArgs e)
+        private async void OnDataContextChanged(object? sender, EventArgs e)
         {
             if (DataContext is LevelEditorViewModel vm)
-            {
-                // Kick off initial scene discovery if project path already present
                 await vm.EnsureScenesLoadedAsync();
-            }
         }
-    }
 
-    class SceneLevelEditor : Scene
-    {
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene?> ResetScene)
+        private void ViewportSplitter_DragCompleted(object? sender, VectorEventArgs e)
         {
-            var secondEntity = entityManager.CreateEntity("background");
-            secondEntity.AddComponent(new CTransform(new Vec2(500, 300)));
-            secondEntity.AddComponent(new CBoundingBox(new Vec2(50, 80), true, true));
+            // If user dragged so the right column became very small -> collapse
+            var rightCol = WorkspaceGrid.ColumnDefinitions[2];
+            if (rightCol.Width.Value <= CollapseThreshold && rightCol.Width.IsAbsolute)
+                CollapseRightPanel();
+        }
+
+        private void ViewportSplitter_DoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+        {
+            var rightCol = WorkspaceGrid.ColumnDefinitions[2];
+            if (IsCollapsed(rightCol))
+                RestoreRightPanel();
+            else
+                CollapseRightPanel();
+        }
+
+        private bool IsCollapsed(ColumnDefinition col)
+            => col.Width.IsAbsolute && col.Width.Value <= 1;
+
+        private void CollapseRightPanel()
+        {
+            var rightCol = WorkspaceGrid.ColumnDefinitions[2];
+            // Remember previous width if not already collapsed
+            if (!IsCollapsed(rightCol))
+                _lastRightWidth = rightCol.Width.IsAbsolute ? rightCol.Width.Value : 300;
+
+            rightCol.Width = new GridLength(0, GridUnitType.Pixel);
+        }
+
+        private void RestoreRightPanel()
+        {
+            var rightCol = WorkspaceGrid.ColumnDefinitions[2];
+            var restoreWidth = _lastRightWidth is > 60 ? _lastRightWidth.Value : 300;
+            rightCol.Width = new GridLength(restoreWidth, GridUnitType.Pixel);
         }
     }
-
 }

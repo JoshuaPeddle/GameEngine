@@ -15,6 +15,7 @@
   </Design.DataContext>
 
   <Grid RowDefinitions="Auto,*" Margin="8">
+    <!-- Top toolbar -->
     <Border Grid.Row="0" Background="#1E1E1E" Padding="4">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="Scene:" VerticalAlignment="Center"/>
@@ -30,10 +31,52 @@
       </StackPanel>
     </Border>
 
-    <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" ClipToBounds="True">
-      <local:EngineView HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        ClipToBounds="True"/>
-    </Border>
+    <!-- Resizable / collapsible work area -->
+    <Grid x:Name="WorkspaceGrid"
+          Grid.Row="1"
+          ColumnDefinitions="*,Auto,300"
+          RowDefinitions="*">
+      <!-- Viewport -->
+      <Border Grid.Column="0"
+              BorderBrush="Gray"
+              BorderThickness="1"
+              ClipToBounds="True"
+              MinWidth="150">
+        <local:EngineView HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          ClipToBounds="True"/>
+      </Border>
+
+      <!-- Splitter -->
+      <GridSplitter x:Name="ViewportSplitter"
+                    Grid.Column="1"
+                    Width="5"
+                    Background="#444"
+                    HorizontalAlignment="Stretch"
+                    ResizeDirection="Columns"
+                    ResizeBehavior="BasedOnAlignment"
+                    ShowsPreview="True"
+                    Cursor="SizeWestEast"
+                    DoubleTapped="ViewportSplitter_DoubleTapped"
+                    DragCompleted="ViewportSplitter_DragCompleted"/>
+
+      <!-- Properties panel -->
+      <Border x:Name="RightPanel"
+              Grid.Column="2"
+              BorderBrush="Gray"
+              BorderThickness="1"
+              Background="#222"
+              Padding="6"
+              MinWidth="0"> <!-- allow full collapse -->
+        <StackPanel Spacing="6">
+          <TextBlock Text="Properties"
+                     FontWeight="Bold"
+                     Foreground="#DDD"/>
+          <TextBlock Text="(Add selection / inspector UI here)"
+                     Foreground="#888"
+                     TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+    </Grid>
   </Grid>
 </UserControl>

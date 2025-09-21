@@ -13,7 +13,8 @@ namespace GameEngine.Editor.ViewModels
 
         public AssetEditorViewModel(IFilePickerService filePickerService)
         {
-            ProjectEditor = new ProjectEditorViewModel(filePickerService, this);
+            var recent = new RecentProjectsService();
+            ProjectEditor = new ProjectEditorViewModel(filePickerService, this, recent);
             TextureEditor = new TextureEditorViewModel(filePickerService, this);
             AnimationEditor = new AnimationEditorViewModel(this);
             LevelEditor = new LevelEditorViewModel(this);
@@ -21,6 +22,7 @@ namespace GameEngine.Editor.ViewModels
 
         public AssetEditorViewModel()
         {
+            var recent = new RecentProjectsService();
             ProjectEditor = new ProjectEditorViewModel();
             TextureEditor = new TextureEditorViewModel();
             AnimationEditor = new AnimationEditorViewModel();

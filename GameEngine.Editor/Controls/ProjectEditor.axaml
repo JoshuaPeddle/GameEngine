@@ -3,20 +3,42 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-			 xmlns:vm="clr-namespace:GameEngine.Editor.ViewModels"
+             xmlns:vm="clr-namespace:GameEngine.Editor.ViewModels"
              x:Class="GameEngine.Editor.Controls.ProjectEditor"
-			 x:DataType="vm:ProjectEditorViewModel">
+             x:DataType="vm:ProjectEditorViewModel">
 
-	<Design.DataContext>
-		<vm:ProjectEditorViewModel />
-	</Design.DataContext>
-	
-	<Border >
-		<StackPanel Orientation="Vertical" Spacing="10" Margin="10">
-			<TextBlock Text="{Binding ProjectName}"  Width="400" Margin="0,10,0,10"/>
-			<Button Content="Open" Command="{Binding OpenProjectCommand}" />
-			<Button Content="Save Project" Command="{Binding SaveProjectCommand}" />
-		</StackPanel>
-	</Border>     
-  
+    <Design.DataContext>
+        <vm:ProjectEditorViewModel />
+    </Design.DataContext>
+
+    <Border Padding="10">
+        <StackPanel Orientation="Vertical" Spacing="10">
+            <TextBlock Text="{Binding ProjectName}" Width="400" Margin="0,0,0,10"/>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Open..." Command="{Binding OpenProjectCommand}" />
+                <Button Content="Save Project" Command="{Binding SaveProjectCommand}" />
+            </StackPanel>
+
+            <Separator/>
+
+            <TextBlock Text="Recent Projects" FontWeight="Bold"/>
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
+                <ListBox Grid.Row="0" Grid.Column="0"
+                         ItemsSource="{Binding RecentProjects}"
+                         SelectedItem="{Binding SelectedRecentProject}"
+                         MinHeight="150">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" Spacing="6" Margin="8,0,0,0">
+                    <Button Content="Open Selected"
+                            Command="{Binding OpenSelectedRecentProjectCommand}" />
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </Border>
 </UserControl>
