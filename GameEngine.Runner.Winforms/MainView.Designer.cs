@@ -33,20 +33,22 @@
             // 
             // skglControl1
             // 
+            skglControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             skglControl1.BackColor = Color.Black;
-            skglControl1.Location = new Point(6, 7);
-            skglControl1.Margin = new Padding(6, 7, 6, 7);
+            skglControl1.Margin = new Padding(0);
             skglControl1.Name = "skglControl1";
-            skglControl1.Size = new Size(1174, 678);
+            skglControl1.Size = new Size(638, 321);
             skglControl1.TabIndex = 0;
             skglControl1.VSync = false;
             // 
             // MainView
             // 
-            AutoScaleDimensions = new SizeF(13F, 32F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1185, 685);
+            ClientSize = new Size(638, 321);
             Controls.Add(skglControl1);
+            Margin = new Padding(0);
+            Padding = new Padding(0);
             Name = "MainView";
             Text = "Form1";
             ResumeLayout(false);
