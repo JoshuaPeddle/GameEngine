@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
+using GameEngine.Core;
 using GameEngine.Editor.Magic;
 using ReactiveUI;
 
@@ -139,5 +140,6 @@ namespace GameEngine.Editor.ViewModels
             get => _zoomLevel;
             set => this.RaiseAndSetIfChanged(ref _zoomLevel, value);
         }
+        public ReactiveCommand<Entity, Unit> EntitySelectedCommand { get; }
     }
 }

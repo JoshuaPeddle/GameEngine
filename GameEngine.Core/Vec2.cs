@@ -11,6 +11,11 @@
            Y = y;
         }
 
+        public Vec2(SkiaSharp.SKSize size) : this()
+        {
+            X = size.Width;
+            Y = size.Height;
+        }
 
         public static Vec2 operator +(in Vec2 a, in Vec2 b)
         {
