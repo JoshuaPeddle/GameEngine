@@ -37,28 +37,41 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Install workloads
-      run:  dotnet workload restore 
+      run: dotnet workload restore 
 
-    - name: Restore dependencies
+    - name: Restore Runner Desktop dependencies
       run: dotnet restore GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj
 
-    - name: Build
+    - name: Build Runner Desktop
       run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -c Release --no-restore
 
-    - name: Publish Linux
+    - name: Publish Runner Linux
       run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r linux-x64 -c Release
 
-    - name: Publish Windows
+    - name: Publish Runner Windows
       run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r win-x64 -c Release
 
-    - name: Build Android
+    - name: Build Runner Android
       run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj -c Release -f net9.0-android
 
-    - name: Zip Linux Release
+    # --- NEW: GameEngine.Editor (Windows) ---
+    - name: Restore Editor Desktop dependencies
+      run: dotnet restore GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj
+
+    - name: Build Editor Desktop (Windows target)
+      run: dotnet build GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -c Release --no-restore
+
+    - name: Publish Editor Windows
+      run: dotnet publish GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -r win-x64 -c Release -p:PublishSingleFile=true -p:SelfContained=true
+
+    - name: Zip Runner Linux Release
       run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net9.0/linux-x64/publish
 
-    - name: Zip Windows Release
+    - name: Zip Runner Windows Release
       run: zip -r windows_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net9.0/win-x64/publish
+
+    - name: Zip Editor Windows Release
+      run: zip -r editor_windows_artifact.zip GameEngine.Editor.Desktop/bin/Release/net9.0/win-x64/publish
 
     - name: Zip Android Release
       run: zip android_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release/net9.0-android/*-Signed.apk
@@ -86,7 +99,7 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Upload Linux Artifact
+    - name: Upload Runner Linux Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -96,7 +109,7 @@ jobs:
         asset_name: linux_artifact.zip
         asset_content_type: application/zip
 
-    - name: Upload Windows Artifact
+    - name: Upload Runner Windows Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,6 +117,16 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./windows_artifact.zip
         asset_name: windows_artifact.zip
+        asset_content_type: application/zip
+
+    - name: Upload Editor Windows Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./editor_windows_artifact.zip
+        asset_name: editor_windows_artifact.zip
         asset_content_type: application/zip
 
     - name: Upload Android Artifact
