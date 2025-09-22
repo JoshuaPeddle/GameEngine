@@ -62,7 +62,7 @@ jobs:
       run: dotnet build GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -c Release --no-restore
 
     - name: Publish Editor Windows
-      run: dotnet publish GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -r win-x64 -c Release -p:PublishSingleFile=true -p:SelfContained=true
+      run: dotnet publish GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -r win-x64 -c Release #-p:PublishSingleFile=true -p:SelfContained=true
 
     - name: Zip Runner Linux Release
       run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net9.0/linux-x64/publish
