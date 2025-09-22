@@ -31,7 +31,9 @@
                   IsChecked="{Binding IsEngineRunning, Mode=TwoWay}"
                   VerticalAlignment="Center"/>
         <TextBlock Text="{Binding StatusMessage}" Margin="12,0,0,0"
-                   Foreground="Gray" VerticalAlignment="Center"/>
+                   Foreground="LightGray" VerticalAlignment="Center"/>
+		<Button Content="Edit"
+		        Command="{Binding EditSceneCommand}"/>
       </StackPanel>
     </Border>
 
@@ -42,8 +44,8 @@
           RowDefinitions="*">
       <!-- Viewport -->
       <Border Grid.Column="0"
-              BorderBrush="Gray"
-              BorderThickness="1"
+              BorderBrush="LightGray"
+              BorderThickness="5"
               ClipToBounds="True"
               MinWidth="150">
         <local:EngineView HorizontalAlignment="Stretch"
@@ -59,7 +61,7 @@
                     HorizontalAlignment="Stretch"
                     ResizeDirection="Columns"
                     ResizeBehavior="BasedOnAlignment"
-                    ShowsPreview="True"
+                    ShowsPreview="False"
                     Cursor="SizeWestEast"
                     DoubleTapped="ViewportSplitter_DoubleTapped"
                     DragCompleted="ViewportSplitter_DragCompleted"/>

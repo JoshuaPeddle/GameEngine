@@ -89,8 +89,10 @@ namespace GameEngine.Editor.Magic
             "Avalonia.Base",
             "Avalonia.Controls",
             "Avalonia.Markup.Xaml",
-            "System.Runtime",            // usually not needed but harmless
+            "System.Runtime",
             "System.Collections",
+            "System.Runtime.InteropServices",
+            "System.Text.Json"
         };
 
         public SceneProjectCompiler(string projectPath) => _projectPath = Path.GetFullPath(projectPath);

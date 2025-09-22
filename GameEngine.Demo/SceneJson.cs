@@ -33,7 +33,11 @@ namespace GameEngine.Demo
 
         private void LoadLevel(string levelFilePath, EntityManager entityManager, InputManager inputManager)
         {
-            var fileStream = Assets._fileFetcher(levelFilePath);
+            Stream fileStream;
+            if (Assets._fileFetcher != null)
+                fileStream = Assets._fileFetcher(levelFilePath);
+            else
+                fileStream = File.OpenRead(levelFilePath);
 
             var json = new StreamReader(fileStream).ReadToEnd();
             var entitiesData = JsonSerializer.Deserialize<List<JsonElement>>(json) ?? throw new Exception("Invalid level file");

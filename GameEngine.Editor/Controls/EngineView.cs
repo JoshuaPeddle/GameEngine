@@ -145,10 +145,10 @@ namespace GameEngine.Editor.Controls
                 if (path.Contains("assets.txt") || path.Contains("levels"))
                 {
                     var assetFilesPath = Path.GetFullPath(Path.Combine(projectDir, path));
-                    return File.Open(assetFilesPath, FileMode.Open, FileAccess.Read);
+                    return File.Open(assetFilesPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 }
                 var fullPath = Path.GetFullPath(Path.Combine(projectDir, "assets/" + path));
-                return File.Open(fullPath, FileMode.Open, FileAccess.Read);
+                return File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             };
         }
 

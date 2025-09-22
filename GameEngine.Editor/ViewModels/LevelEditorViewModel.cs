@@ -21,6 +21,20 @@ namespace GameEngine.Editor.ViewModels
             {
                 await LoadScenesAsync(forceReload: true);
             }, this.WhenAnyValue(v => v.IsBusy, busy => !busy));
+
+            EditSceneCommand = ReactiveCommand.Create(() =>
+            {
+                if (_sceneService == null) return;
+                if (SelectedScene == null) return;
+
+                var scenes = _sceneService.GetScenes();
+                var scene = scenes.FirstOrDefault(s => s.Name == SelectedScene);
+                if (scene == null || string.IsNullOrWhiteSpace(scene.FilePath)) return;
+                if (!System.IO.File.Exists(scene.FilePath)) return;
+
+                var window = new CodeEditor(scene.FilePath);
+                window.Show();
+            });
         }
 
         public LevelEditorViewModel() : this(new AssetEditorViewModel()) { }
@@ -79,6 +93,8 @@ namespace GameEngine.Editor.ViewModels
         }
 
         public ReactiveCommand<Unit, Unit> ReloadScenesCommand { get; }
+        public ReactiveCommand<Unit, Unit> EditSceneCommand { get; }
+
 
         public event Action<Type>? SceneSelected;
 
