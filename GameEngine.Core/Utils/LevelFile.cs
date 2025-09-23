@@ -42,11 +42,12 @@ namespace GameEngine.Core.Utils
                 fileStream = Assets._fileFetcher(filePath);
             else
                 fileStream = File.OpenRead(filePath);
-
-            using var reader = new StreamReader(fileStream);
-            var json = reader.ReadToEnd();
-            
-            return LoadFromJson(json);
+            using (fileStream)
+            {
+                using var reader = new StreamReader(fileStream);
+                var json = reader.ReadToEnd();
+                return LoadFromJson(json);
+            }
         }
 
         public static LevelFile LoadFromJson(string json)

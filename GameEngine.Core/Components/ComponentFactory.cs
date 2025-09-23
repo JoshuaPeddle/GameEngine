@@ -21,14 +21,6 @@ namespace GameEngine.Core.Components
                 };
         }
 
-        private Component CreateCMovement(JsonElement element)
-        {
-            var speed = element.GetProperty("speed").GetDouble();
-            var maxSpeed = element.GetProperty("maxSpeed").GetDouble();
-            return new CMovement(speed, maxSpeed);
-
-        }
-
         public Component CreateComponent(string typeName, JsonElement data)
         {
             if (componentCreators.TryGetValue(typeName, out var creator))
@@ -66,6 +58,14 @@ namespace GameEngine.Core.Components
         private Component CreateCInput(JsonElement data)
         {
             return new CInput();
+        }
+
+        private Component CreateCMovement(JsonElement element)
+        {
+            var speed = element.GetProperty("speed").GetDouble();
+            var maxSpeed = element.GetProperty("maxSpeed").GetDouble();
+            return new CMovement(speed, maxSpeed);
+
         }
     }
 }
