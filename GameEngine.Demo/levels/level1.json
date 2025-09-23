@@ -1,80 +1,113 @@
-﻿[
-  {
-    "tag": "player",
-    "components": [
-      {
-        "type": "CTransform",
-        "position": {
-          "x": 100,
-          "y": 100
-        }
-      },
-      {
-        "type": "CAnimation",
-        "animationName": "JeepBack"
-      },
-      {
-        "type": "CBoundingBox",
-        "size": {
-          "x": 50,
-          "y": 80
-        },
-        "blockVision": false,
-        "blockMovement": false
-      },
-      {
-        "type": "CInput"
-      }
-    ]
+﻿{
+  "metadata": {
+    "name": "Training Grounds",
+    "version": "1.2",
+    "description": "A simple level for learning basic movement and interaction",
+    "properties": {
+      "difficulty": "easy",
+      "backgroundMusic": "Level1",
+      "environment": "outdoor",
+      "maxPlayers": 1,
+      "objectives": [
+        "Learn movement controls",
+        "Interact with objects"
+      ]
+    }
   },
-  {
-    "tag": "tile",
-    "components": [
-      {
-        "type": "CTransform",
-        "position": {
-          "x": 250,
-          "y": 300
-        }
-      },
-      {
-        "type": "CAnimation",
-        "animationName": "StoneBlock"
-      },
-      {
-        "type": "CBoundingBox",
-        "size": {
-          "x": 60,
-          "y": 60
+  "entities": [
+    {
+      "tag": "player",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 100,
+            "y": 100
+          },
+          "rotation": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         },
-        "blockVision": true,
-        "blockMovement": true
-      }
-    ]
-  },
-  {
-    "tag": "tile",
-    "components": [
-      {
-        "type": "CTransform",
-        "position": {
-          "x": 310,
-          "y": 300
-        }
-      },
-      {
-        "type": "CAnimation",
-        "animationName": "StoneBlock"
-      },
-      {
-        "type": "CBoundingBox",
-        "size": {
-          "x": 60,
-          "y": 60
+        {
+          "type": "CAnimation",
+          "animationName": "JeepBack",
+          "speed": 1.0,
+          "repeat": true
         },
-        "blockVision": true,
-        "blockMovement": true
-      }
-    ]
-  }
-]
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 50,
+            "y": 80
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "blockVision": false,
+          "blockMovement": false
+        },
+        {
+          "type": "CInput"
+        },
+        {
+          "type": "CMovement",
+          "speed": 150,
+          "maxSpeed": 300
+        }
+      ]
+    },
+    {
+      "tag": "tile",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 250,
+            "y": 300
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "StoneBlock"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 60,
+            "y": 60
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "tile",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 310,
+            "y": 300
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "StoneBlock"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 60,
+            "y": 60
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    }
+  ]
+}

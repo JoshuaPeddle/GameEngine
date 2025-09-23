@@ -1,81 +1,138 @@
 ﻿using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
+using GameEngine.Core.Utils;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
 
 namespace GameEngine.Demo
 {
     public class SceneJson : Scene
     {
         private Assets? assets;
-        private AudioSystem? _audioPlayer;
-        private ComponentFactory? componentFactory;
+        private AudioSystem? audioSystem;
+        private LevelLoader? levelLoader;
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
             assets ??= new("assets.txt");
+            audioSystem = audioPlayer;
 
-            componentFactory = new ComponentFactory(assets);
-            _audioPlayer = audioPlayer;
+            // Create the level loader
+            levelLoader = LevelManager.CreateLoader(assets);
 
+            // Set up input actions
+            SetupInputActions(inputManager);
+
+            // Load the level
+            LoadLevel("levels/level1.json", entityManager, inputManager);
+
+            // Play background music
+            audioSystem?.Play("Level1", SoundType.BGM);
+        }
+
+        private void SetupInputActions(InputManager inputManager)
+        {
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.A, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
             inputManager.AddAction(GeKeys.Space, "PlaySound");
-            _audioPlayer?.Play("Level1", SoundType.BGM);
-            LoadLevel("levels/level1.json", entityManager, inputManager);
         }
-
 
         private void LoadLevel(string levelFilePath, EntityManager entityManager, InputManager inputManager)
         {
-            Stream fileStream;
-            if (Assets._fileFetcher != null)
-                fileStream = Assets._fileFetcher(levelFilePath);
-            else
-                fileStream = File.OpenRead(levelFilePath);
-
-            var json = new StreamReader(fileStream).ReadToEnd();
-            var entitiesData = JsonSerializer.Deserialize<List<JsonElement>>(json) ?? throw new Exception("Invalid level file");
-            foreach (var entityData in entitiesData)
+            try
             {
-                string tag = entityData.GetProperty("tag").GetString() ?? throw new Exception("Entity tag is required");
-                var entity = entityManager.CreateEntity(tag);
+                var levelFile = LevelFile.LoadFromFile(levelFilePath);
+                levelLoader!.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
 
-                foreach (var componentData in entityData.GetProperty("components").EnumerateArray())
+                Console.WriteLine($"Loaded level: {levelFile.Metadata.Name}");
+                if (!string.IsNullOrEmpty(levelFile.Metadata.Description))
                 {
-                    string componentType = componentData.GetProperty("type").GetString() ?? throw new Exception("Component type is required");
-                    Component component = componentFactory!.CreateComponent(componentType, componentData);
-
-                    entity.AddComponent(component);
-
-                    // Handle special cases, like mapping input actions
-                    if (component is CInput)
-                    {
-                        MapInputActions(entity, inputManager);
-                    }
+                    Console.WriteLine($"Description: {levelFile.Metadata.Description}");
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load level '{levelFilePath}': {ex.Message}");
+                throw;
             }
         }
 
-        private void MapInputActions(Entity entity, InputManager inputManager)
+        // Alternative method for loading from a LevelFile object directly
+        public void LoadFromLevelFile(LevelFile levelFile, EntityManager entityManager, InputManager inputManager)
         {
-            entity.AddComponent<CMovement>();
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Up", entity, (input, isActive) => input.Up = isActive, true);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Down", entity, (input, isActive) => input.Down = isActive, true);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Left", entity, (input, isActive) => input.Left = isActive, true);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Right", entity, (input, isActive) => input.Right = isActive, true);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("PlaySound", entity, (input, isActive) =>
+            levelLoader?.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
+        }
+
+        // Method to register custom entity handlers if needed
+        public void RegisterEntityHandler(string entityTag, Action<Entity, InputManager, AudioSystem?> handler)
+        {
+            levelLoader?.RegisterEntityHandler(entityTag, handler);
+        }
+    }
+
+    // Example of a more advanced scene that might have multiple levels
+    public class MultiLevelScene : Scene
+    {
+        private Assets? assets;
+        private AudioSystem? audioSystem;
+        private LevelLoader? levelLoader;
+        private int currentLevelIndex = 0;
+        private readonly string[] levelPaths = { "levels/level1.json", "levels/level2.json", "levels/level3.json" };
+
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
+        {
+            assets ??= new("assets.txt");
+            audioSystem = audioPlayer;
+            levelLoader = LevelManager.CreateLoader(assets);
+
+            SetupInputActions(inputManager);
+            LoadCurrentLevel(entityManager, inputManager);
+        }
+
+        private void SetupInputActions(InputManager inputManager)
+        {
+            inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.AddAction(GeKeys.Space, "PlaySound");
+            inputManager.AddAction(GeKeys.N, "NextLevel");
+            inputManager.AddAction(GeKeys.P, "PrevLevel");
+        }
+
+        private void LoadCurrentLevel(EntityManager entityManager, InputManager inputManager)
+        {
+            if (currentLevelIndex >= 0 && currentLevelIndex < levelPaths.Length)
             {
-                if (isActive)
-                {
-                    _audioPlayer?.Play("Hit", SoundType.SoundEffect);
-                }
-            }, true);
+                // Clear existing entities
+                entityManager.Clear();
+
+                // Load new level
+                var levelFile = LevelFile.LoadFromFile(levelPaths[currentLevelIndex]);
+                levelLoader!.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
+
+                Console.WriteLine($"Loaded level {currentLevelIndex + 1}: {levelFile.Metadata.Name}");
+            }
+        }
+
+        public void NextLevel(EntityManager entityManager, InputManager inputManager)
+        {
+            if (currentLevelIndex < levelPaths.Length - 1)
+            {
+                currentLevelIndex++;
+                LoadCurrentLevel(entityManager, inputManager);
+            }
+        }
+
+        public void PreviousLevel(EntityManager entityManager, InputManager inputManager)
+        {
+            if (currentLevelIndex > 0)
+            {
+                currentLevelIndex--;
+                LoadCurrentLevel(entityManager, inputManager);
+            }
         }
     }
 }

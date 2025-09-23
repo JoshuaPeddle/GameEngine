@@ -16,8 +16,17 @@ namespace GameEngine.Core.Components
                     { "CAnimation", CreateCAnimation },
                     { "CBoundingBox", CreateCBoundingBox },
                     { "CInput", CreateCInput },
+                    { "CMovement", CreateCMovement }
                     // Add other components here
                 };
+        }
+
+        private Component CreateCMovement(JsonElement element)
+        {
+            var speed = element.GetProperty("speed").GetDouble();
+            var maxSpeed = element.GetProperty("maxSpeed").GetDouble();
+            return new CMovement(speed, maxSpeed);
+
         }
 
         public Component CreateComponent(string typeName, JsonElement data)
