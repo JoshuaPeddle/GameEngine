@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+        x:Class="GameEngine.Editor.CodeEditor"
+        Title="Code Editor"
+        Width="900"
+        Height="700">
+  <AvaloniaEdit:TextEditor x:Name="Editor"
+                           ShowLineNumbers="True"
+                           FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                           FontSize="14"
+                           Background="#1E1E1E"
+                           Foreground="#FFFFFF"
+                           HorizontalScrollBarVisibility="Auto"
+                           VerticalScrollBarVisibility="Auto" />
+</Window>

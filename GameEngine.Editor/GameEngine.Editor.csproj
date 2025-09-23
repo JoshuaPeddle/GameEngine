@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+	<PackageReference Include="Avalonia.AvaloniaEdit" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Core\GameEngine.Core.csproj" />

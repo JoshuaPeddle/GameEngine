@@ -26,6 +26,60 @@ namespace GameEngine.Editor.Controls
         {
             SizeChanged += OnSizeChanged;
             DataContextChanged += OnDataContextChanged;
+            PointerPressed += (s, e) => 
+            {
+                var entityManager = _gameEngine.EntityManager.GetEntities();
+                // Try to find the entity under the pointer
+                foreach (var entity in entityManager)
+                {
+                    if (entity.HasComponent<Core.Components.CTransform>() && entity.HasComponent<Core.Components.CAnimation>())
+                    {
+                        var transform = entity.GetComponent<Core.Components.CTransform>();
+                        var sprite = entity.GetComponent<Core.Components.CAnimation>();
+                        var inputManager = _gameEngine.InputManager;
+
+                        var realResolution = inputManager.RealResolution;
+                        var virtualResolution = inputManager.VirtualResolution;
+
+                        double scaleX = realResolution.X / virtualResolution.X;
+                        double scaleY = realResolution.Y / virtualResolution.Y;
+
+                        double finalScale = Math.Min(scaleX, scaleY);
+
+                        double scaledWidth = virtualResolution.X * finalScale;
+                        double scaledHeight = virtualResolution.Y * finalScale;
+                        double leftoverX = (realResolution.X - scaledWidth) / 2;
+                        double leftoverY = (realResolution.Y - scaledHeight) / 2;
+
+                        double adjustedX = e.GetPosition(this).X - leftoverX;
+                        double adjustedY = e.GetPosition(this).Y - leftoverY;
+                        double virtualX = adjustedX / finalScale;
+                        double virtualY = adjustedY / finalScale;
+
+                        if (entity.TryGetComponent<Core.Components.CBoundingBox>(out var boundingBox))
+                        {
+                            var boxPos = transform.Position - (boundingBox.Size / 2);
+                            if (virtualX >= boxPos.X + boundingBox.Size.X/2 && virtualX <= boxPos.X + boundingBox.Size.X *1.5 &&
+                                virtualY >= boxPos.Y + boundingBox.Size.Y/2 && virtualY <= boxPos.Y + boundingBox.Size.Y *1.5)
+                            {
+                                _vm?.EntitySelectedCommand.Execute(entity).Subscribe();
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            // Fallback to sprite size if no bounding box
+                            var boxPos = transform.Position - new Vec2(sprite.GetSourceRect().Size);
+                            if (virtualX >= boxPos.X && virtualX <= boxPos.X + new Vec2(sprite.GetSourceRect().Size).X &&
+                                virtualY >= boxPos.Y && virtualY <= boxPos.Y + new Vec2(sprite.GetSourceRect().Size).Y)
+                            {
+                                _vm?.EntitySelectedCommand.Execute(entity).Subscribe();
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
         }
 
         private void OnDataContextChanged(object? sender, EventArgs e)
@@ -68,7 +122,8 @@ namespace GameEngine.Editor.Controls
                     _gameEngine.Systems.TryGet<RenderSystem>().options.DrawBoundingBoxes = true;
                     InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
                     _gameEngine.InitializeSystems();
-                    _gameEngine.SetRunning(_vm.IsEngineRunning); 
+                    _gameEngine.SetRunning(_vm.IsEngineRunning);
+                    _gameEngine?.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
                 }
 
                 var sceneInstance = (Scene)Activator.CreateInstance(sceneType)!;
@@ -90,10 +145,10 @@ namespace GameEngine.Editor.Controls
                 if (path.Contains("assets.txt") || path.Contains("levels"))
                 {
                     var assetFilesPath = Path.GetFullPath(Path.Combine(projectDir, path));
-                    return File.Open(assetFilesPath, FileMode.Open, FileAccess.Read);
+                    return File.Open(assetFilesPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 }
                 var fullPath = Path.GetFullPath(Path.Combine(projectDir, "assets/" + path));
-                return File.Open(fullPath, FileMode.Open, FileAccess.Read);
+                return File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             };
         }
 

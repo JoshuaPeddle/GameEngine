@@ -9,8 +9,8 @@ namespace GameEngine.Core
 
         public SystemContainer Systems;
 
-        private EntityManager entityManager;
-        private InputManager inputManager;
+        public EntityManager EntityManager;
+        public InputManager InputManager;
         private readonly Stopwatch stopwatch = new Stopwatch();
 
         private Scene? currentScene;
@@ -30,17 +30,17 @@ namespace GameEngine.Core
 
         public void InitializeSystems()
         {
-            inputManager = new InputManager();
-            entityManager = new EntityManager();
+            InputManager = new InputManager();
+            EntityManager = new EntityManager();
             Systems = new SystemContainer();
             lastUpdateTime = 0;
 
-            Systems.Add(new InputSystem(inputManager));
+            Systems.Add(new InputSystem(InputManager));
             Systems.Add(new MovementSystem());
             Systems.Add(new PhysicsSystem());
             Systems.Add(new AnimationSystem());
             Systems.Add(new RenderSystem(
-                entityManager,
+                EntityManager,
                 new RenderOptions()
                 {
                     DrawAnimations = true,
@@ -82,13 +82,13 @@ namespace GameEngine.Core
         {
             foreach (ISystem system in Systems.Systems)
             {
-                system.Update(entityManager, deltaTime);
+                system.Update(EntityManager, deltaTime);
             }
 
             var physicsSystem = Systems.Get<PhysicsSystem>();
-            currentScene?.Update(entityManager, physicsSystem, deltaTime);
-            currentScene?.Update(entityManager, Systems, deltaTime);
-            entityManager.Update();
+            currentScene?.Update(EntityManager, physicsSystem, deltaTime);
+            currentScene?.Update(EntityManager, Systems, deltaTime);
+            EntityManager.Update();
         }
 
         public void ChangeScene(Scene scene)
@@ -96,18 +96,18 @@ namespace GameEngine.Core
             currentScene = scene;
             Systems.Dispose();
             stopwatch.Restart();
-            var realResolution = inputManager.RealResolution;
+            var realResolution = InputManager.RealResolution;
             InitializeSystems();
-            currentScene.Initialize(entityManager, inputManager, Systems.TryGet<AudioSystem>(), ResetScene);
+            currentScene.Initialize(EntityManager, InputManager, Systems.TryGet<AudioSystem>(), ResetScene);
             var renderSystem = Systems.Get<RenderSystem>();
-            inputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);
-            inputManager.RealResolution = realResolution;
+            InputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);
+            InputManager.RealResolution = realResolution;
             renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
         }
 
         public void ResetScene(Scene? scene = null)
         {
-            entityManager.Clear();
+            EntityManager.Clear();
             if (scene != null)
                 ChangeScene(scene);
             else

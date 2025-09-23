@@ -1,5 +1,4 @@
 ﻿using GameEngine.Core.Components;
-using System.Collections.Concurrent;
 
 namespace GameEngine.Core.Systems
 {
@@ -20,51 +19,69 @@ namespace GameEngine.Core.Systems
     public class PhysicsSystem : ISystem
     {
         private const double epsilon = 0.0001;
-        public ConcurrentBag<CollisionEvent> CollisionEvents { get; private set; } = [];
 
-        private readonly List<(Entity, CBoundingBox, CTransform)> _validEntities = [];
-        private readonly List<(Entity, CGravity, CTransform)> _entitiesWithGravity = [];
+        // Use List instead of ConcurrentBag to avoid allocations
+        public List<CollisionEvent> CollisionEvents { get; private set; } = new(100);
+
+        private readonly List<(Entity entity, CBoundingBox bbox, CTransform transform)> _validEntities = new(1000);
+        private readonly List<(Entity entity, CGravity gravity, CTransform transform)> _entitiesWithGravity = new(100);
 
         public void Update(EntityManager entityManager, double deltaTime)
         {
             ResetEntityLists();
             PopulateEntityLists(entityManager);
             ProcessGravity(deltaTime);
-            ProcessCollisions();
+            ProcessCollisionsOptimized();
         }
 
-        private void ProcessCollisions()
+        private void ProcessCollisionsOptimized()
         {
-            Parallel.ForEach(_validEntities, new ParallelOptions { MaxDegreeOfParallelism = 3 }, entityPair =>
+            int count = _validEntities.Count;
+
+            for (int i = 0; i < count - 1; i++)
             {
-                var entity = entityPair.Item1;
-                var boundingBox = entityPair.Item2;
-                var transform = entityPair.Item3;
+                (Entity entity, CBoundingBox bbox, CTransform transform) entityA = _validEntities[i];
 
-                foreach ((var entityToCheck, var boundingBoxToCheck, var transformToCheck) in _validEntities)
+                for (int j = i + 1; j < count; j++)
                 {
-                    if (entity.Id >= entityToCheck.Id || entity.Id == entityToCheck.Id) continue;
+                    (Entity entity, CBoundingBox bbox, CTransform transform) entityB = _validEntities[j];
 
-                    Vec2 overlap = Physics.GetOverlap(transform, transformToCheck, boundingBox, boundingBoxToCheck);
+                    if (!QuickAABBTest(
+                        entityA.transform.Position, entityA.bbox.Size,
+                        entityB.transform.Position, entityB.bbox.Size))
+                        continue;
+
+                    Vec2 overlap = Physics.GetOverlap(
+                        entityA.transform, entityB.transform,
+                        entityA.bbox, entityB.bbox);
+
                     if (overlap.X > 0.0 && overlap.Y > 0.0)
                     {
-                        CollisionEvents.Add(new CollisionEvent(entity, entityToCheck, overlap));
+                        CollisionEvents.Add(new CollisionEvent(entityA.entity, entityB.entity, overlap));
 
-                        if (boundingBoxToCheck.BlockMovement)
-                            ResolveCollision(transform, transformToCheck, overlap);
+                        if (entityB.bbox.BlockMovement)
+                            ResolveCollision(entityA.transform, entityB.transform, overlap);
                     }
                 }
-            });
+            }
+        }
+
+        private static bool QuickAABBTest(Vec2 pos1, Vec2 size1, Vec2 pos2, Vec2 size2)
+        {
+            return pos1.X < pos2.X + size2.X &&
+                   pos1.X + size1.X > pos2.X &&
+                   pos1.Y < pos2.Y + size2.Y &&
+                   pos1.Y + size1.Y > pos2.Y;
         }
 
         private void ProcessGravity(double deltaTime)
         {
-            Parallel.ForEach(_entitiesWithGravity,  new ParallelOptions { MaxDegreeOfParallelism = 2 }, entity =>
+            double gravityDelta = deltaTime;
+
+            foreach ((Entity entity, CGravity gravity, CTransform transform) in _entitiesWithGravity)
             {
-                var gravity = entity.Item2;
-                var transform = entity.Item3;
-                transform.Velocity += new Vec2(0, gravity.Acceleration * deltaTime);
-            });
+                transform.Velocity += new Vec2(0, gravity.Acceleration * gravityDelta);
+            }
         }
 
         private void PopulateEntityLists(EntityManager entityManager)
