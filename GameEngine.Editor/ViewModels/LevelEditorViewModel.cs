@@ -2,11 +2,11 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
-using System.Threading;
 using System.Threading.Tasks;
 using GameEngine.Core;
 using GameEngine.Editor.Magic;
 using ReactiveUI;
+using System.Collections.Generic;
 
 namespace GameEngine.Editor.ViewModels
 {
@@ -34,6 +34,11 @@ namespace GameEngine.Editor.ViewModels
 
                 var window = new CodeEditor(scene.FilePath);
                 window.Show();
+            });
+
+            EntitySelectedCommand = ReactiveCommand.Create<Entity>(entity =>
+            {
+                SetSelectedEntity(entity);
             });
         }
 
@@ -95,7 +100,6 @@ namespace GameEngine.Editor.ViewModels
         public ReactiveCommand<Unit, Unit> ReloadScenesCommand { get; }
         public ReactiveCommand<Unit, Unit> EditSceneCommand { get; }
 
-
         public event Action<Type>? SceneSelected;
 
         public async Task EnsureScenesLoadedAsync()
@@ -156,6 +160,40 @@ namespace GameEngine.Editor.ViewModels
             get => _zoomLevel;
             set => this.RaiseAndSetIfChanged(ref _zoomLevel, value);
         }
+
         public ReactiveCommand<Entity, Unit> EntitySelectedCommand { get; }
+
+        // --- Entity Selection State ---
+
+        private Entity? _selectedEntity;
+        public Entity? SelectedEntity
+        {
+            get => _selectedEntity;
+            private set => this.RaiseAndSetIfChanged(ref _selectedEntity, value);
+        }
+
+        public bool HasEntitySelection => SelectedEntity != null;
+        public int? SelectedEntityId => SelectedEntity?.Id;
+        public string? SelectedEntityTag => SelectedEntity?.Tag;
+        public bool? SelectedEntityActive => SelectedEntity?.Active;
+
+        public IReadOnlyList<string>? SelectedEntityComponents =>
+            SelectedEntity == null
+                ? null
+                : SelectedEntity.Components.Keys
+                    .Select(t => t.Name)
+                    .OrderBy(n => n)
+                    .ToList();
+
+        private void SetSelectedEntity(Entity? entity)
+        {
+            SelectedEntity = entity;
+            // Notify dependent computed properties
+            this.RaisePropertyChanged(nameof(HasEntitySelection));
+            this.RaisePropertyChanged(nameof(SelectedEntityId));
+            this.RaisePropertyChanged(nameof(SelectedEntityTag));
+            this.RaisePropertyChanged(nameof(SelectedEntityActive));
+            this.RaisePropertyChanged(nameof(SelectedEntityComponents));
+        }
     }
 }

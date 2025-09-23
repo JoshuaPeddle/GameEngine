@@ -26,18 +26,17 @@
         <Button Content="Reload Scenes"
                 Command="{Binding ReloadScenesCommand}"
                 IsEnabled="{Binding IsBusy, Converter={x:Static conv:BoolInvertConverter.Instance}, FallbackValue=True}"/>
-        <!-- NEW: Run toggle -->
         <CheckBox Content="Run"
                   IsChecked="{Binding IsEngineRunning, Mode=TwoWay}"
                   VerticalAlignment="Center"/>
         <TextBlock Text="{Binding StatusMessage}" Margin="12,0,0,0"
                    Foreground="LightGray" VerticalAlignment="Center"/>
-		<Button Content="Edit"
-		        Command="{Binding EditSceneCommand}"/>
+        <Button Content="Edit"
+                Command="{Binding EditSceneCommand}"/>
       </StackPanel>
     </Border>
 
-    <!-- Resizable / collapsible work area -->
+    <!-- Work area -->
     <Grid x:Name="WorkspaceGrid"
           Grid.Row="1"
           ColumnDefinitions="*,Auto,300"
@@ -73,15 +72,45 @@
               BorderThickness="1"
               Background="#222"
               Padding="6"
-              MinWidth="0"> <!-- allow full collapse -->
-        <StackPanel Spacing="6">
-          <TextBlock Text="Properties"
-                     FontWeight="Bold"
-                     Foreground="#DDD"/>
-          <TextBlock Text="(Add selection / inspector UI here)"
-                     Foreground="#888"
-                     TextWrapping="Wrap"/>
-        </StackPanel>
+              MinWidth="0">
+        <ScrollViewer>
+          <StackPanel Spacing="6">
+            <TextBlock Text="Properties"
+                       FontWeight="Bold"
+                       Foreground="#DDD"/>
+
+            <!-- No selection -->
+            <TextBlock Text="No entity selected."
+                       Foreground="#888"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding HasEntitySelection, Converter={x:Static conv:BoolInvertConverter.Instance}}"/>
+
+            <!-- Selected entity details -->
+            <StackPanel Spacing="4"
+                        IsVisible="{Binding HasEntitySelection}">
+              <TextBlock>
+                <Run Text="ID: "/><Run Text="{Binding SelectedEntityId}"/>
+              </TextBlock>
+              <TextBlock>
+                <Run Text="Tag: "/><Run Text="{Binding SelectedEntityTag}"/>
+              </TextBlock>
+              <TextBlock>
+                <Run Text="Active: "/><Run Text="{Binding SelectedEntityActive}"/>
+              </TextBlock>
+
+              <Separator/>
+
+              <TextBlock Text="Components" FontWeight="Bold"/>
+              <ItemsControl ItemsSource="{Binding SelectedEntityComponents}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding}"/>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
       </Border>
     </Grid>
   </Grid>

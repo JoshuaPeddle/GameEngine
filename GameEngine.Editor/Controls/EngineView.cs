@@ -36,7 +36,6 @@ namespace GameEngine.Editor.Controls
                     {
                         var transform = entity.GetComponent<Core.Components.CTransform>();
                         var sprite = entity.GetComponent<Core.Components.CAnimation>();
-                        var boundingBox = entity.GetComponent<Core.Components.CBoundingBox>();
                         var inputManager = _gameEngine.InputManager;
 
                         var realResolution = inputManager.RealResolution;
@@ -57,13 +56,13 @@ namespace GameEngine.Editor.Controls
                         double virtualX = adjustedX / finalScale;
                         double virtualY = adjustedY / finalScale;
 
-                        if (boundingBox != null)
+                        if (entity.TryGetComponent<Core.Components.CBoundingBox>(out var boundingBox))
                         {
                             var boxPos = transform.Position - (boundingBox.Size / 2);
                             if (virtualX >= boxPos.X + boundingBox.Size.X/2 && virtualX <= boxPos.X + boundingBox.Size.X *1.5 &&
                                 virtualY >= boxPos.Y + boundingBox.Size.Y/2 && virtualY <= boxPos.Y + boundingBox.Size.Y *1.5)
                             {
-                                //_vm?.EntitySelectedCommand.Execute(entity);
+                                _vm?.EntitySelectedCommand.Execute(entity).Subscribe();
                                 break;
                             }
                         }
@@ -74,7 +73,7 @@ namespace GameEngine.Editor.Controls
                             if (virtualX >= boxPos.X && virtualX <= boxPos.X + new Vec2(sprite.GetSourceRect().Size).X &&
                                 virtualY >= boxPos.Y && virtualY <= boxPos.Y + new Vec2(sprite.GetSourceRect().Size).Y)
                             {
-                                //_vm?.EntitySelectedCommand.Execute(entity);
+                                _vm?.EntitySelectedCommand.Execute(entity).Subscribe();
                                 break;
                             }
                         }
@@ -123,7 +122,8 @@ namespace GameEngine.Editor.Controls
                     _gameEngine.Systems.TryGet<RenderSystem>().options.DrawBoundingBoxes = true;
                     InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
                     _gameEngine.InitializeSystems();
-                    _gameEngine.SetRunning(_vm.IsEngineRunning); 
+                    _gameEngine.SetRunning(_vm.IsEngineRunning);
+                    _gameEngine?.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
                 }
 
                 var sceneInstance = (Scene)Activator.CreateInstance(sceneType)!;
