@@ -27,7 +27,8 @@
                 <ListBox Grid.Row="0" Grid.Column="0"
                          ItemsSource="{Binding RecentProjects}"
                          SelectedItem="{Binding SelectedRecentProject}"
-                         MinHeight="150">
+                         MinHeight="150"
+                         DoubleTapped="RecentProjects_DoubleTapped">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}"/>
