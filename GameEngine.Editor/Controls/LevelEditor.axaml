@@ -9,109 +9,149 @@
              x:Class="GameEngine.Editor.Controls.LevelEditor"
              x:DataType="vm:LevelEditorViewModel"
              d:DesignWidth="1000" d:DesignHeight="700">
-
   <Design.DataContext>
     <vm:LevelEditorViewModel />
   </Design.DataContext>
 
-  <Grid RowDefinitions="Auto,*" Margin="8">
-    <!-- Top toolbar -->
-    <Border Grid.Row="0" Background="#1E1E1E" Padding="4">
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="Scene:" VerticalAlignment="Center"/>
-        <ComboBox Width="250"
-                  ItemsSource="{Binding Scenes}"
-                  SelectedItem="{Binding SelectedScene, Mode=TwoWay}"
-                  PlaceholderText="Select a scene..." />
-        <Button Content="Reload Scenes"
-                Command="{Binding ReloadScenesCommand}"
-                IsEnabled="{Binding IsBusy, Converter={x:Static conv:BoolInvertConverter.Instance}, FallbackValue=True}"/>
-        <CheckBox Content="Run"
-                  IsChecked="{Binding IsEngineRunning, Mode=TwoWay}"
-                  VerticalAlignment="Center"/>
-        <TextBlock Text="{Binding StatusMessage}" Margin="12,0,0,0"
-                   Foreground="LightGray" VerticalAlignment="Center"/>
-        <Button Content="Edit"
-                Command="{Binding EditSceneCommand}"/>
-      </StackPanel>
-    </Border>
-
-    <!-- Work area -->
-    <Grid x:Name="WorkspaceGrid"
-          Grid.Row="1"
-          ColumnDefinitions="*,Auto,300"
-          RowDefinitions="*">
-      <!-- Viewport -->
-      <Border Grid.Column="0"
-              BorderBrush="LightGray"
-              BorderThickness="5"
-              ClipToBounds="True"
-              MinWidth="150">
-        <local:EngineView HorizontalAlignment="Stretch"
-                          VerticalAlignment="Stretch"
-                          ClipToBounds="True"/>
-      </Border>
-
-      <!-- Splitter -->
-      <GridSplitter x:Name="ViewportSplitter"
-                    Grid.Column="1"
-                    Width="5"
-                    Background="#444"
-                    HorizontalAlignment="Stretch"
-                    ResizeDirection="Columns"
-                    ResizeBehavior="BasedOnAlignment"
-                    ShowsPreview="False"
-                    Cursor="SizeWestEast"
-                    DoubleTapped="ViewportSplitter_DoubleTapped"
-                    DragCompleted="ViewportSplitter_DragCompleted"/>
-
-      <!-- Properties panel -->
-      <Border x:Name="RightPanel"
-              Grid.Column="2"
-              BorderBrush="Gray"
-              BorderThickness="1"
-              Background="#222"
-              Padding="6"
-              MinWidth="0">
-        <ScrollViewer>
-          <StackPanel Spacing="6">
-            <TextBlock Text="Properties"
-                       FontWeight="Bold"
-                       Foreground="#DDD"/>
-
-            <!-- No selection -->
-            <TextBlock Text="No entity selected."
-                       Foreground="#888"
-                       TextWrapping="Wrap"
-                       IsVisible="{Binding HasEntitySelection, Converter={x:Static conv:BoolInvertConverter.Instance}}"/>
-
-            <!-- Selected entity details -->
-            <StackPanel Spacing="4"
-                        IsVisible="{Binding HasEntitySelection}">
-              <TextBlock>
-                <Run Text="ID: "/><Run Text="{Binding SelectedEntityId}"/>
-              </TextBlock>
-              <TextBlock>
-                <Run Text="Tag: "/><Run Text="{Binding SelectedEntityTag}"/>
-              </TextBlock>
-              <TextBlock>
-                <Run Text="Active: "/><Run Text="{Binding SelectedEntityActive}"/>
-              </TextBlock>
-
-              <Separator/>
-
-              <TextBlock Text="Components" FontWeight="Bold"/>
-              <ItemsControl ItemsSource="{Binding SelectedEntityComponents}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <TextBlock Text="{Binding}"/>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
+  <TabControl>
+    <TabItem Header="Runtime">
+      <Grid RowDefinitions="Auto,*" Margin="8">
+        <Border Grid.Row="0" Background="#1E1E1E" Padding="4">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Scene:" VerticalAlignment="Center"/>
+            <ComboBox Width="250"
+                      ItemsSource="{Binding Scenes}"
+                      SelectedItem="{Binding SelectedScene, Mode=TwoWay}"
+                      PlaceholderText="Select a scene..." />
+            <Button Content="Reload Scenes"
+                    Command="{Binding ReloadScenesCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={x:Static conv:BoolInvertConverter.Instance}, FallbackValue=True}"/>
+            <CheckBox Content="Run"
+                      IsChecked="{Binding IsEngineRunning, Mode=TwoWay}"
+                      VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding StatusMessage}" Margin="12,0,0,0"
+                       Foreground="LightGray" VerticalAlignment="Center"/>
+            <Button Content="Edit"
+                    Command="{Binding EditSceneCommand}"/>
           </StackPanel>
-        </ScrollViewer>
-      </Border>
-    </Grid>
-  </Grid>
+        </Border>
+
+        <Grid x:Name="WorkspaceGrid"
+              Grid.Row="1"
+              ColumnDefinitions="*,Auto,300"
+              RowDefinitions="*">
+          <Border Grid.Column="0"
+                  BorderBrush="LightGray"
+                  BorderThickness="5"
+                  ClipToBounds="True"
+                  MinWidth="150">
+            <local:EngineView HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"
+                              ClipToBounds="True"/>
+          </Border>
+
+          <GridSplitter x:Name="ViewportSplitter"
+                        Grid.Column="1"
+                        Width="5"
+                        Background="#444"
+                        HorizontalAlignment="Stretch"
+                        ResizeDirection="Columns"
+                        ResizeBehavior="BasedOnAlignment"
+                        ShowsPreview="False"
+                        Cursor="SizeWestEast"
+                        DoubleTapped="ViewportSplitter_DoubleTapped"
+                        DragCompleted="ViewportSplitter_DragCompleted"/>
+
+          <Border x:Name="RightPanel"
+                  Grid.Column="2"
+                  BorderBrush="Gray"
+                  BorderThickness="1"
+                  Background="#222"
+                  Padding="6"
+                  MinWidth="0">
+            <ScrollViewer>
+              <StackPanel Spacing="6">
+                <TextBlock Text="Properties"
+                           FontWeight="Bold"
+                           Foreground="#DDD"/>
+                <TextBlock Text="No entity selected." Foreground="#888" TextWrapping="Wrap"
+                           IsVisible="{Binding HasEntitySelection, Converter={x:Static conv:BoolInvertConverter.Instance}}"/>
+                <StackPanel Spacing="4" IsVisible="{Binding HasEntitySelection}">
+                  <TextBlock><Run Text="ID: "/><Run Text="{Binding SelectedEntityId}"/></TextBlock>
+                  <TextBlock><Run Text="Tag: "/><Run Text="{Binding SelectedEntityTag}"/></TextBlock>
+                  <TextBlock><Run Text="Active: "/><Run Text="{Binding SelectedEntityActive}"/></TextBlock>
+                  <Separator/>
+                  <TextBlock Text="Components" FontWeight="Bold"/>
+                  <ItemsControl ItemsSource="{Binding SelectedEntityComponents}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding}"/>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </Grid>
+    </TabItem>
+
+    <TabItem Header="Level File">
+      <Grid RowDefinitions="Auto,*" Margin="8">
+        <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="0">
+          <Button Content="Load Level" Command="{Binding LoadLevelFileCommand}"/>
+          <Button Content="Save Level" Command="{Binding SaveLevelFileCommand}"/>
+          <TextBlock Text="{Binding LevelFilePath}" Foreground="#ccc" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnDefinitions="200,5,*,5,300" RowDefinitions="*">
+          <Border Grid.Column="0" BorderBrush="#444" BorderThickness="1" Padding="4">
+            <StackPanel>
+              <TextBlock Text="Entities" FontWeight="Bold"/>
+              <ListBox ItemsSource="{Binding LevelEntities}" SelectedItem="{Binding SelectedLevelEntity}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBox Text="{Binding Tag, Mode=TwoWay}" BorderThickness="0" Background="Transparent"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
+                <Button Content="+" Width="30" Command="{Binding AddEntityCommand}"/>
+                <Button Content="-" Width="30" Command="{Binding RemoveEntityCommand}"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <GridSplitter Grid.Column="1" Width="5" Background="#333" ResizeDirection="Columns"/>
+
+          <Border Grid.Column="2" BorderBrush="#444" BorderThickness="1" Padding="4">
+            <StackPanel>
+              <TextBlock Text="Components" FontWeight="Bold"/>
+              <ListBox ItemsSource="{Binding SelectedLevelEntity.Components}" SelectedItem="{Binding SelectedLevelComponent}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBox Text="{Binding Type, Mode=TwoWay}" BorderThickness="0" Background="Transparent"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
+                <Button Content="+" Width="30" Command="{Binding AddComponentCommand}"/>
+                <Button Content="-" Width="30" Command="{Binding RemoveComponentCommand}"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <GridSplitter Grid.Column="3" Width="5" Background="#333" ResizeDirection="Columns"/>
+
+          <Border Grid.Column="4" BorderBrush="#444" BorderThickness="1" Padding="4">
+            <StackPanel>
+              <TextBlock Text="Component JSON" FontWeight="Bold"/>
+              <TextBox Text="{Binding SelectedLevelComponent.RawJson, Mode=TwoWay}" AcceptsReturn="True" FontFamily="Consolas, Courier New" FontSize="12" TextWrapping="NoWrap"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Grid>
+    </TabItem>
+  </TabControl>
 </UserControl>

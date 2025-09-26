@@ -1,4 +1,4 @@
-﻿{
+{
   "metadata": {
     "name": "Training Grounds",
     "version": "1.2",
@@ -21,7 +21,7 @@
         {
           "type": "CTransform",
           "position": {
-            "x": 100,
+            "x": 1000,
             "y": 100
           },
           "rotation": 0,
@@ -106,6 +106,22 @@
           },
           "blockVision": true,
           "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "pillar",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 100,
+            "y": 300
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "Pillar"
         }
       ]
     }

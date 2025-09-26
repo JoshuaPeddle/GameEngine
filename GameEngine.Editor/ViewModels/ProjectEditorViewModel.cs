@@ -109,17 +109,13 @@ namespace GameEngine.Editor.ViewModels
             ProjectFolderPath = filePath;
             var projectFolder = Path.GetDirectoryName(ProjectFolderPath);
             if (projectFolder == null) return;
-            var assetCollection = AssetFileLoader.LoadAssetCollection(projectFolder);
-            _parentViewModel.SharedTextures.Clear();
-            _parentViewModel.SharedTextures.AddRange(assetCollection.Textures);
-            _parentViewModel.SharedAnimations.Clear();
-            _parentViewModel.SharedAnimations.AddRange(assetCollection.Animations);
-            await Task.CompletedTask;
+            var assetCollection = await AssetFileLoader.LoadAssetCollectionAsync(projectFolder);
+            _parentViewModel.LoadAssetCollection(assetCollection);
         }
 
         public async Task SaveProject()
         {
-            var assetCollection = new AssetCollection([.. _parentViewModel.SharedTextures], [.. _parentViewModel.SharedAnimations]);
+            var assetCollection = new AssetCollection([.. _parentViewModel.SharedTextures], [.. _parentViewModel.SharedAnimations], [.. _parentViewModel.SharedSounds]);
             var projectFolder = Path.GetDirectoryName(ProjectFolderPath);
             if (projectFolder != null)
                 await AssetFileWriter.WriteAssetFilesAsync(projectFolder, assetCollection);

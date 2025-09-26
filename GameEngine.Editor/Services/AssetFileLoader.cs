@@ -7,13 +7,13 @@ namespace GameEngine.Editor.Services
 {
     public static class AssetFileLoader
     {
-        public static AssetCollection LoadAssetCollection(string projectFileFolder)
+        public async static Task<AssetCollection> LoadAssetCollectionAsync(string projectFileFolder)
         {
             string assetFilePath = Path.Combine(projectFileFolder, "assets.txt");
             if (!File.Exists(assetFilePath))
-                return new AssetCollection([], []);
-            string[] lines = File.ReadAllLines(assetFilePath);
-            AssetCollection assetCollection = new([], []);
+                return new AssetCollection([], [], []);
+            string[] lines = await File.ReadAllLinesAsync(assetFilePath);
+            AssetCollection assetCollection = new([], [], []);
             foreach (string line in lines)
             {
                 string[] parts = line.Split(' ');
@@ -38,6 +38,11 @@ namespace GameEngine.Editor.Services
                     int frameCount = int.Parse(parts[3]);
                     int delay = int.Parse(parts[4]);
                     assetCollection.Animations.Add(new Animation(assetName, texture, frameCount, delay));
+                }
+                else if (assetType == "Sound") // Sound [Name] [Path[
+                {
+                    string soundPath = Path.Combine(projectFileFolder, "assets", parts[2]);
+                    assetCollection.Sounds.Add(new Sound(assetName, soundPath));
 
                 }
             }

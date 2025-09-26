@@ -10,9 +10,8 @@ using GameEngine.Core.Systems;
 using GameEngine.Editor.ViewModels;
 using SkiaSharp;
 using System;
-using System.ComponentModel; // NEW
+using System.ComponentModel; 
 using System.IO;
-using System.Threading.Tasks;
 
 namespace GameEngine.Editor.Controls
 {
@@ -28,8 +27,8 @@ namespace GameEngine.Editor.Controls
             DataContextChanged += OnDataContextChanged;
             PointerPressed += (s, e) => 
             {
-                var entityManager = _gameEngine.EntityManager.GetEntities();
-                // Try to find the entity under the pointer
+                var entityManager = _gameEngine?.EntityManager.GetEntities();
+                if (entityManager == null || _vm == null) return;
                 foreach (var entity in entityManager)
                 {
                     if (entity.HasComponent<Core.Components.CTransform>() && entity.HasComponent<Core.Components.CAnimation>())
@@ -68,7 +67,6 @@ namespace GameEngine.Editor.Controls
                         }
                         else
                         {
-                            // Fallback to sprite size if no bounding box
                             var boxPos = transform.Position - new Vec2(sprite.GetSourceRect().Size);
                             if (virtualX >= boxPos.X && virtualX <= boxPos.X + new Vec2(sprite.GetSourceRect().Size).X &&
                                 virtualY >= boxPos.Y && virtualY <= boxPos.Y + new Vec2(sprite.GetSourceRect().Size).Y)

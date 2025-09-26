@@ -25,6 +25,14 @@ namespace GameEngine.Editor.Services
                 string animationLine = $"Animation {animation.Name} {textureName} {animation.FrameCount} {animation.Delay}";
                 sb.AppendLine(animationLine);
             }
+
+            foreach (Sound sound in assetCollection.Sounds)
+            {
+                string soundRelativePath = Path.Combine("sounds", Path.GetFileName(sound.Path)).Replace("\\", "/");
+                string soundLine = $"Sound {sound.Name} {soundRelativePath}";
+                sb.AppendLine(soundLine);
+            }
+
             string assetFilePath = Path.Combine(projectFolder, "assets.txt");
             await File.WriteAllTextAsync(assetFilePath, sb.ToString());
 
@@ -33,12 +41,12 @@ namespace GameEngine.Editor.Services
 
         private static string GetTextureAssetFilePath(Texture texture)
         {
-            return Path.Combine("textures", Path.GetFileName(texture.Path)).Replace("\\", "/");
+            return Path.Combine("images", Path.GetFileName(texture.Path)).Replace("\\", "/");
         }
 
         private static string GetTextureRelativePath(Texture texture)
         {
-            return Path.Combine("assets", "textures", Path.GetFileName(texture.Path));
+            return Path.Combine("assets", "images", Path.GetFileName(texture.Path));
         }
 
         private static async Task CopyTexturesToAssetsFolderAsync(string projectFolder, List<Texture> textures)
@@ -83,12 +91,12 @@ namespace GameEngine.Editor.Services
     {
         public List<Texture> Textures { get; }
         public List<Animation> Animations { get; }
-
-        // Additional asset types can be added here
-        public AssetCollection(List<Texture> textures, List<Animation> animations)
+        public List<Sound> Sounds { get; }
+        public AssetCollection(List<Texture> textures, List<Animation> animations, List<Sound> sounds)
         {
             Textures = textures;
             Animations = animations;
+            Sounds = sounds;
         }
     }
 }

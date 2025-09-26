@@ -1,4 +1,4 @@
-﻿Texture TexJeep images/jeep.png
+Texture TexJeep images/jeep.png
 Texture TexGrenade images/grenade.png
 Texture TexStoneBlock images/stoneBlock.png
 Texture TexSnakeHead images/snakeHead.png
@@ -6,12 +6,12 @@ Texture TexSnakeBody images/snakeBody.png
 Texture TexSnakeFood images/snakeFood.png
 Texture TexQuadBlock images/quadBlock.png
 Texture TexBrickBlock images/brickBlock.png
-Texture TexBall images/snake/ball.png
-Texture TexPaddle images/snake/paddle.png
-Texture TexWallHorizontal images/snake/wallHorizontal.png
-Texture TexWallVertical images/snake/wallVertical.png
+Texture TexBall images/ball.png
+Texture TexPaddle images/paddle.png
+Texture TexWallHorizontal images/wallHorizontal.png
+Texture TexWallVertical images/wallVertical.png
 Texture TexAimer images/aimer.png
-
+Texture TextPillar images/Pillar.png
 Animation Grenade TexGrenade 4 250
 Animation JeepBack TexJeep 1 1
 Animation StoneBlock TexStoneBlock 1 0
@@ -27,6 +27,6 @@ Animation Paddle TexPaddle 1 1
 Animation WallHorizontal TexWallHorizontal 1 1
 Animation WallVertical TexWallVertical 1 1
 Animation Aimer TexAimer 1 1
-
+Animation Pillar TextPillar 1 0
 Sound Hit sounds/hit.wav
 Sound Level1 sounds/level1.wav

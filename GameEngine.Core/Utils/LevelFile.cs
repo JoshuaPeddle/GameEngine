@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
+﻿using System.Text.Json;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
+using System.Text;
 
 namespace GameEngine.Core.Utils
 {
@@ -18,6 +16,17 @@ namespace GameEngine.Core.Utils
     {
         public string Tag { get; set; } = string.Empty;
         public List<ComponentData> Components { get; set; } = new();
+
+        public static Entity ToEntity (EntityData entityData, EntityManager entityManager, ComponentFactory componentFactory)
+        {
+            var entity = entityManager.CreateEntity(entityData.Tag);
+            foreach (var componentData in entityData.Components)
+            {
+                var component = componentFactory.CreateComponent(componentData.Type, componentData.Data);
+                entity.AddComponent(component);
+            }
+            return entity;
+        }
     }
 
     public class LevelMetadata
@@ -58,56 +67,50 @@ namespace GameEngine.Core.Utils
                 ReadCommentHandling = JsonCommentHandling.Skip
             };
 
-            // Parse the JSON manually to handle the component data structure
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
-            
+
             var levelFile = new LevelFile();
-            
-            // Handle metadata if present
+
             if (root.TryGetProperty("metadata", out var metadataElement))
             {
                 levelFile.Metadata = JsonSerializer.Deserialize<LevelMetadata>(metadataElement, options) ?? new LevelMetadata();
             }
-            
-            // Get entities array (either from "entities" property or root if it's just an array)
+
             JsonElement entitiesElement;
             if (root.TryGetProperty("entities", out entitiesElement))
             {
-                // New format with metadata
+                // metadata format
             }
             else if (root.ValueKind == JsonValueKind.Array)
             {
-                // Direct array format
                 entitiesElement = root;
             }
             else
             {
                 throw new InvalidDataException("Invalid level format - expected entities array");
             }
-            
-            // Parse entities
+
             foreach (var entityElement in entitiesElement.EnumerateArray())
             {
                 var entityData = new EntityData
                 {
                     Tag = entityElement.GetProperty("tag").GetString() ?? throw new InvalidDataException("Entity tag is required")
                 };
-                
-                // Parse components
+
                 foreach (var componentElement in entityElement.GetProperty("components").EnumerateArray())
                 {
                     var componentData = new ComponentData
                     {
                         Type = componentElement.GetProperty("type").GetString() ?? throw new InvalidDataException("Component type is required"),
-                        Data = componentElement.Clone() // Store the entire component JSON
+                        Data = componentElement.Clone()
                     };
                     entityData.Components.Add(componentData);
                 }
-                
+
                 levelFile.Entities.Add(entityData);
             }
-            
+
             return levelFile;
         }
 
@@ -119,13 +122,41 @@ namespace GameEngine.Core.Utils
 
         public string ToJson()
         {
-            var options = new JsonSerializerOptions
+            // Custom writer so that each component is written as its raw JSON (without wrapping inside a "data" object)
+            var writerOptions = new JsonWriterOptions { Indented = true };
+            using var ms = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(ms, writerOptions))
             {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+                writer.WriteStartObject();
 
-            return JsonSerializer.Serialize(this, options);
+                // metadata
+                writer.WritePropertyName("metadata");
+                JsonSerializer.Serialize(writer, Metadata, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+                // entities
+                writer.WritePropertyName("entities");
+                writer.WriteStartArray();
+                foreach (var entity in Entities)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("tag", entity.Tag);
+
+                    writer.WritePropertyName("components");
+                    writer.WriteStartArray();
+                    foreach (var comp in entity.Components)
+                    {
+                        // comp.Data already includes the component object with its own "type" and properties
+                        comp.Data.WriteTo(writer);
+                    }
+                    writer.WriteEndArray();
+
+                    writer.WriteEndObject();
+                }
+                writer.WriteEndArray();
+
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(ms.ToArray());
         }
 
         // Validation methods
@@ -157,7 +188,6 @@ namespace GameEngine.Core.Utils
             specialEntityHandlers = new Dictionary<string, Action<Entity, InputManager, AudioSystem?>>
             {
                 { "player", HandlePlayerEntity }
-                // Add more special entity handlers here
             };
         }
 
@@ -168,8 +198,7 @@ namespace GameEngine.Core.Utils
             foreach (var entityData in levelFile.Entities)
             {
                 var entity = CreateEntity(entityData, entityManager);
-                
-                // Handle special entity types
+
                 if (specialEntityHandlers.TryGetValue(entityData.Tag, out var handler))
                 {
                     handler(entity, inputManager!, audioSystem);
@@ -197,12 +226,9 @@ namespace GameEngine.Core.Utils
             return entity;
         }
 
-        // Special handlers for entities that need extra setup
         private void HandlePlayerEntity(Entity entity, InputManager inputManager, AudioSystem? audioSystem)
         {
             if (!entity.HasComponent<CInput>()) return;
-
-            // Map input actions
             MapInputActions(entity, inputManager, audioSystem);
         }
 
@@ -212,7 +238,7 @@ namespace GameEngine.Core.Utils
             inputManager.ActionMapper.MapActionToComponent<CInput>("Down", entity, (input, isActive) => input.Down = isActive, true);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Left", entity, (input, isActive) => input.Left = isActive, true);
             inputManager.ActionMapper.MapActionToComponent<CInput>("Right", entity, (input, isActive) => input.Right = isActive, true);
-            
+
             if (audioSystem != null)
             {
                 inputManager.ActionMapper.MapActionToComponent<CInput>("PlaySound", entity, (input, isActive) =>
@@ -225,7 +251,6 @@ namespace GameEngine.Core.Utils
             }
         }
 
-        // Allow adding custom entity handlers at runtime
         public void RegisterEntityHandler(string entityTag, Action<Entity, InputManager, AudioSystem?> handler)
         {
             specialEntityHandlers[entityTag] = handler;
