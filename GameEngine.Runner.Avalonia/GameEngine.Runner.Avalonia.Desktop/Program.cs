@@ -17,11 +17,11 @@ namespace GameEngine.Runner.Avalonia.Desktop
             => AppBuilder.Configure<App>()
                 .With(new Win32PlatformOptions
                 {
-                    RenderingMode = [Win32RenderingMode.AngleEgl]
+                    RenderingMode = [Win32RenderingMode.Wgl, Win32RenderingMode.Vulkan, Win32RenderingMode.AngleEgl]// , ,
                 })
                 .With(new X11PlatformOptions 
                 { 
-                    RenderingMode = [X11RenderingMode.Vulkan] 
+                    RenderingMode = [X11RenderingMode.Egl, X11RenderingMode.Vulkan] 
                 })
                 .UsePlatformDetect()
                 .LogToTrace();
