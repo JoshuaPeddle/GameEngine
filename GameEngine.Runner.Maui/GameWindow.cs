@@ -38,7 +38,7 @@ namespace GameEngine.Runner.Maui
             }, audioEnabled: false);
 
             _gameEngine.ChangeScene(new ScenePong());
-
+            _gameEngine.TargetFrameRate = 1440;
             Content = canvasView;
             ConfigureKeyEvents();
             _keyboardHook.RunAsync();

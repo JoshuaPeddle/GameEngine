@@ -148,9 +148,11 @@ namespace GameEngine.Core
                         Thread.Sleep((int)remainingMs - 1);
                     }
 
+                    int spinCount = 32; 
                     while ((stopwatch.Elapsed.TotalMilliseconds - frameStartMs) < frameDurationMs)
                     {
-                        Thread.SpinWait(64);
+                        Thread.SpinWait(spinCount); 
+                        spinCount = Math.Min(((int)Math.Floor(spinCount * 1.5)), 1024);
                         Thread.Yield();
                     }
                 }
