@@ -8,6 +8,8 @@ using SharpHook.Native;
 using GameEngine.Core;
 using GameEngine.Demo;
 using GameEngine.Core.Systems;
+using Microsoft.Maui.ApplicationModel;
+using System.Threading;
 
 namespace GameEngine.Runner.Maui
 {
@@ -16,20 +18,32 @@ namespace GameEngine.Runner.Maui
         private Engine _gameEngine;
         SimpleReactiveGlobalHook _keyboardHook;
 
+        private int _invalidationsPending = 0;
+
         public HelloBitmapPage()
         {
             SKCanvasView canvasView = new SKCanvasView();
             canvasView.PaintSurface += OnCanvasViewPaintSurface;
 
-            _gameEngine = new Engine(canvasView.InvalidateSurface);
+            _gameEngine = new Engine(() =>
+            {
+                if (Interlocked.Exchange(ref _invalidationsPending, 1) == 0)
+                {
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        _invalidationsPending = 0;
+                        canvasView.InvalidateSurface();
+                    });
+                }
+            }, audioEnabled: false);
 
-            _gameEngine.ChangeScene(new SceneSnake());
-
+            _gameEngine.ChangeScene(new ScenePong());
+            _gameEngine.TargetFrameRate = 1440;
             Content = canvasView;
             ConfigureKeyEvents();
             _keyboardHook.RunAsync();
-            _gameEngine.Start(); // Dont await this, it will block the UI thread
 
+            _gameEngine.Start(); // Dont await this, it will block the UI thread
         }
 
         public void ConfigureKeyEvents()
@@ -71,6 +85,9 @@ namespace GameEngine.Runner.Maui
             SKCanvas canvas = surface.Canvas;
 
             _gameEngine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+
+            // Resume updates after first visible frame of a new scene
+            _gameEngine.NotifyFirstPresent();
         }
     }
 }

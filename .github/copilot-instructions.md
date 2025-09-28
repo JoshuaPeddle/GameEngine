@@ -42,8 +42,7 @@ Best practices (do/avoid)
 Common extensions (how to implement)
 - New Component: create GameEngine.Core/Components/MyComponent.cs, derive from Component, add data fields/properties only.
 - New System: create GameEngine.Core/Systems/MySystem.cs implementing ISystem.Update. Query entities via EntityManager, convert deltaMs to seconds if needed, mutate component data.
-- Scene logic: in Initialize, create entities via em.CreateEntity(tag), add required components. Use provided AudioSystem via Initialize parameter if present.
-- Rendering feature flag: extend RenderOptions and handle in RenderSystem with minimal branching.
+s
 
 Notes
 - Target frameworks: .NET 8/9. Use modern C# features already present (records/readonly structs, target-typed new, collection expressions).

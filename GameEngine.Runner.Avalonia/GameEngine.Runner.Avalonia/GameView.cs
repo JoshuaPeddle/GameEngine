@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using static GameEngine.Core.Pointer;
+using Avalonia.Threading;
+using System.Threading;
 
 namespace GameEngine.Runner.Avalonia
 {
@@ -24,16 +26,20 @@ namespace GameEngine.Runner.Avalonia
         private readonly SimpleReactiveGlobalHook _keyboardHook;
 
         private Point? _pointerStartPosition;
-        private const double SwipeThreshold = 20.0; 
+        private const double SwipeThreshold = 20.0;
+
+        private int _invalidationsPending = 0;
+        private bool _started;
 
         public GameView()
         {
             IsHitTestVisible = true;
 
             if (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser())
-                _gameEngine = new Engine(InvalidateVisual, audioEnabled: false);
+                _gameEngine = new Engine(QueueInvalidate, audioEnabled: false);
             else
-                _gameEngine = new Engine(InvalidateVisual);
+                _gameEngine = new Engine(QueueInvalidate);
+
             _gameEngine.ChangeScene(new SceneMenu());
 
             if (!OperatingSystem.IsBrowser())
@@ -50,9 +56,27 @@ namespace GameEngine.Runner.Avalonia
             Loaded += OnSizeChanged;
             SizeChanged += OnSizeChanged;
 
-            _gameEngine.Start();
+            AttachedToVisualTree += (_, __) =>
+            {
+                if (_started) return;
+                _started = true;
+
+                _gameEngine.TargetFrameRate = OperatingSystem.IsBrowser() ? 60 : 14400;
+                _gameEngine.Start();
+            };
         }
 
+        private void QueueInvalidate()
+        {
+            if (Interlocked.Exchange(ref _invalidationsPending, 1) == 0)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _invalidationsPending = 0;
+                    InvalidateVisual();
+                }, DispatcherPriority.Render);
+            }
+        }
 
         private void OnSizeChanged(object? sender, EventArgs args)
         {
@@ -81,28 +105,22 @@ namespace GameEngine.Runner.Avalonia
             {
                 var endPosition = e.GetPosition(this);
                 _gameEngine.Systems.Get<InputSystem>().PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
-                
+
                 var startPosition = _pointerStartPosition.Value;
 
                 var deltaX = endPosition.X - startPosition.X;
                 var deltaY = endPosition.Y - startPosition.Y;
                 var distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
 
-                // If the distance is small, consider it a tap
                 if (distance < SwipeThreshold)
                 {
-                    Console.WriteLine("Tap detected - Space key");
                     _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.Space);
-                    // Simulate key up after a brief delay to mimic key press behavior
                     Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.Space));
                 }
-                // Otherwise it's a swipe - determine direction
                 else
                 {
-                    // Determine if horizontal or vertical swipe based on which delta is larger
                     if (Math.Abs(deltaX) > Math.Abs(deltaY))
                     {
-                        // Horizontal swipe
                         if (deltaX > 0)
                         {
                             _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.D);
@@ -116,7 +134,6 @@ namespace GameEngine.Runner.Avalonia
                     }
                     else
                     {
-                        // Vertical swipe
                         if (deltaY > 0)
                         {
                             _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.S);
@@ -195,6 +212,9 @@ namespace GameEngine.Runner.Avalonia
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
             _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+
+            // Resume updates immediately after first visible frame
+            _engine.NotifyFirstPresent();
         }
     }
 }

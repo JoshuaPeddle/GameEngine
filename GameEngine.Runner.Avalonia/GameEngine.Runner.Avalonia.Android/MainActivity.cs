@@ -17,6 +17,10 @@ namespace GameEngine.Runner.Avalonia.Android
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
             App._fileFetcher = LoadFile;
+            builder.With (new AndroidPlatformOptions
+            {
+                RenderingMode = [AndroidRenderingMode.Egl]
+            });
             return base.CustomizeAppBuilder(builder);
         }
 

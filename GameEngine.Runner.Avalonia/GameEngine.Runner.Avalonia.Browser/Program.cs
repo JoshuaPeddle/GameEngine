@@ -46,6 +46,11 @@ internal sealed partial class Program
         App._fileFetcher = LoadFile;
 
         return BuildAvaloniaApp()
+            .With(new BrowserPlatformOptions
+            {
+                RenderingMode = [BrowserRenderingMode.WebGL2, BrowserRenderingMode.WebGL1, BrowserRenderingMode.Software2D],
+            })
+            .UseSkia()
             .StartBrowserAppAsync("out");
     }
 

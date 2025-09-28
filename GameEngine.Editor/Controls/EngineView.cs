@@ -12,6 +12,7 @@ using SkiaSharp;
 using System;
 using System.ComponentModel; 
 using System.IO;
+using System.Threading;
 
 namespace GameEngine.Editor.Controls
 {
@@ -20,6 +21,9 @@ namespace GameEngine.Editor.Controls
         private Engine? _gameEngine;
         private bool _started;
         private LevelEditorViewModel? _vm;
+
+        // Coalesce pending invalidations
+        private int _invalidationsPending = 0;
 
         public EngineView()
         {
@@ -116,8 +120,12 @@ namespace GameEngine.Editor.Controls
             {
                 if (_gameEngine == null)
                 {
-                    _gameEngine = new Engine(InvalidateVisual, audioEnabled: false);
+                    if (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser())
+                        _gameEngine = new Engine(QueueInvalidate, audioEnabled: false);
+                    else
+                        _gameEngine = new Engine(QueueInvalidate);
                     _gameEngine.Systems.TryGet<RenderSystem>().options.DrawBoundingBoxes = true;
+                    _gameEngine.TargetFrameRate = 120;
                     InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
                     _gameEngine.InitializeSystems();
                     _gameEngine.SetRunning(_vm.IsEngineRunning);
@@ -133,6 +141,18 @@ namespace GameEngine.Editor.Controls
                     await _gameEngine.Start();
                 }
             });
+        }
+
+        private void QueueInvalidate()
+        {
+            if (Interlocked.Exchange(ref _invalidationsPending, 1) == 0)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _invalidationsPending = 0;
+                    InvalidateVisual();
+                }, DispatcherPriority.Render);
+            }
         }
 
         private static void InitializeAssetFileFetcher(string projectCsprojPath)
@@ -186,10 +206,13 @@ namespace GameEngine.Editor.Controls
 
                 canvas.Save();
                 canvas.ClipRect(new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
-
+                
                 _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
 
                 canvas.Restore();
+
+                // Resume updates after first visible frame of a new scene
+                _engine.NotifyFirstPresent();
             }
         }
     }
