@@ -24,7 +24,7 @@ public partial class CodeEditor : Window
     {
         InitializeComponent();
         Unloaded += (_, _) => _disposables.Dispose();
-        KeyDown += OnKeyDown;
+        KeyDown += async (sender, e) => await OnKeyDown(sender, e);
         // Defer TextMate init until we know the file extension
     }
 
@@ -104,7 +104,7 @@ public partial class CodeEditor : Window
         }
     }
 
-    private void OnKeyDown(object? sender, KeyEventArgs e)
+    private async Task OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is CodeEditorViewModel vm &&
             e.Key == Key.S &&
@@ -118,7 +118,7 @@ public partial class CodeEditor : Window
                 return;
             }
 
-            if (vm.SaveCommand.CanExecute.FirstAsync().Wait())
+            if (await vm.SaveCommand.CanExecute.FirstAsync())
             {
                 vm.SaveCommand.Execute().Subscribe();
             }
