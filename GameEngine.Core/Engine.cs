@@ -74,11 +74,14 @@ namespace GameEngine.Core
                 return StartAsyncLoopBrowser();
             }
 
-            Task.Factory.StartNew(
-                RunLoop,
-                CancellationToken.None,
-                TaskCreationOptions.LongRunning,
-                TaskScheduler.Default);
+            // Use dedicated thread with high priority for better frame timing
+            var thread = new Thread(RunLoop)
+            {
+                Name = "GameEngine-Main",
+                IsBackground = true,
+                Priority = ThreadPriority.AboveNormal
+            };
+            thread.Start();
 
             return Task.CompletedTask;
         }
