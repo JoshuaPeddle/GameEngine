@@ -2,14 +2,28 @@
 using System;
 using System.IO;
 using System.Reactive;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 
 namespace GameEngine.Editor.ViewModels
 {
     internal class CodeEditorViewModel : ViewModelBase
     {
-        private readonly string _filePath;
-        public string FilePath => _filePath;
+        private string _filePath;
+        public string FilePath
+        {
+            get => _filePath;
+            private set => this.RaiseAndSetIfChanged(ref _filePath, value);
+        }
+
+        public string WindowTitle
+        {
+            get
+            {
+                var name = string.IsNullOrWhiteSpace(FilePath) ? "(untitled)" : Path.GetFileName(FilePath);
+                return ($"{(IsDirty ? "*" : string.Empty)}{name} - Code Editor");
+            }
+        }
 
         private string _sourceCode = "// Loading...";
         public string SourceCode
@@ -17,10 +31,13 @@ namespace GameEngine.Editor.ViewModels
             get => _sourceCode;
             set
             {
-                var s = this.RaiseAndSetIfChanged(ref _sourceCode, value);
-                if (!string.IsNullOrWhiteSpace(s))
+                if (!string.Equals(value, _sourceCode, StringComparison.Ordinal))
                 {
-                    if (_initialized) IsDirty = true;
+                    this.RaiseAndSetIfChanged(ref _sourceCode, value);
+                    if (_initialized)
+                    {
+                        IsDirty = true;
+                    }
                 }
             }
         }
@@ -29,7 +46,11 @@ namespace GameEngine.Editor.ViewModels
         public bool IsDirty
         {
             get => _isDirty;
-            private set => this.RaiseAndSetIfChanged(ref _isDirty, value);
+            internal set
+            {
+                this.RaiseAndSetIfChanged(ref _isDirty, value);
+                this.RaisePropertyChanged(nameof(WindowTitle));
+            }
         }
 
         private bool _isBusy;
@@ -46,7 +67,9 @@ namespace GameEngine.Editor.ViewModels
         public CodeEditorViewModel(string filePath)
         {
             _filePath = filePath;
-            SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, this.WhenAnyValue(v => v.IsDirty));
+            // Can save only when dirty and not busy
+            SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync,
+                this.WhenAnyValue(v => v.IsDirty, v => v.IsBusy, (dirty, busy) => dirty && !busy));
         }
 
         public CodeEditorViewModel() : this("Program.cs") { }
@@ -56,14 +79,18 @@ namespace GameEngine.Editor.ViewModels
             try
             {
                 IsBusy = true;
-                if (File.Exists(_filePath))
+                if (!string.IsNullOrWhiteSpace(FilePath) && File.Exists(FilePath))
                 {
-                    var text = await File.ReadAllTextAsync(_filePath);
+                    var text = await File.ReadAllTextAsync(FilePath);
                     SourceCode = string.IsNullOrEmpty(text) ? "// (File is empty)" : text;
+                }
+                else if (!string.IsNullOrWhiteSpace(FilePath))
+                {
+                    SourceCode = $"// File not found: {FilePath}";
                 }
                 else
                 {
-                    SourceCode = $"// File not found: {_filePath}";
+                    SourceCode = "// New file";
                 }
                 IsDirty = false;
                 _initialized = true;
@@ -78,12 +105,48 @@ namespace GameEngine.Editor.ViewModels
             }
         }
 
+        public void SetFilePath(string newPath)
+        {
+            FilePath = newPath;
+            this.RaisePropertyChanged(nameof(WindowTitle));
+        }
+
+        public void MarkSaved(string? newPath = null)
+        {
+            if (!string.IsNullOrWhiteSpace(newPath))
+            {
+                SetFilePath(newPath);
+            }
+            IsDirty = false;
+        }
+
+        public async Task SaveToAsync(string path)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(path)) return;
+                IsBusy = true;
+                await File.WriteAllTextAsync(path, SourceCode ?? string.Empty);
+                SetFilePath(path);
+                IsDirty = false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Save failed: " + ex);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         private async Task SaveAsync()
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(_filePath)) return;
-                await File.WriteAllTextAsync(_filePath, SourceCode ?? string.Empty);
+                if (string.IsNullOrWhiteSpace(FilePath)) return;
+                IsBusy = true;
+                await File.WriteAllTextAsync(FilePath, SourceCode ?? string.Empty);
                 IsDirty = false;
                 // Hook: trigger scene incremental compile here if applicable.
             }
@@ -91,6 +154,10 @@ namespace GameEngine.Editor.ViewModels
             {
                 // Optionally expose a StatusMessage property.
                 Console.WriteLine("Save failed: " + ex);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
     }

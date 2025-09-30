@@ -31,7 +31,15 @@ namespace GameEngine.Editor.ViewModels
         public AnimationEditorViewModel(AssetEditorViewModel parentViewModel)
         {
             _parentViewModel = parentViewModel;
-            SaveAnimationCommand = ReactiveCommand.Create(SaveAnimation);
+            SaveAnimationCommand = ReactiveCommand.Create(
+                SaveAnimation,
+                this.WhenAnyValue(
+                    x => x.SelectedTexture,
+                    x => x.AnimationName,
+                    x => x.FrameCount,
+                    (texture, name, count) => texture != null && !string.IsNullOrWhiteSpace(name) && count > 0
+                )
+            );
         }
 
         public AnimationEditorViewModel() // Designer constructor

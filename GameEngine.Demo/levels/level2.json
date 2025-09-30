@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "name": "Level 2",
+    "version": "1.0",
+    "description": "A simple level for learning basic movement and interaction",
+    "properties": {
+      "difficulty": "easy"
+    }
+  },
+  "entities": [
+    {
+      "tag": "Entity1",
+      "components": [
+        {
+          "type": "CTransform"
+        }
+      ]
+    }
+  ]
+}
