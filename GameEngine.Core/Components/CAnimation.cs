@@ -14,6 +14,8 @@ namespace GameEngine.Core.Components
         }
 
         public SKBitmap Texture => animation.Texture;
+        public bool ShouldDraw { get; set; } = true;
+
         public SKRect GetSourceRect()
         {
             return animation.GetSourceRect(elapsedTime);

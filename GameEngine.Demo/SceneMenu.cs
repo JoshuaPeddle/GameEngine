@@ -3,6 +3,7 @@ using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GameEngine.Demo
 {
@@ -11,7 +12,15 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 800;
         public override int VirtualHeight => scenes.Count * 100 + 100;
 
-        readonly List<(string,Lazy<Scene>)> scenes =
+        private const int SceneMenuX = 400;
+        private const int FpsMenuX = 650;
+        private const int MenuStartY = 100;
+        private const int SceneItemYSpacing = 100;
+        private const int FpsItemYSpacing = 50;
+        private const int SceneFontSize = 24;
+        private const int FpsFontSize = 20;
+
+        private readonly List<(string, Lazy<Scene>)> scenes =
         [
             ("Basic", new Lazy<Scene>(() => new SceneBasic())),
             ("Snake", new Lazy<Scene>(() => new SceneSnake())),
@@ -25,53 +34,136 @@ namespace GameEngine.Demo
             ("Pointer", new Lazy<Scene>(() => new ScenePointer())),
         ];
 
+        private readonly int[] fpsOptions = [10, 60, 120, 144, 240, 500, 1000, 10000];
+        private bool isOnFpsMenu = false;
+
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
         {
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.Space, "Go");
+            inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.AddAction(GeKeys.A, "Left");
 
-            for (int i = 0; i < scenes.Count; i++)
+            // Create menu items
+            CreateMenuItems(entityManager, scenes.Select(s => s.Item1), new Vec2(SceneMenuX, MenuStartY), SceneItemYSpacing, SceneFontSize, "scene");
+            CreateMenuItems(entityManager, fpsOptions.Select(f => f.ToString()), new Vec2(FpsMenuX, MenuStartY), FpsItemYSpacing, FpsFontSize, "fps");
+
+            // Create FPS menu title
+            var fpsTitle = entityManager.CreateEntity("fpsTitle");
+            fpsTitle.AddComponent(new CTransform(new Vec2(FpsMenuX, 50)));
+            fpsTitle.AddComponent(new CText("FPS Control:", FpsFontSize));
+
+            // Create cursors
+            var sceneCursor = entityManager.CreateEntity("cursor");
+            sceneCursor.AddComponent(new CTransform(new Vec2(SceneMenuX - 100, MenuStartY)));
+            sceneCursor.AddComponent(new CText(">", SceneFontSize));
+
+            var fpsCursor = entityManager.CreateEntity("fpsCursor");
+            fpsCursor.AddComponent(new CTransform(new Vec2(FpsMenuX - 50, MenuStartY)));
+            fpsCursor.AddComponent(new CText(">", FpsFontSize) { ShouldDraw = false });
+
+            // Menu navigation
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Right", sceneCursor, (transform, isActive)  =>
             {
-                var entity = entityManager.CreateEntity("scene" + i);
-                entity.AddComponent(new CTransform(new Vec2(400, 100 + i * 100)));
-                entity.AddComponent(new CText(scenes[i].Item1, 24));
+                if (isActive && !isOnFpsMenu)
+                {
+                    isOnFpsMenu = true;
+                    SetMenuVisibility(entityManager, true);
+                }
+            }, oneShot: true);
+
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Left", sceneCursor, (transform, isActive) =>
+            {
+                if (isActive && isOnFpsMenu)
+                {
+                    isOnFpsMenu = false;
+                    SetMenuVisibility(entityManager, false);
+                }
+            }, oneShot: true);
+
+            // Scene menu actions
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Up", sceneCursor, (transform, isActive) =>
+            {
+                if (isActive && !isOnFpsMenu)
+                {
+                    int currentIndex = (int)(transform.Position.Y - MenuStartY) / SceneItemYSpacing;
+                    int newIndex = (currentIndex - 1 + scenes.Count) % scenes.Count;
+                    transform.Position = new Vec2(transform.Position.X, MenuStartY + newIndex * SceneItemYSpacing);
+                }
+            }, oneShot: true);
+
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Down", sceneCursor, (transform, isActive) =>
+            {
+                if (isActive && !isOnFpsMenu)
+                {
+                    int currentIndex = (int)(transform.Position.Y - MenuStartY) / SceneItemYSpacing;
+                    int newIndex = (currentIndex + 1) % scenes.Count;
+                    transform.Position = new Vec2(transform.Position.X, MenuStartY + newIndex * SceneItemYSpacing);
+                }
+            }, oneShot: true);
+
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Go", sceneCursor, (transform, isActive) =>
+            {
+                if (isActive && !isOnFpsMenu)
+                {
+                    int selectedIndex = (int)(transform.Position.Y - MenuStartY) / SceneItemYSpacing;
+                    ResetScene(scenes[selectedIndex].Item2.Value);
+                }
+            }, oneShot: true);
+
+            // FPS menu actions
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Up", fpsCursor, (transform, isActive) =>
+            {
+                if (isActive && isOnFpsMenu)
+                {
+                    int currentIndex = (int)(transform.Position.Y - MenuStartY) / FpsItemYSpacing;
+                    int newIndex = (currentIndex - 1 + fpsOptions.Length) % fpsOptions.Length;
+                    transform.Position = new Vec2(transform.Position.X, MenuStartY + newIndex * FpsItemYSpacing);
+                }
+            }, oneShot: true);
+
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Down", fpsCursor, (transform, isActive) =>
+            {
+                if (isActive && isOnFpsMenu)
+                {
+                    int currentIndex = (int)(transform.Position.Y - MenuStartY) / FpsItemYSpacing;
+                    int newIndex = (currentIndex + 1) % fpsOptions.Length;
+                    transform.Position = new Vec2(transform.Position.X, MenuStartY + newIndex * FpsItemYSpacing);
+                }
+            }, oneShot: true);
+
+            inputManager.ActionMapper.MapActionToComponent<CTransform>("Go", fpsCursor, (transform, isActive) =>
+            {
+                if (isActive && isOnFpsMenu)
+                {
+                    int selectedIndex = (int)(transform.Position.Y - MenuStartY) / FpsItemYSpacing;
+                    Engine.TargetFrameRate = fpsOptions[selectedIndex];
+                }
+            }, oneShot: true);
+        }
+
+        private void CreateMenuItems(EntityManager entityManager, IEnumerable<string> items, Vec2 startPosition, float ySpacing, int fontSize, string tagPrefix)
+        {
+            int i = 0;
+            foreach (var itemText in items)
+            {
+                var entity = entityManager.CreateEntity($"{tagPrefix}{i}");
+                entity.AddComponent(new CTransform(new Vec2(startPosition.X, startPosition.Y + i * ySpacing)));
+                entity.AddComponent(new CText(itemText, fontSize));
+                i++;
             }
+        }
 
-            var cursor = entityManager.CreateEntity("cursor");
-            cursor.AddComponent(new CTransform(new Vec2(300, 100)));
-            cursor.AddComponent(new CText(">", 24));
+        private void SetMenuVisibility(EntityManager entityManager, bool showFpsMenu)
+        {
+            var sceneCursorText = entityManager.GetEntityWithTag("cursor")?.GetComponent<CText>();
+            var fpsCursorText = entityManager.GetEntityWithTag("fpsCursor")?.GetComponent<CText>();
 
-            inputManager.ActionMapper.MapActionToComponent<CTransform>("Up", cursor, (transform, isActive) =>
-            {
-                if (isActive)
-                {
-                    int currentIndex = (int)(transform.Position.Y - 100) / 100;
-                    int newIndex = currentIndex - 1;
-                    if (newIndex < 0)
-                        newIndex = scenes.Count - 1; // Wrap to bottom
-                    transform.Position = new Vec2(transform.Position.X, 100 + newIndex * 100);
-                }
-            }, oneShot: true);
-
-            inputManager.ActionMapper.MapActionToComponent<CTransform>("Down", cursor, (transform, isActive) =>
-            {
-                if (isActive)
-                {
-                    int currentIndex = (int)(transform.Position.Y - 100) / 100;
-                    int newIndex = (currentIndex + 1) % scenes.Count; // Wrap to top
-                    transform.Position = new Vec2(transform.Position.X, 100 + newIndex * 100);
-                }
-            }, oneShot: true);
-
-            inputManager.ActionMapper.MapActionToComponent<CTransform>("Go", cursor, (transform, isActive) =>
-            {
-                if (isActive)
-                {
-                    var selectedScene = scenes[(int)(transform.Position.Y - 100) / 100];
-                    ResetScene(selectedScene.Item2.Value);
-                }
-            }, oneShot: true);
+            if (sceneCursorText != null)
+                sceneCursorText.ShouldDraw = !showFpsMenu;
+            if (fpsCursorText != null)
+                fpsCursorText.ShouldDraw = showFpsMenu;
         }
     }
 }

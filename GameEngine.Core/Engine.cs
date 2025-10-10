@@ -23,7 +23,7 @@ namespace GameEngine.Core
         public bool IsRunning => _isRunning;
 
         // Optional frame limiter (null = unlimited)
-        public int? TargetFrameRate { get; set; } = null;
+        public static int? TargetFrameRate { get; set; } = null;
 
         // Scene-change handoff to engine thread
         private Scene? _pendingScene;
@@ -114,13 +114,13 @@ namespace GameEngine.Core
         {
             stopwatch.Start();
             lastUpdateTime = 0;
-
-            double frameDurationMs = TargetFrameRate.HasValue
-                ? 1000.0 / TargetFrameRate.Value
-                : 0.0;
-
+            
             while (true)
             {
+                double frameDurationMs = TargetFrameRate.HasValue
+                    ? 1000.0 / TargetFrameRate.Value
+                    : 0.0;
+                
                 // Apply queued scene change on engine thread
                 var scene = Interlocked.Exchange(ref _pendingScene, null);
                 if (scene != null)

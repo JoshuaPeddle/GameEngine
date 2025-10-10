@@ -129,13 +129,15 @@ namespace GameEngine.Core.Systems
                 // The existing logic is fine because from this point forward,
                 // your (x, y) are in "virtual" coordinates, and Skia is scaling them.
                 if (options.DrawAnimations && entity.Item1.TryGetComponent<CAnimation>(out var cAnimation))
-                {
-                    DrawAnimation(canvas, entity.Item1, entity.Item2, cAnimation);
+                {  
+                    if (cAnimation.ShouldDraw)
+                        DrawAnimation(canvas, entity.Item1, entity.Item2, cAnimation);
                 }
 
                 if (entity.Item1.TryGetComponent<CText>(out var text))
                 {
-                    canvas.DrawText(text.Text, (float)entity.Item2.Position.X, (float)entity.Item2.Position.Y, text.Paint);
+                    if (text.ShouldDraw)
+                        canvas.DrawText(text.Text, (float)entity.Item2.Position.X, (float)entity.Item2.Position.Y, text.Paint);
                 }
 
                 if (options.DrawBoundingBoxes && entity.Item1.TryGetComponent<CBoundingBox>(out var boundingBox))

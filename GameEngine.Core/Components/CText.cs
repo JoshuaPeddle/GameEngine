@@ -23,5 +23,7 @@ namespace GameEngine.Core.Components
             TextAlign = SKTextAlign.Center,
             TextSize = 24
         };
+
+        public bool ShouldDraw { get; set; } = true;
     }
 }
