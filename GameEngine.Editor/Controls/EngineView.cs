@@ -125,7 +125,7 @@ namespace GameEngine.Editor.Controls
                     else
                         _gameEngine = new Engine(QueueInvalidate);
                     _gameEngine.Systems.TryGet<RenderSystem>().options.DrawBoundingBoxes = true;
-                    _gameEngine.TargetFrameRate = 120;
+                    Engine.TargetFrameRate = 120;
                     InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
                     _gameEngine.InitializeSystems();
                     _gameEngine.SetRunning(_vm.IsEngineRunning);

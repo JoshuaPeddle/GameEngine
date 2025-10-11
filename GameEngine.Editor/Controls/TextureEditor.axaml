@@ -23,7 +23,7 @@
 		</Style>
 	</UserControl.Styles>
 
-	<Grid ColumnDefinitions="200,1,*" RowDefinitions=""  Margin="4">
+	<Grid ColumnDefinitions="200,1,*" RowDefinitions="*"  Margin="4">
 		<Border Background="AliceBlue" Grid.Column="0">
 			<ListBox ItemsSource="{Binding Textures}">
 				<ListBox.ItemTemplate>

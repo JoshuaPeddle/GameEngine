@@ -49,7 +49,7 @@ namespace GameEngine
             skglControl1.MouseUp += (sender, args) => _gameEngine.Systems.Get<InputSystem>().PointerReleased(new PointerReleaseEvent(new Vec2(args.X, args.Y)));
 
             _gameEngine.ChangeScene(new SceneMenu());
-            _gameEngine.TargetFrameRate = 1000;
+            Engine.TargetFrameRate = 1000;
 
             _gameEngine.Start(); // Dont await this, it will block the UI thread
         }
