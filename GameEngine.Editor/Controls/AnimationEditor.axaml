@@ -59,7 +59,7 @@
 			<Grid ColumnDefinitions="*" RowDefinitions="60,*"  Margin="0"  RenderOptions.BitmapInterpolationMode="HighQuality">
 				<Border Background="DarkGray">
 					<StackPanel Orientation="Horizontal" Spacing="10">
-						<Button Margin="10,0,0,0" Classes="ControlButton" Command="{Binding SaveAnimationCommand}" IsEnabled="{Binding SaveButtonEnabled}">Save</Button>
+						<Button Margin="10,0,0,0" Classes="ControlButton" Command="{Binding SaveAnimationCommand}">Save</Button>
 						<TextBox Classes="TexInput" Watermark="Amimation Name" Text="{Binding AnimationName}" Width="300" Margin="0,10,0,10"/>
 						<TextBox Classes="TexInput" Watermark="Frame Count" Text="{Binding FrameCount}" Width="130" Margin="0,10,0,10"/>
 						<TextBox Classes="TexInput" Watermark="Frame Delay(ms)" Text="{Binding FrameDelay}" Width="130" Margin="0,10,0,10"/>

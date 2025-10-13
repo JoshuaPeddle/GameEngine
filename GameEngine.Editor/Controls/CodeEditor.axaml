@@ -2,15 +2,33 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
         x:Class="GameEngine.Editor.CodeEditor"
-        Title="Code Editor"
+		xmlns:vm="clr-namespace:GameEngine.Editor.ViewModels"
+		Title="{ReflectionBinding WindowTitle}"
         Width="900"
         Height="700">
-  <AvaloniaEdit:TextEditor x:Name="Editor"
-                           ShowLineNumbers="True"
-                           FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
-                           FontSize="14"
-                           Background="#1E1E1E"
-                           Foreground="#FFFFFF"
-                           HorizontalScrollBarVisibility="Auto"
-                           VerticalScrollBarVisibility="Auto" />
+
+	<Design.DataContext>
+		<vm:CodeEditorViewModel /> 
+	</Design.DataContext>
+
+	<DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Header="_Save" InputGesture="Ctrl+S" x:Name="SaveMenu"/>
+        <MenuItem Header="Save _As..." InputGesture="Ctrl+Shift+S" x:Name="SaveAsMenu"/>
+      </MenuItem>
+    </Menu>
+    <AvaloniaEdit:TextEditor x:Name="Editor"
+							 DockPanel.Dock="Top"
+                             ShowLineNumbers="True"
+                             FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                             FontSize="14"
+                             Background="#1E1E1E"
+                             Foreground="#FFFFFF"
+                             HorizontalScrollBarVisibility="Auto"
+                             VerticalScrollBarVisibility="Auto" />
+    <Border DockPanel.Dock="Bottom" Padding="6" Background="#2A2A2A" Height="65">
+      <TextBlock x:Name="CaretStatus" Text="Ln 1, Col 1"/>
+    </Border>
+  </DockPanel>
 </Window>

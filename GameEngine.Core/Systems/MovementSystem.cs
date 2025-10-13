@@ -1,54 +1,91 @@
 ﻿using GameEngine.Core.Components;
+using System.Runtime.CompilerServices;
 
 namespace GameEngine.Core.Systems
 {
     public class MovementSystem : ISystem
     {
+        private const double DecelerationBase = 0.2;
+        
         public void Update(EntityManager entityManager, double deltaMs)
         {
-            double deltaSeconds = deltaMs / 1000f;
+            double deltaSeconds = deltaMs * 0.001;
 
             var entities = entityManager.GetEntitiesWithComponents<CMovement, CTransform>();
 
-            foreach ((var entity, var cMovvement, var transform) in entities)
+            foreach (var (entity, movement, transform) in entities)
             {
-                double moveSpeed = cMovvement.Speed; 
-                if (entity.TryGetComponent<CInput>(out var input))
-                {
-                    double playerSpeedTransform = moveSpeed * deltaSeconds;
-
-                    if (!input.Any)
-                    {
-                        float decelerationFactor = 0.2f;
-                        transform.Velocity *= Math.Pow(decelerationFactor, deltaSeconds);
-                    }
-                    if (input.Up)
-                    {
-                        transform.Velocity -= new Vec2(0, playerSpeedTransform);
-                    }
-                    if (input.Down)
-                    {
-                        transform.Velocity += new Vec2(0, playerSpeedTransform);
-                    }
-                    if (input.Left)
-                    {
-                        transform.Velocity -= new Vec2(playerSpeedTransform, 0);
-                    }
-                    if (input.Right)
-                    {
-                        transform.Velocity += new Vec2(playerSpeedTransform, 0);
-                    }
-                }
-
-                double maxSpeed = cMovvement.MaxSpeed;
-                if (transform.Velocity.Length() > maxSpeed)
-                {
-                    transform.Velocity = transform.Velocity.Normalize() * maxSpeed;
-                }
-                transform.PreviousPosition = transform.Position.Clone();
-
-                transform.Position += transform.Velocity * deltaSeconds;
+                ProcessEntityMovement(entity, movement, transform, deltaSeconds);
             }
+        }
+
+        private static void ProcessEntityMovement(Entity entity, CMovement movement, CTransform transform, double deltaSeconds)
+        {
+            double moveSpeed = movement.Speed;
+            
+            if (entity.TryGetComponent<CInput>(out var input))
+            {
+                ProcessInputBasedMovement(input, transform, moveSpeed, deltaSeconds);
+            }
+
+            ApplySpeedLimits(transform, movement.MaxSpeed);
+            
+            UpdatePosition(transform, deltaSeconds);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ProcessInputBasedMovement(CInput input, CTransform transform, double moveSpeed, double deltaSeconds)
+        {
+            double speedDelta = moveSpeed * deltaSeconds;
+
+            if (!input.Any)
+            {
+                double decelerationFactor = Math.Pow(DecelerationBase, deltaSeconds);
+                transform.Velocity = new Vec2(
+                    transform.Velocity.X * decelerationFactor,
+                    transform.Velocity.Y * decelerationFactor
+                );
+                return;
+            }
+
+            Vec2 inputVelocity = Vec2.Zero;
+            
+            if (input.Up)    inputVelocity = new Vec2(inputVelocity.X, inputVelocity.Y - speedDelta);
+            if (input.Down)  inputVelocity = new Vec2(inputVelocity.X, inputVelocity.Y + speedDelta);
+            if (input.Left)  inputVelocity = new Vec2(inputVelocity.X - speedDelta, inputVelocity.Y);
+            if (input.Right) inputVelocity = new Vec2(inputVelocity.X + speedDelta, inputVelocity.Y);
+
+            transform.Velocity = new Vec2(
+                transform.Velocity.X + inputVelocity.X,
+                transform.Velocity.Y + inputVelocity.Y
+            );
+        }
+
+        private static void ApplySpeedLimits(CTransform transform, double maxSpeed)
+        {
+            double currentSpeedSquared = (transform.Velocity.X * transform.Velocity.X) + 
+                                       (transform.Velocity.Y * transform.Velocity.Y);
+            double maxSpeedSquared = maxSpeed * maxSpeed;
+
+            if (currentSpeedSquared > maxSpeedSquared)
+            {
+                double currentSpeed = Math.Sqrt(currentSpeedSquared);
+                double scale = maxSpeed / currentSpeed;
+                transform.Velocity = new Vec2(
+                    transform.Velocity.X * scale,
+                    transform.Velocity.Y * scale
+                );
+            }
+        }
+
+        private static void UpdatePosition(CTransform transform, double deltaSeconds)
+        {
+            transform.PreviousPosition = transform.Position;
+            
+            transform.Position = new Vec2(
+                transform.Position.X + (transform.Velocity.X * deltaSeconds),
+                transform.Position.Y + (transform.Velocity.Y * deltaSeconds)
+            );
         }
     }
 }

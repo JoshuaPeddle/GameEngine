@@ -19,7 +19,10 @@ namespace GameEngine.Editor.Controls
         private async void OnDataContextChanged(object? sender, EventArgs e)
         {
             if (DataContext is LevelEditorViewModel vm)
+            {
                 await vm.EnsureScenesLoadedAsync();
+                vm.RefreshLevelFileOptions();
+            }
         }
 
         private void ViewportSplitter_DragCompleted(object? sender, VectorEventArgs e)

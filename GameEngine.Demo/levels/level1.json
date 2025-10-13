@@ -122,6 +122,15 @@
         {
           "type": "CAnimation",
           "animationName": "Pillar"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 70,
+            "y": 140
+          },
+          "blockVision": true,
+          "blockMovement": true
         }
       ]
     }
