@@ -133,7 +133,7 @@ namespace GameEngine.Core.Systems
 
         private void DrawEntities(SKCanvas canvas, CCamera? camera = null)
         {
-            List<(Entity, CTransform)> entities = entityManager.GetEntitiesWithComponents<CTransform>();
+            IReadOnlyList<(Entity, CTransform)> entities = entityManager.GetEntitiesWithComponents<CTransform>();
             if (camera != null)
                 entities = GetVisibleEntities(entities, camera);
 
@@ -165,7 +165,7 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        private List<(Entity, CTransform)> GetVisibleEntities(List<(Entity, CTransform)> entities, CCamera camera)
+        private List<(Entity, CTransform)> GetVisibleEntities(IReadOnlyList<(Entity, CTransform)> entities, CCamera camera)
         {
             float viewWidth = options.VirtualWidth / camera.Zoom;
             float viewHeight = options.VirtualHeight / camera.Zoom;
