@@ -8,8 +8,9 @@ namespace GameEngine.Core.Systems
         private readonly EntityManager entityManager;
         public readonly RenderOptions options;
 
-        private readonly List<double> _fpsSamples = [];
-
+        private double[] _fpsSamples = [];
+        private int _fpsSampleIndex;
+        private int _fpsSampleCount;
         private double _fps;
 
         public RenderSystem(EntityManager entityManager, RenderOptions options)
@@ -33,12 +34,24 @@ namespace GameEngine.Core.Systems
                     return;
                 }
 
-                _fpsSamples.Add(currentFps);
+                // Lazily allocate or resize if the option changed
+                if (_fpsSamples.Length != options.FpsSmoothingSamples)
+                {
+                    _fpsSamples = new double[options.FpsSmoothingSamples];
+                    _fpsSampleIndex = 0;
+                    _fpsSampleCount = 0;
+                }
 
-                if (_fpsSamples.Count > options.FpsSmoothingSamples)
-                    _fpsSamples.RemoveAt(0);
+                _fpsSamples[_fpsSampleIndex] = currentFps;
+                _fpsSampleIndex = (_fpsSampleIndex + 1) % _fpsSamples.Length;
+                if (_fpsSampleCount < _fpsSamples.Length)
+                    _fpsSampleCount++;
 
-                _fps = _fpsSamples.Average();
+                double sum = 0;
+                for (int i = 0; i < _fpsSampleCount; i++)
+                    sum += _fpsSamples[i];
+
+                _fps = sum / _fpsSampleCount;
             }
         }
 
