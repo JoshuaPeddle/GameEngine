@@ -8,9 +8,6 @@ using Avalonia.Skia;
 using GameEngine.Core;
 using GameEngine.Core.Systems;
 using GameEngine.Demo;
-using SharpHook;
-using SharpHook.Native;
-using SharpHook.Reactive;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -23,7 +20,8 @@ namespace GameEngine.Runner.Avalonia
     public class GameView : Control
     {
         public static Engine _gameEngine;
-        private readonly SimpleReactiveGlobalHook _keyboardHook;
+        private readonly IDisposable? _keyboardHook;
+        
 
         private Point? _pointerStartPosition;
         private const double SwipeThreshold = 20.0;
@@ -44,9 +42,7 @@ namespace GameEngine.Runner.Avalonia
 
             if (!OperatingSystem.IsBrowser())
             {
-                _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
-                ConfigureKeyEvents();
-                _keyboardHook.RunAsync();
+                _keyboardHook = KeyboardHookHelper.Create(_gameEngine);
             }
 
             PointerPressed += OnPointerPressed;
@@ -155,36 +151,6 @@ namespace GameEngine.Runner.Avalonia
         {
             context.Custom(new CustomDrawOp(new Rect(0, 0, Bounds.Width, Bounds.Height), _gameEngine));
         }
-
-        public void ConfigureKeyEvents()
-        {
-            _keyboardHook.KeyPressed
-                .Subscribe(KeyPressed);
-
-            _keyboardHook.KeyReleased
-                .Subscribe(KeyReleased);
-        }
-
-        void KeyPressed(KeyboardHookEventArgs args)
-        {
-            if (KeyMap.TryGetValue(args.Data.KeyCode, out GeKeys value))
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(value);
-        }
-
-        void KeyReleased(KeyboardHookEventArgs args)
-        {
-            if (KeyMap.TryGetValue(args.Data.KeyCode, out GeKeys value))
-                _gameEngine.Systems.Get<InputSystem>().KeyUp(value);
-        }
-
-        public Dictionary<KeyCode, GeKeys> KeyMap { get; private set; } = new Dictionary<KeyCode, GeKeys>()
-        {
-            { KeyCode.VcW, GeKeys.W },
-            { KeyCode.VcA, GeKeys.A },
-            { KeyCode.VcS, GeKeys.S },
-            { KeyCode.VcD, GeKeys.D },
-            { KeyCode.VcSpace, GeKeys.Space }
-        };
     }
 
     class CustomDrawOp : ICustomDrawOperation
