@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using static GameEngine.Core.Exceptions;
 
 namespace GameEngine.Core
@@ -46,7 +47,7 @@ namespace GameEngine.Core
             return Components.ContainsKey(typeof(T));
         }
 
-        public bool TryGetComponent<T>(out T? component) where T : Component
+        public bool TryGetComponent<T>([NotNullWhen(true)] out T? component) where T : Component
         {
             if (Components.TryGetValue(typeof(T), out var comp))
             {

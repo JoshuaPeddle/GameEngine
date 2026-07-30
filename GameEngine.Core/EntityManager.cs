@@ -1,7 +1,12 @@
-﻿namespace GameEngine.Core
+﻿using GameEngine.Core.Components;
+
+namespace GameEngine.Core
 {
     public class EntityManager
     {
+        /// <summary>Tag the renderer looks for when picking the active camera.</summary>
+        private const string CameraTag = "camera";
+
         private readonly List<Entity> entities = [];
         private readonly List<Entity> entitiesToAdd = [];
         private readonly List<Entity> inactiveBuffer = [];
@@ -214,6 +219,72 @@
                 if (obj is System.Collections.IList l) l.Clear();
             }
             foreach (var list in cachedTagLists.Values) list.Clear();
+        }
+
+        /// <summary>
+        /// Fill <paramref name="buffer"/> with all renderable entity state.
+        /// Called on the engine thread after Update() so all deferred adds/removes are applied.
+        /// The buffer is reused frame to frame, so this allocates nothing once its backing
+        /// array has grown to fit the scene.
+        /// </summary>
+        public void BuildRenderSnapshot(RenderSnapshot buffer)
+        {
+            componentEntityMap.TryGetValue(typeof(CTransform), out var transformEntities);
+            buffer.Reset(transformEntities?.Count ?? 0);
+
+            // A camera entity is not required to carry a CTransform (none of the demo scenes
+            // give it one), so it has to be found through its own component set rather than
+            // while walking the transforms.
+            if (componentEntityMap.TryGetValue(typeof(CCamera), out var cameraEntities))
+            {
+                CCamera? activeCamera = null;
+                foreach (var entity in cameraEntities)
+                {
+                    if (!entity.TryGetComponent<CCamera>(out var cam))
+                        continue;
+
+                    // Match the legacy renderer: the entity tagged "camera" wins. Any other
+                    // camera is a fallback so untagged setups still render through one.
+                    if (entity.Tag == CameraTag)
+                    {
+                        activeCamera = cam;
+                        break;
+                    }
+                    activeCamera ??= cam;
+                }
+
+                if (activeCamera != null)
+                    buffer.SetCamera(new RenderSnapshot.CameraData(activeCamera));
+            }
+
+            if (transformEntities == null)
+                return;
+
+            foreach (var entity in transformEntities)
+            {
+                var transform = entity.GetComponent<CTransform>();
+
+                RenderSnapshot.AnimationData? animData = null;
+                if (entity.TryGetComponent<CAnimation>(out var anim))
+                    animData = new RenderSnapshot.AnimationData(anim);
+
+                RenderSnapshot.TextData? textData = null;
+                if (entity.TryGetComponent<CText>(out var text))
+                    textData = new RenderSnapshot.TextData(text);
+
+                RenderSnapshot.BoundingBoxData? bboxData = null;
+                if (entity.TryGetComponent<CBoundingBox>(out var bbox))
+                    bboxData = new RenderSnapshot.BoundingBoxData(bbox);
+
+                buffer.Add(new RenderSnapshot.Entry(
+                    entity.Id,
+                    entity.Tag,
+                    new RenderSnapshot.TransformData(transform),
+                    animData,
+                    textData,
+                    bboxData
+                ));
+            }
         }
     }
 }

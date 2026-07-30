@@ -177,7 +177,7 @@ namespace GameEngine.Runner.Avalonia
                 return;
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-            _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+            _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
 
             // Resume updates immediately after first visible frame
             _engine.NotifyFirstPresent();

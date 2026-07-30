@@ -207,7 +207,7 @@ namespace GameEngine.Editor.Controls
                 canvas.Save();
                 canvas.ClipRect(new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
                 
-                _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+                _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
 
                 canvas.Restore();
 

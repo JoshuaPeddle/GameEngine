@@ -22,6 +22,80 @@ namespace GameEngine.Core
 
         public bool IsRunning => _isRunning;
 
+        // Pooled render snapshots: filled on the engine thread, read on the UI thread.
+        // Three buffers are enough for a single reader — at most one is published and one is
+        // held by the reader, which always leaves one free for the engine to fill. Recycling
+        // them keeps steady-state rendering allocation-free.
+        private readonly object _snapshotLock = new();
+        private readonly List<RenderSnapshot> _snapshotPool = [new(), new(), new()];
+        private RenderSnapshot? _publishedSnapshot;
+        private RenderSnapshot? _readerSnapshot;
+        private RenderSnapshot? _fillingSnapshot;
+
+        /// <summary>
+        /// Called by the UI/render thread to get a consistent view of entity state.
+        /// The returned buffer stays valid until this method is called again, at which point
+        /// the previous one is recycled — so one reader thread per engine is assumed.
+        /// The lock is only held long enough to swap references (nanoseconds).
+        /// </summary>
+        public RenderSnapshot GetRenderSnapshot()
+        {
+            lock (_snapshotLock)
+            {
+                // Hand back the buffer from the previous paint so the engine can refill it.
+                if (_readerSnapshot != null)
+                    _readerSnapshot.Readers--;
+
+                _readerSnapshot = _publishedSnapshot;
+                if (_readerSnapshot == null)
+                    return RenderSnapshot.Empty;
+
+                _readerSnapshot.Readers++;
+                return _readerSnapshot;
+            }
+        }
+
+        /// <summary>
+        /// Engine thread: fill a buffer nobody is reading with current entity state and publish it.
+        /// </summary>
+        private void PublishRenderSnapshot()
+        {
+            RenderSnapshot buffer;
+            lock (_snapshotLock)
+            {
+                buffer = RentSnapshotBuffer();
+                _fillingSnapshot = buffer;
+            }
+
+            // Filled outside the lock. The buffer is unreachable by readers (not published)
+            // and excluded from any further rent, so nothing else can touch it.
+            EntityManager.BuildRenderSnapshot(buffer);
+
+            lock (_snapshotLock)
+            {
+                _publishedSnapshot = buffer;
+                _fillingSnapshot = null;
+            }
+        }
+
+        // Caller must hold _snapshotLock.
+        private RenderSnapshot RentSnapshotBuffer()
+        {
+            foreach (var candidate in _snapshotPool)
+            {
+                if (candidate != _publishedSnapshot
+                    && candidate != _fillingSnapshot
+                    && candidate.Readers == 0)
+                    return candidate;
+            }
+
+            // Only reachable if more than one reader attaches to this engine. Grows the pool
+            // once and then settles, so it is not a per-frame allocation.
+            var grown = new RenderSnapshot();
+            _snapshotPool.Add(grown);
+            return grown;
+        }
+
         // Optional frame limiter (null = unlimited)
         public static int? TargetFrameRate { get; set; } = null;
 
@@ -60,7 +134,7 @@ namespace GameEngine.Core
                     DrawFps = true,
                     FpsSmoothingSamples = 1000
                 }));
-            if (_audioEnabled)
+            if (false==true)
                 Systems.Add(new AudioSystem());
         }
 
@@ -173,15 +247,19 @@ namespace GameEngine.Core
 
         private void Update(double deltaTime)
         {
-            foreach (ISystem system in Systems.Systems)
+            foreach (var system in Systems.Systems)
             {
                 system.Update(EntityManager, deltaTime);
             }
-
+            
             var physicsSystem = Systems.Get<PhysicsSystem>();
             currentScene?.Update(EntityManager, physicsSystem, deltaTime);
             currentScene?.Update(EntityManager, Systems, deltaTime);
             EntityManager.Update();
+
+            // Snapshot all renderable state. The UI thread reads only from this snapshot,
+            // avoiding cross-thread mutation.
+            PublishRenderSnapshot();
         }
 
         // Queue the scene change; it will be applied on the engine thread
@@ -205,6 +283,12 @@ namespace GameEngine.Core
             InputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);
             InputManager.RealResolution = realResolution;
             renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
+
+            // Flush the entities the scene just created and publish them. Update() is skipped
+            // while paused, so without this the paint requested below would still be showing
+            // the previous scene's last frame.
+            EntityManager.Update();
+            PublishRenderSnapshot();
 
             // Pause updates until first actual paint
             _pauseUntilFirstPresent = true;
