@@ -1,44 +1,47 @@
-﻿using System.Collections.Concurrent;
-
-namespace GameEngine.Core.Systems
+﻿namespace GameEngine.Core.Systems
 {
     public class SystemContainer : IDisposable
     {
-        public ConcurrentBag<ISystem> Systems { get; } = new ConcurrentBag<ISystem>();
+        private readonly List<ISystem> _systems = [];
+
+        /// <summary>
+        /// Systems in insertion (execution) order.
+        /// </summary>
+        public IReadOnlyList<ISystem> Systems => _systems;
 
         public SystemContainer() { }
 
         public void Add(ISystem system)
         {
-            if (Systems.Any(s => s.GetType() == system.GetType()))
+            if (_systems.Any(s => s.GetType() == system.GetType()))
                 throw new DuplicateSystemException();
-            Systems.Add(system);
+            _systems.Add(system);
         }
 
         public T Get<T>() where T : ISystem
         {
-            var system = Systems.FirstOrDefault(s => s.GetType() == typeof(T));
+            var system = _systems.FirstOrDefault(s => s.GetType() == typeof(T));
             return system != null ? (T)system : throw new MissingSystemException();
         }
 
         public T? TryGet<T>() where T : class, ISystem
         {
-            return Systems.FirstOrDefault(s => s.GetType() == typeof(T)) as T;
+            return _systems.FirstOrDefault(s => s.GetType() == typeof(T)) as T;
         }
 
         public bool Contains<T>() where T : ISystem
         {
-            return Systems.Any(s => s.GetType() == typeof(T));
+            return _systems.Any(s => s.GetType() == typeof(T));
         }
 
         public void Dispose()
         {
-            foreach (var system in Systems)
+            foreach (var system in _systems)
             {
                 if (system is IDisposable disposable)
                     disposable.Dispose();
             }
-            Systems.Clear();
+            _systems.Clear();
             GC.SuppressFinalize(this);
         }
     }

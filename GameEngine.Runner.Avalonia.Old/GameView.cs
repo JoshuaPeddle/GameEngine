@@ -92,7 +92,7 @@ namespace GameEngine.Runner.Avalonia
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
             canvas.Save();
-            _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+            _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
 
             canvas.Restore();
         }

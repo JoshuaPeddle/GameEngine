@@ -55,61 +55,98 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        public void DrawEntitiesToCanvas(SKCanvas canvas)
+        /// <summary>
+        /// Thread-safe overload: renders from an immutable <see cref="RenderSnapshot"/>
+        /// that was built on the engine thread. No EntityManager access occurs.
+        /// </summary>
+        public void DrawEntitiesToCanvas(SKCanvas canvas, RenderSnapshot snapshot)
         {
             canvas.Clear(SKColors.White);
 
-            // 1. Compute scale factors (width-based and height-based)
-            var canvasBounds = canvas.LocalClipBounds; // e.g., (0,0, screenWidth, screenHeight)
+            var canvasBounds = canvas.LocalClipBounds;
             float screenWidth = canvasBounds.Width;
             float screenHeight = canvasBounds.Height;
 
             float scaleX = screenWidth / options.VirtualWidth;
             float scaleY = screenHeight / options.VirtualHeight;
 
-            float finalScale = 1.0f;
-
-            switch (options.ScalingStrategy)
+            float finalScale = options.ScalingStrategy switch
             {
-                case ScalingStrategy.Letterbox:
-                    // Use the smaller scale so the entire game area is visible
-                    finalScale = Math.Min(scaleX, scaleY);
-                    break;
-                case ScalingStrategy.Stretch:
-                    // Use the entire screen, even if it distorts
-                    finalScale = scaleX;
-                    // or handle X and Y separately, if you *really* want full stretch
-                    break;
-                case ScalingStrategy.Crop:
-                    // Possibly use the larger scale and let some of the game area go off screen
-                    finalScale = Math.Max(scaleX, scaleY);
-                    break;
-            }
+                ScalingStrategy.Letterbox => Math.Min(scaleX, scaleY),
+                ScalingStrategy.Stretch => scaleX,
+                ScalingStrategy.Crop => Math.Max(scaleX, scaleY),
+                _ => 1.0f
+            };
 
-            // 2. If you want letterboxing, compute the leftover space
             float scaledWidth = options.VirtualWidth * finalScale;
             float scaledHeight = options.VirtualHeight * finalScale;
 
             float leftoverX = (screenWidth - scaledWidth) / 2f;
             float leftoverY = (screenHeight - scaledHeight) / 2f;
 
-            // 3. Apply transformations so that (0,0) in *game space* ends up at
-            // leftoverX, leftoverY in *screen space*, and everything is scaled by finalScale
             canvas.Save();
             canvas.Translate(leftoverX, leftoverY);
             canvas.Scale(finalScale, finalScale);
 
-            // 4. Apply camera transformation if available.
-            // We assume the camera entity has the tag "camera"
+            if (snapshot.ActiveCamera is { } camera)
+            {
+                canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
+                canvas.Scale(camera.Zoom, camera.Zoom);
+                canvas.Translate(-((float)camera.Position.X), -((float)camera.Position.Y));
+
+                DrawSnapshotEntries(canvas, snapshot, camera);
+            }
+            else
+            {
+                DrawSnapshotEntries(canvas, snapshot, null);
+            }
+
+            canvas.Restore();
+
+            if (options.DrawFps)
+            {
+                DrawFpsCounter(canvas, _fps);
+            }
+        }
+
+        /// <summary>
+        /// Legacy overload that reads directly from EntityManager.
+        /// ⚠️ Not thread-safe — only safe when the caller and the engine share a thread.
+        /// Every runner has moved to the <see cref="RenderSnapshot"/> overload above;
+        /// the only remaining caller is Runner.Avalonia.Old's SkiaCanvasControl.
+        /// </summary>
+        public void DrawEntitiesToCanvas(SKCanvas canvas)
+        {
+            canvas.Clear(SKColors.White);
+
+            var canvasBounds = canvas.LocalClipBounds;
+            float screenWidth = canvasBounds.Width;
+            float screenHeight = canvasBounds.Height;
+
+            float scaleX = screenWidth / options.VirtualWidth;
+            float scaleY = screenHeight / options.VirtualHeight;
+
+            float finalScale = options.ScalingStrategy switch
+            {
+                ScalingStrategy.Letterbox => Math.Min(scaleX, scaleY),
+                ScalingStrategy.Stretch => scaleX,
+                ScalingStrategy.Crop => Math.Max(scaleX, scaleY),
+                _ => 1.0f
+            };
+
+            float scaledWidth = options.VirtualWidth * finalScale;
+            float scaledHeight = options.VirtualHeight * finalScale;
+
+            float leftoverX = (screenWidth - scaledWidth) / 2f;
+            float leftoverY = (screenHeight - scaledHeight) / 2f;
+
+            canvas.Save();
+            canvas.Translate(leftoverX, leftoverY);
+            canvas.Scale(finalScale, finalScale);
+
             var cameraEntity = entityManager.GetEntityWithTag("camera");
             if (cameraEntity != null && cameraEntity.TryGetComponent<CCamera>(out var camera))
             {
-                // Here we translate the world so that the camera's position is at the center
-                // of our virtual space and then scale by the camera's zoom factor.
-                // The order of operations is:
-                //   a) Translate so that camera.Position becomes the origin.
-                //   b) Scale by Camera.Zoom (zoom in or out).
-                //   c) Translate back to put the camera at the center of the virtual space.
                 canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
                 canvas.Scale(camera.Zoom, camera.Zoom);
                 canvas.Translate(-((float)camera.Position.X), -((float)camera.Position.Y));
@@ -120,9 +157,7 @@ namespace GameEngine.Core.Systems
             {
                 DrawEntities(canvas);
             }
-               
 
-            // 5. Restore so that subsequent UI draws (like FPS counter) are in pixel space
             canvas.Restore();
 
             if (options.DrawFps)
@@ -131,16 +166,137 @@ namespace GameEngine.Core.Systems
             }
         }
 
+        // ── Snapshot-based rendering ────────────────────────────────────────
+
+        private void DrawSnapshotEntries(SKCanvas canvas, RenderSnapshot snapshot,
+            RenderSnapshot.CameraData? camera)
+        {
+            ReadOnlySpan<RenderSnapshot.Entry> entries = snapshot.Entries;
+
+            // Optional visibility culling when a camera is active
+            bool cull = false;
+            SKRect cameraBounds = default;
+            if (camera is { } cam)
+            {
+                cull = true;
+                float halfViewW = options.VirtualWidth / cam.Zoom / 2;
+                float halfViewH = options.VirtualHeight / cam.Zoom / 2;
+
+                // The camera position is the centre of the view, so the box extends half a
+                // view height above it as well as below.
+                cameraBounds = new SKRect(
+                    (float)cam.Position.X - halfViewW,
+                    (float)cam.Position.Y - halfViewH,
+                    (float)cam.Position.X + halfViewW,
+                    (float)cam.Position.Y + halfViewH);
+                cameraBounds.Inflate(100, 100);
+            }
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                ref readonly var entry = ref entries[i];
+
+                // Visibility culling
+                if (cull)
+                {
+                    if (entry.BoundingBox.HasValue)
+                    {
+                        var bb = entry.BoundingBox.Value;
+                        var entityRect = new SKRect(
+                            (float)entry.Transform.Position.X,
+                            (float)entry.Transform.Position.Y,
+                            (float)(entry.Transform.Position.X + bb.Width),
+                            (float)(entry.Transform.Position.Y + bb.Height));
+
+                        if (!cameraBounds.IntersectsWith(entityRect))
+                            continue;
+                    }
+                    else if (!cameraBounds.Contains(
+                                 (float)entry.Transform.Position.X,
+                                 (float)entry.Transform.Position.Y))
+                    {
+                        continue;
+                    }
+                }
+
+                // Draw animation
+                if (options.DrawAnimations && entry.Animation is { ShouldDraw: true } anim)
+                {
+                    DrawSnapshotAnimation(canvas, entry, anim);
+                }
+
+                // Draw text
+                if (entry.Text is { ShouldDraw: true } text)
+                {
+                    canvas.DrawText(text.Text,
+                        (float)entry.Transform.Position.X,
+                        (float)entry.Transform.Position.Y,
+                        text.Paint);
+                }
+
+                // Draw bounding box (debug)
+                if (options.DrawBoundingBoxes && entry.BoundingBox is { } bbox)
+                {
+                    var rect = new SKRect(
+                        (float)entry.Transform.Position.X,
+                        (float)entry.Transform.Position.Y,
+                        (float)entry.Transform.Position.X + (float)bbox.Width,
+                        (float)entry.Transform.Position.Y + (float)bbox.Height);
+                    canvas.DrawRect(rect, _boundingBoxPaint);
+                }
+
+                // Draw entity center (debug)
+                if (options.DrawEntityCenters)
+                {
+                    var center = FindEntryCenter(entry);
+                    canvas.DrawPoint((float)center.X, (float)center.Y, _debugPointPaint);
+                }
+            }
+        }
+
+        private static void DrawSnapshotAnimation(SKCanvas canvas,
+            in RenderSnapshot.Entry entry, in RenderSnapshot.AnimationData anim)
+        {
+            float frameWidth = anim.SourceRect.Width;
+            float frameHeight = anim.SourceRect.Height;
+
+            Vec2 center = FindEntryCenter(entry);
+
+            canvas.Save();
+            canvas.Translate((float)center.X, (float)center.Y);
+            canvas.RotateDegrees((float)entry.Transform.Rotation);
+
+            SKRect destRect = new SKRect(
+                -(frameWidth / 2),
+                -(frameHeight / 2),
+                (frameWidth / 2),
+                (frameHeight / 2));
+
+            canvas.DrawBitmap(anim.Texture, anim.SourceRect, destRect, _animationPaint);
+            canvas.Restore();
+        }
+
+        private static Vec2 FindEntryCenter(in RenderSnapshot.Entry entry)
+        {
+            if (entry.BoundingBox is { } bb)
+            {
+                return new Vec2(
+                    entry.Transform.Position.X + bb.Width / 2,
+                    entry.Transform.Position.Y + bb.Height / 2);
+            }
+            return entry.Transform.Position;
+        }
+
+        // ── Legacy EntityManager-based rendering ────────────────────────────
+
         private void DrawEntities(SKCanvas canvas, CCamera? camera = null)
         {
-            List<(Entity, CTransform)> entities = entityManager.GetEntitiesWithComponents<CTransform>();
+            IReadOnlyList<(Entity, CTransform)> entities = entityManager.GetEntitiesWithComponents<CTransform>();
             if (camera != null)
                 entities = GetVisibleEntities(entities, camera);
 
             foreach (var entity in entities)
             {
-                // The existing logic is fine because from this point forward,
-                // your (x, y) are in "virtual" coordinates, and Skia is scaling them.
                 if (options.DrawAnimations && entity.Item1.TryGetComponent<CAnimation>(out var cAnimation))
                 {  
                     if (cAnimation.ShouldDraw)
@@ -165,7 +321,7 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        private List<(Entity, CTransform)> GetVisibleEntities(List<(Entity, CTransform)> entities, CCamera camera)
+        private List<(Entity, CTransform)> GetVisibleEntities(IReadOnlyList<(Entity, CTransform)> entities, CCamera camera)
         {
             float viewWidth = options.VirtualWidth / camera.Zoom;
             float viewHeight = options.VirtualHeight / camera.Zoom;
@@ -173,11 +329,12 @@ namespace GameEngine.Core.Systems
             float halfWidth = viewWidth / 2;
             float halfHeight = viewHeight / 2;
 
-
+            // The camera position is the centre of the view, so the box extends half a view
+            // height above it as well as below.
             var cameraBounds = new SKRect(
-                (float)camera.Position.X  - halfWidth,
-                (float)camera.Position.Y ,
-                (float)camera.Position.X + halfWidth + 0,
+                (float)camera.Position.X - halfWidth,
+                (float)camera.Position.Y - halfHeight,
+                (float)camera.Position.X + halfWidth,
                 (float)camera.Position.Y + halfHeight
             );
             cameraBounds.Inflate(100, 100);
@@ -274,7 +431,6 @@ namespace GameEngine.Core.Systems
         {
             string fpsText = $"FPS: {fps:0.0}";
             float margin = 10;
-            // Coordinates now are in *actual* pixels
             canvas.DrawText(fpsText, margin, margin + _fpsPaint.TextSize, _fpsPaint);
 
         }

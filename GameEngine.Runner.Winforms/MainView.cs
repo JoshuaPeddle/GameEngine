@@ -160,7 +160,7 @@ namespace GameEngine
         private void OnPaintSurface(object? sender, SKPaintGLSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
-            _gameEngine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+            _gameEngine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _gameEngine.GetRenderSnapshot());
 
             // Resume updates after first visible frame of a new scene
             _gameEngine.NotifyFirstPresent();

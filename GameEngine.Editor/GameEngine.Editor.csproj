@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
 	<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
@@ -17,6 +17,9 @@
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" />
     <PackageReference Include="AvaloniaEdit.TextMate" />
     <PackageReference Include="Microsoft.Build.Locator" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all">
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="SkiaSharp" />
@@ -26,6 +29,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Core\GameEngine.Core.csproj" />
+    <ProjectReference Include="..\GameEngine.Editor.ImageGen\GameEngine.Editor.ImageGen.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Controls\TextureEditor.axaml.cs">
@@ -42,6 +46,10 @@
     </Compile>
     <Compile Update="Views\AssetEditorWindow.axaml.cs">
       <DependentUpon>AssetEditorWindow.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Controls\ImageGeneratorControl.axaml.cs">
+      <DependentUpon>ImageGeneratorControl.axaml</DependentUpon>
+      <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
 </Project>

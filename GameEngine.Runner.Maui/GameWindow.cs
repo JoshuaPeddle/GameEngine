@@ -85,7 +85,7 @@ namespace GameEngine.Runner.Maui
             SKSurface surface = args.Surface;
             SKCanvas canvas = surface.Canvas;
 
-            _gameEngine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas);
+            _gameEngine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _gameEngine.GetRenderSnapshot());
 
             // Resume updates after first visible frame of a new scene
             _gameEngine.NotifyFirstPresent();

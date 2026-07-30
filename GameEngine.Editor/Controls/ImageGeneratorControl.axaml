@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="GameEngine.Editor.Controls.ImageGeneratorControl">
+    
+    <UserControl.Styles>
+        <Style Selector="TextBlock.SectionHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
+        </Style>
+        <Style Selector="TextBlock.Label">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
+    </UserControl.Styles>
+    
+    <Grid RowDefinitions="*,Auto" Margin="10">
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="0">
+            <StackPanel Spacing="5">
+                
+                <!-- Prompt Section -->
+                <TextBlock Text="Prompt" Classes="SectionHeader"/>
+                <TextBox Name="PromptTextBox" 
+                         Watermark="Enter your prompt here..."
+                         MinHeight="60"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"/>
+                
+                <TextBlock Text="Negative Prompt" Classes="SectionHeader"/>
+                <TextBox Name="NegativePromptTextBox" 
+                         Text="text, watermark"
+                         Watermark="Elements to avoid..."
+                         MinHeight="40"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"/>
+                
+                <!-- Model Settings -->
+                <TextBlock Text="Model Settings" Classes="SectionHeader"/>
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                    
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Model Type:" Classes="Label"/>
+                    <ComboBox Grid.Row="0" Grid.Column="1" Name="ModelTypeComboBox" 
+                              SelectedIndex="0" HorizontalAlignment="Stretch">
+                        <ComboBoxItem Content="SD 1.5 (512x512)"/>
+                        <ComboBoxItem Content="SDXL (1024x1024)"/>
+                        <ComboBoxItem Content="Custom"/>
+                    </ComboBox>
+                    
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Checkpoint:" Classes="Label" Margin="0,5,10,0"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Name="CheckpointTextBox" 
+                             Text="v1-5-pruned-emaonly-fp16.safetensors"
+                             Watermark="Model checkpoint file"
+                             Margin="0,5,0,0"/>
+                    
+                    <CheckBox Grid.Row="2" Grid.Column="1" Name="RemoveBackgroundCheckBox" 
+                              Content="Remove Background" 
+                              IsChecked="True"
+                              Margin="0,5,0,0"/>
+                </Grid>
+                
+                <!-- Image Size -->
+                <TextBlock Text="Image Size" Classes="SectionHeader"/>
+                <Grid ColumnDefinitions="Auto,*,10,Auto,*" RowDefinitions="Auto">
+                    <TextBlock Grid.Column="0" Text="Width:" Classes="Label"/>
+                    <NumericUpDown Grid.Column="1" Name="WidthNumeric" 
+                                   Value="512" Minimum="64" Maximum="2048" 
+                                   Increment="64"/>
+                    
+                    <TextBlock Grid.Column="3" Text="Height:" Classes="Label"/>
+                    <NumericUpDown Grid.Column="4" Name="HeightNumeric" 
+                                   Value="512" Minimum="64" Maximum="2048" 
+                                   Increment="64"/>
+                </Grid>
+                
+                <!-- Generation Settings -->
+                <TextBlock Text="Generation Settings" Classes="SectionHeader"/>
+                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                    
+                    <!-- Steps -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Steps:" Classes="Label"/>
+                    <Slider Grid.Row="0" Grid.Column="1" Name="StepsSlider" 
+                            Minimum="1" Maximum="300" Value="20"
+                            TickFrequency="1" IsSnapToTickEnabled="True"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding #StepsSlider.Value}" 
+                               Width="40" TextAlignment="Right"/>
+                    
+                    <!-- CFG Scale -->
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="CFG Scale:" Classes="Label" Margin="0,5,10,0"/>
+                    <Slider Grid.Row="1" Grid.Column="1" Name="CfgSlider" 
+                            Minimum="1" Maximum="20" Value="8"
+                            TickFrequency="0.5" Margin="0,5,0,0"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" 
+                               Text="{Binding #CfgSlider.Value, StringFormat='{}{0:F1}'}" 
+                               Width="40" TextAlignment="Right" Margin="0,5,0,0"/>
+                    
+                    <!-- Batch Size -->
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Batch Size:" Classes="Label" Margin="0,5,10,0"/>
+                    <NumericUpDown Grid.Row="2" Grid.Column="1" Name="BatchSizeNumeric" 
+                                   Value="1" Minimum="1" Maximum="8"
+                                   Margin="0,5,0,0"/>
+                    
+                    <!-- Sampler -->
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Sampler:" Classes="Label" Margin="0,5,10,0"/>
+                    <ComboBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" 
+                              Name="SamplerComboBox" 
+                              SelectedIndex="0" 
+                              Margin="0,5,0,0">
+                        <ComboBoxItem Content="euler"/>
+                        <ComboBoxItem Content="euler_a"/>
+                        <ComboBoxItem Content="dpmpp_2m"/>
+                        <ComboBoxItem Content="dpmpp_2m_sde"/>
+                        <ComboBoxItem Content="dpmpp_3m_sde"/>
+                        <ComboBoxItem Content="ddim"/>
+                        <ComboBoxItem Content="ddpm"/>
+                    </ComboBox>
+                    
+                    <!-- Scheduler -->
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Scheduler:" Classes="Label" Margin="0,5,10,0"/>
+                    <ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" 
+                              Name="SchedulerComboBox" 
+                              SelectedIndex="0"
+                              Margin="0,5,0,0">
+                        <ComboBoxItem Content="normal"/>
+                        <ComboBoxItem Content="karras"/>
+                        <ComboBoxItem Content="exponential"/>
+                        <ComboBoxItem Content="sgm_uniform"/>
+                    </ComboBox>
+                </Grid>
+                
+                <!-- Seed -->
+                <TextBlock Text="Seed" Classes="SectionHeader"/>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Grid.Column="0" Name="SeedTextBox" 
+                             Watermark="Random (leave empty for random seed)"/>
+                    <Button Grid.Column="1" Content="Random" 
+                            Name="RandomSeedButton"
+                            Margin="5,0,0,0" Padding="10,5"/>
+                </Grid>
+                
+                <!-- Generated Image Preview -->
+                <TextBlock Text="Generated Image" Classes="SectionHeader"/>
+                <Border BorderBrush="Gray" BorderThickness="1" 
+                        MinHeight="300" Background="#222"
+                        CornerRadius="4">
+                    <Grid>
+                        <Image Name="GeneratedImage" 
+                               Stretch="Uniform"
+                               MaxWidth="800"
+                               MaxHeight="600"
+                               IsVisible="{Binding #GeneratedImage.Source, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                        <TextBlock Text="No image generated yet" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"
+                                   Foreground="Gray"
+                                   IsVisible="{Binding #GeneratedImage.Source, Converter={x:Static ObjectConverters.IsNull}}"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Status -->
+                <TextBlock Name="StatusTextBlock" 
+                           Text="" 
+                           Foreground="LightBlue"
+                           TextWrapping="Wrap"
+                           IsVisible="False"/>
+                
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row="1" 
+                BorderBrush="Gray" 
+                BorderThickness="0,1,0,0" 
+                Padding="0,10,0,0"
+                Margin="0,10,0,0">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <ProgressBar Grid.Column="0" 
+                             Name="ProgressBar"
+                             IsIndeterminate="True"
+                             IsVisible="False"
+                             Margin="0,0,10,0"/>
+                
+                <Button Grid.Column="1" 
+                        Content="Generate Image" 
+                        Name="GenerateButton"
+                        Padding="20,10"
+                        Margin="0,0,10,0"/>
+                
+                <Button Grid.Column="2" 
+                        Content="Save Image" 
+                        Name="SaveButton"
+                        Padding="20,10"
+                        IsEnabled="{Binding #GeneratedImage.Source, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+            </Grid>
+        </Border>
+    </Grid>
+    
+</UserControl>

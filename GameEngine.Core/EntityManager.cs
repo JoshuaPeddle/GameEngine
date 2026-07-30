@@ -1,10 +1,22 @@
-﻿namespace GameEngine.Core
+﻿using GameEngine.Core.Components;
+
+namespace GameEngine.Core
 {
     public class EntityManager
     {
+        /// <summary>Tag the renderer looks for when picking the active camera.</summary>
+        private const string CameraTag = "camera";
+
         private readonly List<Entity> entities = [];
         private readonly List<Entity> entitiesToAdd = [];
+        private readonly List<Entity> inactiveBuffer = [];
         private readonly Dictionary<Type, HashSet<Entity>> componentEntityMap = [];
+
+        // Pre-allocated caches to avoid per-frame allocations
+        private readonly Dictionary<Type, List<Entity>> cachedEntityLists = [];
+        private readonly Dictionary<Type, object> cachedTupleLists = [];
+        private readonly Dictionary<Type, object> cachedTuple2Lists = [];
+        private readonly Dictionary<string, List<Entity>> cachedTagLists = [];
 
         public EntityManager() { }
 
@@ -25,8 +37,14 @@
             }
             entitiesToAdd.Clear();
 
-            var inactiveEntities = entities.Where(e => !e.Active).ToList();
-            foreach (var entity in inactiveEntities)
+            inactiveBuffer.Clear();
+            foreach (var e in entities)
+            {
+                if (!e.Active)
+                    inactiveBuffer.Add(e);
+            }
+
+            foreach (var entity in inactiveBuffer)
             {
                 entities.Remove(entity);
                 foreach (var componentType in entity.Components.Keys)
@@ -60,13 +78,9 @@
             return entities[id];
         }
 
-        public List<Entity> GetEntitiesWith<T>() where T : Component
+        public IReadOnlyList<Entity> GetEntitiesWith<T>() where T : Component
         {
-            if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
-            {
-                return [.. entitySet];
-            }
-            return [];
+            return GetCachedEntityList<T>();
         }
 
         public Entity? GetEntityWithTag(string tag)
@@ -74,46 +88,73 @@
             return entities.FirstOrDefault(e => e.Tag == tag);
         }
 
-        public List<Entity> GetEntitiesWithTag(string tag)
+        public IReadOnlyList<Entity> GetEntitiesWithTag(string tag)
         {
-            return entities.Where(e => e.Tag == tag).ToList();
+            if (!cachedTagLists.TryGetValue(tag, out var cached))
+            {
+                cached = [];
+                cachedTagLists[tag] = cached;
+            }
+
+            cached.Clear();
+            foreach (var e in entities)
+            {
+                if (e.Tag == tag)
+                    cached.Add(e);
+            }
+            return cached;
         }
 
         public IReadOnlyList<Entity> GetEntitiesWithComponent<T>() where T : Component
         {
-            if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
-            {
-                return [.. entitySet];
-            }
-            return [];
+            return GetCachedEntityList<T>();
         }
 
-        public List<(Entity, T)> GetEntitiesWithComponents<T>() where T : Component
+        public IReadOnlyList<(Entity, T)> GetEntitiesWithComponents<T>() where T : Component
         {
-            if (componentEntityMap.TryGetValue(typeof(T), out var entitySet))
+            var type = typeof(T);
+            if (!cachedTupleLists.TryGetValue(type, out var cached))
             {
-                var result = new List<(Entity, T)>(entitySet.Count);
+                cached = new List<(Entity, T)>();
+                cachedTupleLists[type] = cached;
+            }
+
+            var result = (List<(Entity, T)>)cached;
+            result.Clear();
+
+            if (componentEntityMap.TryGetValue(type, out var entitySet))
+            {
                 foreach (var entity in entitySet)
                 {
                     result.Add((entity, entity.GetComponent<T>()));
                 }
-                return result;
             }
-            return [];
+            return result;
         }
 
         public IReadOnlyList<(Entity, T1, T2)> GetEntitiesWithComponents<T1, T2>() where T1 : Component where T2 : Component
         {
+            var key = typeof((T1, T2));
+            if (!cachedTuple2Lists.TryGetValue(key, out var cached))
+            {
+                cached = new List<(Entity, T1, T2)>();
+                cachedTuple2Lists[key] = cached;
+            }
+
+            var result = (List<(Entity, T1, T2)>)cached;
+            result.Clear();
+
             if (componentEntityMap.TryGetValue(typeof(T1), out var entitySet))
             {
-                var result = new List<(Entity, T1, T2)>(entitySet.Count);
                 foreach (var entity in entitySet)
                 {
-                    result.Add((entity, entity.GetComponent<T1>(), entity.GetComponent<T2>()));
+                    if (entity.HasComponent<T2>())
+                    {
+                        result.Add((entity, entity.GetComponent<T1>(), entity.GetComponent<T2>()));
+                    }
                 }
-                return result;
             }
-            return [];
+            return result;
         }
 
         public void Clear()
@@ -121,6 +162,7 @@
             entities.Clear();
             entitiesToAdd.Clear();
             componentEntityMap.Clear();
+            ClearCaches();
         }
 
         internal void AddEntityToComponentMap(Type componentType, Entity entity)
@@ -142,6 +184,106 @@
                 {
                     componentEntityMap.Remove(componentType);
                 }
+            }
+        }
+
+        private IReadOnlyList<Entity> GetCachedEntityList<T>() where T : Component
+        {
+            var type = typeof(T);
+            if (!cachedEntityLists.TryGetValue(type, out var cached))
+            {
+                cached = [];
+                cachedEntityLists[type] = cached;
+            }
+
+            cached.Clear();
+            if (componentEntityMap.TryGetValue(type, out var entitySet))
+            {
+                foreach (var entity in entitySet)
+                {
+                    cached.Add(entity);
+                }
+            }
+            return cached;
+        }
+
+        private void ClearCaches()
+        {
+            foreach (var list in cachedEntityLists.Values) list.Clear();
+            foreach (var obj in cachedTupleLists.Values)
+            {
+                if (obj is System.Collections.IList l) l.Clear();
+            }
+            foreach (var obj in cachedTuple2Lists.Values)
+            {
+                if (obj is System.Collections.IList l) l.Clear();
+            }
+            foreach (var list in cachedTagLists.Values) list.Clear();
+        }
+
+        /// <summary>
+        /// Fill <paramref name="buffer"/> with all renderable entity state.
+        /// Called on the engine thread after Update() so all deferred adds/removes are applied.
+        /// The buffer is reused frame to frame, so this allocates nothing once its backing
+        /// array has grown to fit the scene.
+        /// </summary>
+        public void BuildRenderSnapshot(RenderSnapshot buffer)
+        {
+            componentEntityMap.TryGetValue(typeof(CTransform), out var transformEntities);
+            buffer.Reset(transformEntities?.Count ?? 0);
+
+            // A camera entity is not required to carry a CTransform (none of the demo scenes
+            // give it one), so it has to be found through its own component set rather than
+            // while walking the transforms.
+            if (componentEntityMap.TryGetValue(typeof(CCamera), out var cameraEntities))
+            {
+                CCamera? activeCamera = null;
+                foreach (var entity in cameraEntities)
+                {
+                    if (!entity.TryGetComponent<CCamera>(out var cam))
+                        continue;
+
+                    // Match the legacy renderer: the entity tagged "camera" wins. Any other
+                    // camera is a fallback so untagged setups still render through one.
+                    if (entity.Tag == CameraTag)
+                    {
+                        activeCamera = cam;
+                        break;
+                    }
+                    activeCamera ??= cam;
+                }
+
+                if (activeCamera != null)
+                    buffer.SetCamera(new RenderSnapshot.CameraData(activeCamera));
+            }
+
+            if (transformEntities == null)
+                return;
+
+            foreach (var entity in transformEntities)
+            {
+                var transform = entity.GetComponent<CTransform>();
+
+                RenderSnapshot.AnimationData? animData = null;
+                if (entity.TryGetComponent<CAnimation>(out var anim))
+                    animData = new RenderSnapshot.AnimationData(anim);
+
+                RenderSnapshot.TextData? textData = null;
+                if (entity.TryGetComponent<CText>(out var text))
+                    textData = new RenderSnapshot.TextData(text);
+
+                RenderSnapshot.BoundingBoxData? bboxData = null;
+                if (entity.TryGetComponent<CBoundingBox>(out var bbox))
+                    bboxData = new RenderSnapshot.BoundingBoxData(bbox);
+
+                buffer.Add(new RenderSnapshot.Entry(
+                    entity.Id,
+                    entity.Tag,
+                    new RenderSnapshot.TransformData(transform),
+                    animData,
+                    textData,
+                    bboxData
+                ));
             }
         }
     }
