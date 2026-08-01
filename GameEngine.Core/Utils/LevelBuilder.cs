@@ -61,15 +61,53 @@ namespace GameEngine.Core.Utils
             entityData = new EntityData { Tag = tag };
         }
 
-        public EntityBuilder AddTransform(double x, double y, double rotation = 0)
+        public EntityBuilder AddTransform(double x, double y, double rotation = 0, int layer = 0,
+            double scaleX = 1, double scaleY = 1)
         {
             var transformData = new Dictionary<string, object>
             {
                 ["position"] = new { x, y },
-                ["rotation"] = rotation
+                ["rotation"] = rotation,
+                ["layer"] = layer,
+                ["scale"] = new { x = scaleX, y = scaleY }
             };
 
             return AddComponent("CTransform", transformData);
+        }
+
+        public EntityBuilder AddText(string text, int size = 24)
+        {
+            return AddComponent("CText", new Dictionary<string, object>
+            {
+                ["text"] = text,
+                ["size"] = size
+            });
+        }
+
+        public EntityBuilder AddCamera(double x = 0, double y = 0, double zoom = 1.0)
+        {
+            return AddComponent("CCamera", new Dictionary<string, object>
+            {
+                ["position"] = new { x, y },
+                ["zoom"] = zoom
+            });
+        }
+
+        public EntityBuilder AddGravity(double acceleration = 200)
+        {
+            return AddComponent("CGravity", new Dictionary<string, object>
+            {
+                ["acceleration"] = acceleration
+            });
+        }
+
+        public EntityBuilder AddMovement(double speed = 600, double maxSpeed = 250)
+        {
+            return AddComponent("CMovement", new Dictionary<string, object>
+            {
+                ["speed"] = speed,
+                ["maxSpeed"] = maxSpeed
+            });
         }
 
         public EntityBuilder AddAnimation(string animationName)

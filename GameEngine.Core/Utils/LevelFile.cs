@@ -16,17 +16,6 @@ namespace GameEngine.Core.Utils
     {
         public string Tag { get; set; } = string.Empty;
         public List<ComponentData> Components { get; set; } = new();
-
-        public static Entity ToEntity (EntityData entityData, EntityManager entityManager, ComponentFactory componentFactory)
-        {
-            var entity = entityManager.CreateEntity(entityData.Tag);
-            foreach (var componentData in entityData.Components)
-            {
-                var component = componentFactory.CreateComponent(componentData.Type, componentData.Data);
-                entity.AddComponent(component);
-            }
-            return entity;
-        }
     }
 
     public class LevelMetadata
@@ -197,10 +186,7 @@ namespace GameEngine.Core.Utils
         public LevelLoader(ComponentFactory componentFactory)
         {
             this.componentFactory = componentFactory;
-            specialEntityHandlers = new Dictionary<string, Action<Entity, InputManager, AudioSystem?>>
-            {
-                { "player", HandlePlayerEntity }
-            };
+            specialEntityHandlers = new Dictionary<string, Action<Entity, InputManager, AudioSystem?>>();
         }
 
         public void LoadLevel(LevelFile levelFile, EntityManager entityManager, InputManager? inputManager = null, AudioSystem? audioSystem = null)
@@ -236,31 +222,6 @@ namespace GameEngine.Core.Utils
             }
 
             return entity;
-        }
-
-        private void HandlePlayerEntity(Entity entity, InputManager inputManager, AudioSystem? audioSystem)
-        {
-            if (!entity.HasComponent<CInput>()) return;
-            MapInputActions(entity, inputManager, audioSystem);
-        }
-
-        private void MapInputActions(Entity entity, InputManager inputManager, AudioSystem? audioSystem)
-        {
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Up", entity, (input, isActive) => input.Up = isActive, true);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Down", entity, (input, isActive) => input.Down = isActive, true);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Left", entity, (input, isActive) => input.Left = isActive, true);
-            inputManager.ActionMapper.MapActionToComponent<CInput>("Right", entity, (input, isActive) => input.Right = isActive, true);
-
-            if (audioSystem != null)
-            {
-                inputManager.ActionMapper.MapActionToComponent<CInput>("PlaySound", entity, (input, isActive) =>
-                {
-                    if (isActive)
-                    {
-                        audioSystem.Play("Hit", SoundType.SoundEffect);
-                    }
-                }, true);
-            }
         }
 
         public void RegisterEntityHandler(string entityTag, Action<Entity, InputManager, AudioSystem?> handler)
