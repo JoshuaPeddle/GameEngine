@@ -20,10 +20,9 @@ public partial class ImageGeneratorControl : UserControl
     public ImageGeneratorControl()
     {
         InitializeComponent();
-        
-        // Initialize ComfyUI client - update this URL to match your server
-        _client = new ComfyUiClient("http://192.168.2.169:8000");
-        
+
+        _client = new ComfyUiClient();
+
         // Wire up events
         GenerateButton.Click += OnGenerateButtonClick;
         SaveButton.Click += OnSaveButtonClick;
