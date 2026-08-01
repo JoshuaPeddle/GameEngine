@@ -8,11 +8,25 @@ namespace GameEngine.Core.Systems
         public readonly Entity B;
         public readonly Vec2 Overlap;
 
-        public CollisionEvent(Entity a, Entity b, Vec2 overlap)
+        /// <summary>
+        /// <see cref="A"/>'s velocity at the moment of impact, before the collision was
+        /// resolved. Resolution zeroes the velocity component along the separation axis, so a
+        /// scene that wants to bounce — rather than stop — has to work from the impact value.
+        /// Reading the live velocity after the fact sees the zero and loses both the speed and
+        /// the direction it needs.
+        /// </summary>
+        public readonly Vec2 VelocityA;
+
+        /// <summary><see cref="B"/>'s velocity at the moment of impact. See <see cref="VelocityA"/>.</summary>
+        public readonly Vec2 VelocityB;
+
+        public CollisionEvent(Entity a, Entity b, Vec2 overlap, Vec2 velocityA, Vec2 velocityB)
         {
             A = a;
             B = b;
             Overlap = overlap;
+            VelocityA = velocityA;
+            VelocityB = velocityB;
         }
     }
 
@@ -57,7 +71,12 @@ namespace GameEngine.Core.Systems
 
                     if (overlap.X > 0.0 && overlap.Y > 0.0)
                     {
-                        CollisionEvents.Add(new CollisionEvent(entityA.entity, entityB.entity, overlap));
+                        // Captured before resolving: resolution zeroes the velocity along the
+                        // separation axis, and scenes that bounce need the impact value.
+                        CollisionEvents.Add(new CollisionEvent(
+                            entityA.entity, entityB.entity, overlap,
+                            entityA.transform.Velocity, entityB.transform.Velocity));
+
                         ResolveCollision(
                             entityA.bbox, entityA.transform,
                             entityB.bbox, entityB.transform,

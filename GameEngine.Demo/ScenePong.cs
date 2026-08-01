@@ -156,6 +156,12 @@ namespace GameEngine.Demo
                 var ball = aIsBall ? collision.A : collision.B;
                 var paddle = aIsPaddle ? collision.A : collision.B;
 
+                // The paddle is solid, so the physics system has already pushed the ball clear
+                // and zeroed its X velocity. Bounce off the impact velocity, not the live one,
+                // or the sign test below reads zero and fires the ball back into the paddle.
+                var ballImpactVelocity = aIsBall ? collision.VelocityA : collision.VelocityB;
+                var paddleImpactVelocity = aIsPaddle ? collision.VelocityA : collision.VelocityB;
+
                 var cBall = ball.GetComponent<CBall>();
 
                 if (cBall.LastHitPaddle != paddle.Tag)
@@ -163,15 +169,14 @@ namespace GameEngine.Demo
                     cBall.LastHitPaddle = paddle.Tag;
                     cBall.LastHitWall = "";
                     var ballTransform = ball.GetComponent<CTransform>();
-                    var paddleTransform = paddle.GetComponent<CTransform>();
 
-                    double paddleYVelocity = paddleTransform.Velocity.Y;
+                    double paddleYVelocity = paddleImpactVelocity.Y;
 
                     double yVelocityTransferFactor = 0.6;
 
-                    double newBallYVelocity = ballTransform.Velocity.Y + (paddleYVelocity * yVelocityTransferFactor);
+                    double newBallYVelocity = ballImpactVelocity.Y + (paddleYVelocity * yVelocityTransferFactor);
 
-                    if(ballTransform.Velocity.X < 0)
+                    if (ballImpactVelocity.X < 0)
                         ballTransform.Velocity = new Vec2(BallXSpeed, newBallYVelocity);
                     else
                         ballTransform.Velocity = new Vec2(-BallXSpeed, newBallYVelocity);
@@ -191,6 +196,11 @@ namespace GameEngine.Demo
                 var ball = aIsBall ? collision.A : collision.B;
                 var wall = aIsWall ? collision.A : collision.B;
 
+                // Walls are solid too, so the ball's Y velocity has already been zeroed by the
+                // time this runs. Reflect the impact value; negating the live one would leave
+                // the ball sliding along the wall.
+                var ballImpactVelocity = aIsBall ? collision.VelocityA : collision.VelocityB;
+
                 var cBall = ball.GetComponent<CBall>();
 
                 if (cBall.LastHitWall != wall.Tag)
@@ -203,7 +213,10 @@ namespace GameEngine.Demo
                         HandleScore(entityManager);
                     }
                     else if (wall.Tag == "wallTop" || wall.Tag == "wallBottom")
-                        ballTransform.Velocity = new Vec2(ballTransform.Velocity.X, -ballTransform.Velocity.Y);
+                    {
+                        // X stays live so a paddle bounce applied earlier this frame survives.
+                        ballTransform.Velocity = new Vec2(ballTransform.Velocity.X, -ballImpactVelocity.Y);
+                    }
                 }
             }
         }
