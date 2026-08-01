@@ -20,7 +20,6 @@ namespace GameEngine.Core.Systems
             this.options = options;
         }
 
-        /// <summary>Smoothed frames per second, over <see cref="RenderOptions.FpsSmoothingSamples"/> frames.</summary>
         public double Fps => _fps;
 
         public void Update(EntityManager entityManager, double deltaSeconds)
@@ -47,10 +46,6 @@ namespace GameEngine.Core.Systems
                     _fpsSampleSum = 0;
                 }
 
-                // Maintain a running total: drop the sample being evicted, add the new one.
-                // Re-summing the whole window every frame made this O(window), which is what
-                // the ring buffer was supposed to have removed. Slots not yet written hold 0,
-                // so the subtraction is a no-op while the window is still filling.
                 _fpsSampleSum -= _fpsSamples[_fpsSampleIndex];
                 _fpsSamples[_fpsSampleIndex] = currentFps;
                 _fpsSampleSum += currentFps;

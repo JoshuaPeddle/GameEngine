@@ -107,11 +107,6 @@ public sealed class RenderSnapshot
         }
     }
 
-    /// <summary>
-    /// Orders entries by layer, then by entity id. Ids are handed out monotonically, so
-    /// tying on them makes this equivalent to a stable sort on spawn order without needing
-    /// a stable sort algorithm.
-    /// </summary>
     private sealed class LayerComparer : IComparer<Entry>
     {
         public static readonly LayerComparer Instance = new();
@@ -126,15 +121,10 @@ public sealed class RenderSnapshot
     private Entry[] _entries = [];
     private int _count;
 
-    /// <summary>
     /// How many readers currently hold this buffer. Only ever touched under the engine's
     /// snapshot lock; a buffer with readers is never handed back out to be filled.
-    /// </summary>
     internal int Readers;
 
-    /// <summary>
-    /// The entities to draw, in paint order: ascending layer, and within a layer, spawn order.
-    /// </summary>
     public ReadOnlySpan<Entry> Entries => _entries.AsSpan(0, _count);
 
     /// <summary>The active camera, or null when the scene has none.</summary>
@@ -143,10 +133,8 @@ public sealed class RenderSnapshot
     /// <summary>Snapshot returned before the first frame is built. Never pooled or filled.</summary>
     public static readonly RenderSnapshot Empty = new();
 
-    /// <summary>
     /// Engine thread: clear the buffer and pre-size it for <paramref name="expectedCount"/>
     /// entries, reusing the existing array whenever it is already big enough.
-    /// </summary>
     internal void Reset(int expectedCount)
     {
         if (_entries.Length < expectedCount)
@@ -168,11 +156,6 @@ public sealed class RenderSnapshot
     /// <summary>Engine thread: record the camera to render through.</summary>
     internal void SetCamera(in CameraData camera) => ActiveCamera = camera;
 
-    /// <summary>
-    /// Engine thread: order entries by layer. Entries arrive in spawn order already, so this
-    /// is only worth doing when a scene actually assigns layers — the caller skips it when
-    /// every entity sits on the default layer, which is the common case.
-    /// </summary>
     internal void SortByLayer()
     {
         if (_count > 1)

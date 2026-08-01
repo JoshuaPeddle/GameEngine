@@ -15,34 +15,10 @@ namespace GameEngine.Core
         private readonly Dictionary<Type, HashSet<Entity>> componentEntityMap = [];
         private readonly Dictionary<int, Entity> entitiesById = [];
 
-        /// <summary>
-        /// Ids are handed out monotonically and never reused. They used to be derived from the
-        /// entity count, so despawning freed an id for the next spawn and two live entities
-        /// could end up sharing one.
-        /// </summary>
         private int nextEntityId;
 
-        /// <summary>
-        /// Bumped on every structural change: an entity added or removed, or a component added
-        /// to or removed from one. Cached query results record the version they were built at
-        /// and are rebuilt only when stale.
-        /// </summary>
         private int structuralVersion;
 
-        /// <summary>
-        /// A query result plus the <see cref="structuralVersion"/> it was built at.
-        /// <para>
-        /// A stale entry is replaced with a <em>new</em> list rather than cleared and refilled
-        /// in place. Callers hold onto these lists — systems iterate them, and
-        /// <see cref="Systems.PhysicsSystem"/> copies out of them — so mutating a list that has
-        /// already been handed out is what made the previous shared-buffer cache unsafe: a
-        /// nested query for the same component type wiped the list the outer loop was walking.
-        /// </para>
-        /// <para>
-        /// Steady state still allocates nothing. A rebuild only happens after a structural
-        /// change, which is far rarer than querying.
-        /// </para>
-        /// </summary>
         private sealed class CachedQuery<T>
         {
             public int Version = -1;
@@ -106,11 +82,6 @@ namespace GameEngine.Core
             structuralVersion++;
         }
 
-        /// <summary>
-        /// Create an entity. It becomes visible to <see cref="GetEntities"/> on the next
-        /// <see cref="Update"/>, but is addressable by id — and by component queries, once
-        /// components are attached — straight away.
-        /// </summary>
         public Entity CreateEntity(string tag)
         {
             Entity entity = new(nextEntityId++, tag, this);
@@ -124,11 +95,6 @@ namespace GameEngine.Core
             return entities;
         }
 
-        /// <summary>
-        /// Look an entity up by its id. This used to index the backing list, so any removal
-        /// shifted every later entity and returned the wrong one.
-        /// </summary>
-        /// <exception cref="EntityNotFoundException">No live entity carries that id.</exception>
         public Entity GetEntity(int id)
         {
             if (entitiesById.TryGetValue(id, out var entity))
@@ -137,7 +103,6 @@ namespace GameEngine.Core
             throw new EntityNotFoundException($"No entity with id {id}.");
         }
 
-        /// <summary>Non-throwing counterpart to <see cref="GetEntity"/>.</summary>
         public bool TryGetEntity(int id, [NotNullWhen(true)] out Entity? entity)
         {
             return entitiesById.TryGetValue(id, out entity);
@@ -250,8 +215,6 @@ namespace GameEngine.Core
             ClearCaches();
             structuralVersion++;
 
-            // nextEntityId deliberately keeps counting. Restarting it would let a reference
-            // held across a scene reset silently match a freshly created entity.
         }
 
         internal void AddEntityToComponentMap(Type componentType, Entity entity)
@@ -316,12 +279,10 @@ namespace GameEngine.Core
             cachedTagLists.Clear();
         }
 
-        /// <summary>
         /// Fill <paramref name="buffer"/> with all renderable entity state.
         /// Called on the engine thread after Update() so all deferred adds/removes are applied.
         /// The buffer is reused frame to frame, so this allocates nothing once its backing
         /// array has grown to fit the scene.
-        /// </summary>
         public void BuildRenderSnapshot(RenderSnapshot buffer)
         {
             buffer.Reset(entities.Count);
@@ -351,9 +312,6 @@ namespace GameEngine.Core
                     buffer.SetCamera(new RenderSnapshot.CameraData(activeCamera));
             }
 
-            // Walk the entity list rather than the component set: the list is in spawn order,
-            // whereas the set enumerates in hash-slot order, which reshuffles as soon as a
-            // despawn frees a slot for a later entity to reuse. Draw order has to be stable.
             bool anyNonDefaultLayer = false;
 
             foreach (var entity in entities)
@@ -387,8 +345,6 @@ namespace GameEngine.Core
                 ));
             }
 
-            // Entries are already in spawn order, so sorting is only needed when a scene
-            // actually uses layers.
             if (anyNonDefaultLayer)
                 buffer.SortByLayer();
         }

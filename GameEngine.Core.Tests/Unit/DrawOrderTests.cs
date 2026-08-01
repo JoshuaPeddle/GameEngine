@@ -2,10 +2,6 @@ using GameEngine.Core.Components;
 
 namespace GameEngine.Core.Tests.Unit;
 
-/// <summary>
-/// GE-03: draw order used to be whatever order the backing HashSet enumerated in, which
-/// looked like spawn order until something despawned and a new entity reused the freed slot.
-/// </summary>
 public class DrawOrderTests
 {
     private static Entity Spawn(EntityManager manager, string tag, int layer = 0)
@@ -37,13 +33,11 @@ public class DrawOrderTests
     [Test]
     public void DrawOrder_IsStableAcrossRemoveAndRespawn()
     {
-        // Arrange
         var manager = new EntityManager();
         var spawned = new List<Entity>();
         for (int i = 0; i < 8; i++) spawned.Add(Spawn(manager, "old" + i));
         manager.Update();
 
-        // Act: despawn from the middle, the way a game kills bullets, then spawn replacements.
         spawned[2].Active = false;
         spawned[3].Active = false;
         spawned[5].Active = false;
@@ -53,7 +47,6 @@ public class DrawOrderTests
         for (int i = 0; i < 3; i++) Spawn(manager, "new" + i);
         manager.Update();
 
-        // Assert: replacements draw after the survivors, not in the freed slots.
         Assert.That(DrawOrderOf(manager),
             Is.EqualTo("old0,old1,old4,old6,old7,new0,new1,new2"));
     }

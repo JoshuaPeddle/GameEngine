@@ -4,11 +4,6 @@ using GameEngine.Core.Utils;
 
 namespace GameEngine.Core.Tests.Unit;
 
-/// <summary>
-/// GE-04: <see cref="EntityBuilder"/> wrote component payloads with no "type" property, but
-/// <see cref="LevelFile.LoadFromJson"/> requires one — so anything the builder produced could
-/// be saved but never loaded back.
-/// </summary>
 public class LevelFileTests
 {
     private static LevelFile SampleLevel() =>
@@ -85,8 +80,6 @@ public class LevelFileTests
     [Test]
     public void RoundTrip_IsStableAcrossRepeatedSaves()
     {
-        // Loaded component data carries its own "type" property, while builder output does
-        // not. Re-serialising must not duplicate it or drop it.
         var once = LevelFile.LoadFromJson(SampleLevel().ToJson());
         var onceJson = once.ToJson();
         var twice = LevelFile.LoadFromJson(onceJson);
@@ -130,10 +123,8 @@ public class LevelFileTests
     [Test]
     public void ComponentFactory_ReadsTransformRotation()
     {
-        // GE-31: AddTransform wrote a rotation that the factory silently dropped.
         var data = ComponentOf(LevelFile.LoadFromJson(SampleLevel().ToJson()), "player", "CTransform").Data;
 
-        // CTransform creation never consults the asset store.
         var factory = new ComponentFactory(assets: null!);
         var transform = (CTransform)factory.CreateComponent("CTransform", data);
 
@@ -148,7 +139,6 @@ public class LevelFileTests
     [Test]
     public void ComponentFactory_DefaultsRotationWhenAbsent()
     {
-        // Levels authored by hand predate the rotation field, so it has to stay optional.
         const string json = """
             { "entities": [ { "tag": "tile", "components": [
                 { "type": "CTransform", "position": { "x": 3, "y": 4 } } ] } ] }

@@ -6,16 +6,11 @@ namespace GameEngine.Core
     {
         public SKBitmap texture;
         public int frames;
-        public float delay; // Delay between frames in milliseconds, as authored in assets.txt
+        public float delay;
         public int frameWidth;
         public int frameHeight;
         public SKRect[]? _cachedFrames;
 
-        /// <summary>
-        /// The same delay in seconds — the unit the engine runs on. Asset files keep authoring
-        /// milliseconds because that is the friendlier number to write; the conversion happens
-        /// once here rather than on every frame.
-        /// </summary>
         private readonly double frameDurationSeconds;
 
         public Animation(SKBitmap texture, int frames, float delayMs)
@@ -41,14 +36,10 @@ namespace GameEngine.Core
 
         public SKBitmap Texture => texture;
 
-        /// <param name="elapsedSeconds">Seconds this animation has been playing.</param>
         public SKRect GetSourceRect(double elapsedSeconds)
         {
             _cachedFrames ??= InitializeFrames(frames);
 
-            // assets.txt authors single-image animations with a delay of 0. Dividing by that
-            // yields infinity, which casts to int.MinValue and can index outside the frame
-            // array; treat a non-positive delay as "hold the first frame".
             if (frameDurationSeconds <= 0)
                 return _cachedFrames[0];
 

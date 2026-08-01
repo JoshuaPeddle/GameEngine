@@ -3,15 +3,6 @@ using GameEngine.Core.Components;
 
 namespace GameEngine.Demo.Tests;
 
-/// <summary>
-/// Smoke tests over every shipped demo scene, plus per-scene checks on the behaviour each one
-/// actually exists to demonstrate.
-/// <para>
-/// The generic pass is the regression net: it drives real scenes through a real engine, which
-/// is what would have caught the Pong ball freezing on a paddle after the collision-resolution
-/// change. A scene that loads and runs without throwing is not necessarily a scene that works.
-/// </para>
-/// </summary>
 public class DemoSceneTests
 {
     private static IEnumerable<Type> SceneTypes() => SceneHarness.AllDemoSceneTypes();
@@ -21,7 +12,7 @@ public class DemoSceneTests
     {
         var harness = SceneHarness.Load(SceneHarness.Instantiate(sceneType));
 
-        harness.Run(300); // five seconds at 60fps
+        harness.Run(300);
 
         Assert.That(harness.Engine.IsRunning, Is.True);
     }
@@ -48,8 +39,6 @@ public class DemoSceneTests
     [TestCaseSource(nameof(SceneTypes))]
     public void Scene_SurvivesBeingReset(Type sceneType)
     {
-        // ResetScene rebuilds the systems and the entity manager, which is the path most likely
-        // to leave a scene holding a stale reference.
         var harness = SceneHarness.Load(SceneHarness.Instantiate(sceneType));
         harness.Run(30);
 
@@ -61,12 +50,9 @@ public class DemoSceneTests
         Assert.Pass();
     }
 
-    // ── Per-scene behaviour ─────────────────────────────────────────────
-
     [Test]
     public void Pong_BallKeepsRallying()
     {
-        // The regression that shipped past the unit tests: the ball hit a paddle and stopped.
         var harness = SceneHarness.Load(new ScenePong());
         var ball = harness.Require("ball").GetComponent<CTransform>();
 
@@ -118,7 +104,6 @@ public class DemoSceneTests
 
         Assert.That(player.Position.Y, Is.GreaterThan(startY), "gravity should have pulled the player down");
 
-        // Once landed it should settle rather than sink through or jitter.
         double landedY = player.Position.Y;
         harness.Run(60);
         Assert.That(player.Position.Y, Is.EqualTo(landedY).Within(2.0), "the player should rest on the platform");
@@ -139,9 +124,6 @@ public class DemoSceneTests
     [Test]
     public void BrickBreaker_HoldsTheBallUntilItIsLaunched()
     {
-        // The scene opens in an aiming state: the ball sits on the paddle and only launches on
-        // a pointer press. Staying still here is correct, so this pins that rather than
-        // asserting motion.
         var harness = SceneHarness.Load(new SceneBrickBreaker());
         var ball = harness.Require("ball").GetComponent<CTransform>();
         var startPosition = ball.Position;

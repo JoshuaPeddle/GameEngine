@@ -5,14 +5,8 @@ using GameEngine.Core.Systems;
 
 namespace GameEngine.Demo.Tests;
 
-/// <summary>
-/// Drives a real <see cref="Engine"/> headlessly so scenes can be exercised the way the
-/// runners exercise them — same system order, same scene-change path, same snapshot
-/// publication — but with a fixed delta and no thread, so results are deterministic.
-/// </summary>
 public sealed class SceneHarness
 {
-    /// <summary>60fps, matching what the demos were tuned against.</summary>
     public const double FrameSeconds = 1.0 / 60.0;
 
     public Engine Engine { get; }
@@ -26,26 +20,19 @@ public sealed class SceneHarness
         Scene = scene;
     }
 
-    /// <summary>
-    /// Loads a scene and runs it up to its first live frame. Audio is off: these tests never
-    /// assert on sound, and a mixer is not available on every machine.
-    /// </summary>
     public static SceneHarness Load(Scene scene)
     {
         var engine = new Engine(audioEnabled: false);
         engine.SizeChanged(800, 600);
         engine.ChangeScene(scene);
 
-        // Applies the queued scene change; the engine then holds until a paint happens.
         engine.Tick(FrameSeconds);
 
-        // Stand in for a runner presenting that first frame.
         engine.NotifyFirstPresent();
 
         return new SceneHarness(engine, scene);
     }
 
-    /// <summary>Advance <paramref name="frames"/> frames, asserting the engine stays healthy.</summary>
     public SceneHarness Run(int frames)
     {
         for (int frame = 0; frame < frames; frame++)
@@ -65,10 +52,6 @@ public sealed class SceneHarness
         return this;
     }
 
-    /// <summary>
-    /// A scene that produces NaN or infinite positions still "runs" — it just renders nothing
-    /// sensible. Catching it here is the difference between a green suite and a working game.
-    /// </summary>
     private void AssertStateIsFinite(int frame)
     {
         foreach (var entity in Entities.GetEntities())
@@ -85,7 +68,6 @@ public sealed class SceneHarness
         }
     }
 
-    /// <summary>Builds the render snapshot the UI thread would read, and returns its entries.</summary>
     public IReadOnlyList<RenderSnapshot.Entry> Snapshot()
     {
         var snapshot = Engine.GetRenderSnapshot();
@@ -112,7 +94,6 @@ public sealed class SceneHarness
         Run(1);
     }
 
-    /// <summary>Every concrete <see cref="Scene"/> the demo assembly ships.</summary>
     public static IEnumerable<Type> AllDemoSceneTypes() =>
         typeof(ScenePong).Assembly
             .GetTypes()
@@ -124,10 +105,6 @@ public sealed class SceneHarness
         (Scene)Activator.CreateInstance(sceneType)!;
 }
 
-/// <summary>
-/// Scenes resolve assets relative to the working directory, so point it at the test binary,
-/// where the csproj has staged assets.txt, the textures and the levels.
-/// </summary>
 [SetUpFixture]
 public class AssetEnvironment
 {
@@ -136,7 +113,6 @@ public class AssetEnvironment
     {
         Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!);
 
-        // Nothing here should depend on a fetcher another suite installed.
         Assets._fileFetcher = null;
     }
 }

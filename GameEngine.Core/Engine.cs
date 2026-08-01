@@ -32,12 +32,10 @@ namespace GameEngine.Core
         private RenderSnapshot? _readerSnapshot;
         private RenderSnapshot? _fillingSnapshot;
 
-        /// <summary>
         /// Called by the UI/render thread to get a consistent view of entity state.
         /// The returned buffer stays valid until this method is called again, at which point
         /// the previous one is recycled — so one reader thread per engine is assumed.
         /// The lock is only held long enough to swap references (nanoseconds).
-        /// </summary>
         public RenderSnapshot GetRenderSnapshot()
         {
             lock (_snapshotLock)
@@ -55,9 +53,7 @@ namespace GameEngine.Core
             }
         }
 
-        /// <summary>
         /// Engine thread: fill a buffer nobody is reading with current entity state and publish it.
-        /// </summary>
         private void PublishRenderSnapshot()
         {
             RenderSnapshot buffer;
@@ -104,7 +100,7 @@ namespace GameEngine.Core
         private volatile bool _pauseUntilFirstPresent;
 
         // Clamp extreme dt spikes
-        private const double MaxDeltaSeconds = 0.1; // cap to 100ms (10 FPS) to avoid catch-up bursts
+        private const double MaxDeltaSeconds = 0.1;
 
         public Engine(Action? invalidateAction = null, bool audioEnabled = true)
         {
@@ -132,14 +128,8 @@ namespace GameEngine.Core
                     DrawBoundingBoxes = false,
                     DrawEntityCenters = false,
                     DrawFps = true,
-                    // ~1 second of history at 60fps. The previous 1000 took roughly 1000 frames
-                    // to converge, so a hitch you could see with your eyes never reached the
-                    // counter.
                     FpsSmoothingSamples = 60
                 }));
-            // Audio is optional: TryCreate returns null on platforms without a mixer, or when
-            // the device or native library is missing. Scenes receive a nullable AudioSystem
-            // and are expected to cope with silence.
             if (_audioEnabled)
             {
                 var audioSystem = AudioSystem.TryCreate();
@@ -170,24 +160,8 @@ namespace GameEngine.Core
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Advance the simulation by one frame, applying any queued scene change first.
-        /// <para>
-        /// Both run loops are built on this, and it is public so a headless harness can drive
-        /// the engine deterministically — a fixed delta, no thread, no clock — which is how the
-        /// demo scenes are smoke-tested. Call it only from one thread.
-        /// </para>
-        /// </summary>
-        /// <param name="deltaSeconds">Seconds to advance by.</param>
-        /// <returns>
-        /// True when the simulation advanced. False when the frame was consumed by a scene
-        /// change, or while paused awaiting the first paint, or while stopped — in which case
-        /// the caller should not treat it as a rendered frame.
-        /// </returns>
         public bool Tick(double deltaSeconds)
         {
-            // Scene changes are queued from other threads and applied here, on the thread that
-            // owns the simulation.
             var scene = Interlocked.Exchange(ref _pendingScene, null);
             if (scene != null)
                 ApplySceneChange(scene);
@@ -333,12 +307,6 @@ namespace GameEngine.Core
                 ChangeScene(currentScene!);
         }
 
-        /// <summary>
-        /// Seconds elapsed since the previous frame. Seconds are the engine's one time unit:
-        /// every <see cref="ISystem.Update"/> and <see cref="Scene.Update"/> receives them, so
-        /// component values like <see cref="Components.CGravity.Acceleration"/> can be written
-        /// in the physical units they document.
-        /// </summary>
         private double CalculateDeltaTime()
         {
             double currentTime = stopwatch.Elapsed.TotalSeconds;

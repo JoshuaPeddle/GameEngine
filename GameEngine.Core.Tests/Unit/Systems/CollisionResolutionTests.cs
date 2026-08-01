@@ -3,17 +3,6 @@ using GameEngine.Core.Systems;
 
 namespace GameEngine.Core.Tests.Unit.Systems;
 
-/// <summary>
-/// GE-03: resolution only ever pushed the entity that happened to come first in the pair
-/// loop, and only when the other one was solid. Which entity that was depended on HashSet
-/// slot order, so in Pong the ball was pushed out of a paddle or passed straight through it
-/// depending on internal hashing state.
-/// <para>
-/// <see cref="CBoundingBox.BlockMovement"/> means "I am solid; things get pushed out of me",
-/// which is how every demo scene uses it: players and balls are false, platforms, paddles
-/// and walls are true.
-/// </para>
-/// </summary>
 public class CollisionResolutionTests
 {
     private static Entity Add(EntityManager manager, string tag, Vec2 position, bool solid)
@@ -24,7 +13,6 @@ public class CollisionResolutionTests
         return entity;
     }
 
-    /// <summary>Overlapping pair, resolved once. <paramref name="solidFirst"/> flips creation order.</summary>
     private static (Vec2 mover, Vec2 solid) ResolveOverlap(bool solidFirst)
     {
         var manager = new EntityManager();
@@ -63,11 +51,9 @@ public class CollisionResolutionTests
     [Test]
     public void Resolution_DoesNotDependOnCreationOrder()
     {
-        // Arrange / Act: the same overlap, built both ways round.
         var moverFirst = ResolveOverlap(solidFirst: false);
         var solidFirst = ResolveOverlap(solidFirst: true);
 
-        // Assert
         Assert.Multiple(() =>
         {
             Assert.That(solidFirst.mover.X, Is.EqualTo(moverFirst.mover.X).Within(0.001));
@@ -78,8 +64,6 @@ public class CollisionResolutionTests
     [Test]
     public void MovingSolid_BacksOutOfStationarySolid()
     {
-        // Arrange: both solid, but only one is moving. Static geometry must not be shoved
-        // aside by something running into it.
         var manager = new EntityManager();
 
         var mover = manager.CreateEntity("mover");
@@ -93,7 +77,6 @@ public class CollisionResolutionTests
         wall.AddComponent(new CBoundingBox(new Vec2(20, 20), false, true));
         manager.Update();
 
-        // Act: step until the mover reaches the wall.
         var movement = new MovementSystem();
         var physics = new PhysicsSystem();
         for (int frame = 0; frame < 20; frame++)
@@ -102,7 +85,6 @@ public class CollisionResolutionTests
             physics.Update(manager, 0.016);
         }
 
-        // Assert
         Assert.Multiple(() =>
         {
             Assert.That(moverTransform.Position.X, Is.EqualTo(10).Within(0.001),
@@ -132,8 +114,6 @@ public class CollisionResolutionTests
     [Test]
     public void NeitherSolid_ReportsTheCollisionButMovesNothing()
     {
-        // Arrange: this is how BrickBreaker and Snake work — the scene reacts to the event
-        // and does its own bouncing.
         var manager = new EntityManager();
         var a = Add(manager, "ball", new Vec2(0, 0), solid: false);
         var b = Add(manager, "brick", new Vec2(10, 0), solid: false);
@@ -153,9 +133,6 @@ public class CollisionResolutionTests
     [Test]
     public void CollisionEvent_CarriesVelocityFromBeforeResolution()
     {
-        // Arrange: resolution zeroes the velocity along the separation axis. A scene that
-        // bounces rather than stops — Pong reversing the ball off a paddle — has to work from
-        // the impact value, because by the time it runs the live velocity is already zero.
         var manager = new EntityManager();
 
         var mover = manager.CreateEntity("ball");
@@ -168,11 +145,9 @@ public class CollisionResolutionTests
         paddle.AddComponent(new CBoundingBox(new Vec2(20, 20), false, true));
         manager.Update();
 
-        // Act
         var physics = new PhysicsSystem();
         physics.Update(manager, 1.0 / 60.0);
 
-        // Assert
         Assert.That(physics.CollisionEvents, Has.Count.EqualTo(1));
         var collision = physics.CollisionEvents[0];
 
@@ -190,7 +165,6 @@ public class CollisionResolutionTests
     [Test]
     public void Resolution_SeparatesAlongTheShallowAxis()
     {
-        // Arrange: deep overlap horizontally, shallow vertically -> separate vertically.
         var manager = new EntityManager();
         var mover = manager.CreateEntity("mover");
         mover.AddComponent(new CTransform(new Vec2(0, 0)));
@@ -201,10 +175,8 @@ public class CollisionResolutionTests
         ground.AddComponent(new CBoundingBox(new Vec2(40, 40), false, true));
         manager.Update();
 
-        // Act
         new PhysicsSystem().Update(manager, 1.0 / 60.0);
 
-        // Assert
         var position = mover.GetComponent<CTransform>().Position;
         Assert.Multiple(() =>
         {

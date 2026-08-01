@@ -8,7 +8,6 @@ public class AnimationTests
     private const int FrameWidth = 10;
     private const int FrameCount = 4;
 
-    /// <summary>A 4-frame strip, each frame 10px wide, 250ms per frame — one second per loop.</summary>
     private static Animation FourFrameStrip(float delayMs = 250f)
         => new(new SKBitmap(FrameWidth * FrameCount, 16), FrameCount, delayMs);
 
@@ -18,11 +17,8 @@ public class AnimationTests
     [Test]
     public void Animation_AdvancesOnSecondsElapsed()
     {
-        // Arrange: GE-05 — CAnimation accumulates whatever unit the engine feeds it, and the
-        // frame delay is authored in milliseconds in assets.txt. The two must agree.
         var animation = new CAnimation(FourFrameStrip());
 
-        // Assert: 250ms per frame, driven with seconds.
         Assert.That(FrameIndexOf(animation), Is.EqualTo(0), "starts on the first frame");
 
         animation.Update(0.25);
@@ -50,9 +46,6 @@ public class AnimationTests
     [Test]
     public void Animation_WithZeroDelay_StaysOnFirstFrameAndDoesNotThrow()
     {
-        // Arrange: GE-53 — assets.txt authors several single-frame animations with a delay of
-        // 0. Dividing elapsed time by that delay yields infinity, which casts to int.MinValue;
-        // it only avoided an IndexOutOfRange because those animations have exactly one frame.
         var animation = new CAnimation(FourFrameStrip(delayMs: 0f));
 
         Assert.DoesNotThrow(() =>
