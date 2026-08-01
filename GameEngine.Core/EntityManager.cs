@@ -324,8 +324,7 @@ namespace GameEngine.Core
         /// </summary>
         public void BuildRenderSnapshot(RenderSnapshot buffer)
         {
-            componentEntityMap.TryGetValue(typeof(CTransform), out var transformEntities);
-            buffer.Reset(transformEntities?.Count ?? 0);
+            buffer.Reset(entities.Count);
 
             // A camera entity is not required to carry a CTransform (none of the demo scenes
             // give it one), so it has to be found through its own component set rather than
@@ -352,12 +351,18 @@ namespace GameEngine.Core
                     buffer.SetCamera(new RenderSnapshot.CameraData(activeCamera));
             }
 
-            if (transformEntities == null)
-                return;
+            // Walk the entity list rather than the component set: the list is in spawn order,
+            // whereas the set enumerates in hash-slot order, which reshuffles as soon as a
+            // despawn frees a slot for a later entity to reuse. Draw order has to be stable.
+            bool anyNonDefaultLayer = false;
 
-            foreach (var entity in transformEntities)
+            foreach (var entity in entities)
             {
-                var transform = entity.GetComponent<CTransform>();
+                if (!entity.TryGetComponent<CTransform>(out var transform))
+                    continue;
+
+                if (transform.Layer != 0)
+                    anyNonDefaultLayer = true;
 
                 RenderSnapshot.AnimationData? animData = null;
                 if (entity.TryGetComponent<CAnimation>(out var anim))
@@ -374,12 +379,18 @@ namespace GameEngine.Core
                 buffer.Add(new RenderSnapshot.Entry(
                     entity.Id,
                     entity.Tag,
+                    transform.Layer,
                     new RenderSnapshot.TransformData(transform),
                     animData,
                     textData,
                     bboxData
                 ));
             }
+
+            // Entries are already in spawn order, so sorting is only needed when a scene
+            // actually uses layers.
+            if (anyNonDefaultLayer)
+                buffer.SortByLayer();
         }
     }
 }
