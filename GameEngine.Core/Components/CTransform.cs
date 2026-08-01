@@ -8,11 +8,6 @@
         public Vec2 Velocity = new(0.0f, 0.0f);
         public double Rotation = 0; // in degrees
 
-        /// <summary>
-        /// Draw order. Lower layers are painted first, so higher layers appear in front.
-        /// Entities sharing a layer are drawn in spawn order. Negative values are allowed
-        /// and put an entity behind the default layer.
-        /// </summary>
         public int Layer = 0;
 
         public CTransform(Vec2 position)

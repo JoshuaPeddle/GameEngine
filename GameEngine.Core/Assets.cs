@@ -11,12 +11,6 @@ namespace GameEngine.Core
 
         public static Func<string, Stream>? _fileFetcher;
 
-        /// <summary>
-        /// Open an asset through the custom fetcher when one is installed, falling back to the
-        /// file system otherwise. Android, browser, MAUI and the editor install a fetcher;
-        /// desktop and WinForms do not, so calling <see cref="_fileFetcher"/> directly throws
-        /// a NullReferenceException there.
-        /// </summary>
         public static Stream OpenAsset(string path) => _fileFetcher?.Invoke(path) ?? File.OpenRead(path);
 
         public Assets(string path)

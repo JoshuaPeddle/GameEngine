@@ -22,10 +22,9 @@ public class PhysicsAndMovementSystemTests
         wall.AddComponent(new CTransform(new Vec2(70, 50)));
         wall.AddComponent(new CBoundingBox(new Vec2(10, 10), true, true));
 
-
         for (int i = 0; i < 10; i++)
         {
-            movementSystem.Update(entityManager, 0.016); // 16 ms per frame
+            movementSystem.Update(entityManager, 0.016);
             physicsSystem.Update(entityManager, 0.016);
             entityManager.Update();
         }

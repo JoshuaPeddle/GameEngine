@@ -1,24 +1,11 @@
 using static GameEngine.Core.Exceptions;
-using static SDL2.SDL; // https://github.com/ppy/SDL2-CS/blob/master/src/SDL2_mixer.cs
-using static SDL2.SDL_mixer; // https://github.com/libsdl-org/SDL_mixer/
+using static SDL2.SDL;
+using static SDL2.SDL_mixer;
 
 namespace GameEngine.Core.Systems
 {
     public enum SoundType { BGM, SoundEffect }
 
-    /// <summary>
-    /// Audio playback through SDL2_mixer.
-    /// <para>
-    /// Background music plays on channel 0; sound effects take the first free channel from 1
-    /// upwards, and are dropped when every channel is busy. Decoded chunks are cached for the
-    /// lifetime of the system, so playing a sound is a pointer lookup rather than a file read.
-    /// </para>
-    /// <para>
-    /// Construct through <see cref="TryCreate"/> rather than the constructor unless failing to
-    /// initialise should be fatal: SDL2_mixer is unavailable on browser and mobile, and even on
-    /// desktop it fails when there is no audio device or the native library is missing.
-    /// </para>
-    /// </summary>
     public class AudioSystem : ISystem, IDisposable
     {
         private const int BgmChannel = 0;
@@ -30,20 +17,11 @@ namespace GameEngine.Core.Systems
         private Assets? _assets;
         private bool _disposed;
 
-        /// <summary>
-        /// Platforms where SDL2_mixer can run at all. Browser and mobile have no usable
-        /// backend, and attempting to initialise there fails inside native code.
-        /// </summary>
         public static bool IsSupportedPlatform =>
             !OperatingSystem.IsBrowser()
             && !OperatingSystem.IsAndroid()
             && !OperatingSystem.IsIOS();
 
-        /// <summary>
-        /// Returns a ready audio system, or null when audio is unavailable on this platform or
-        /// fails to initialise. Never throws — a machine with no sound device should still run
-        /// the game.
-        /// </summary>
         public static AudioSystem? TryCreate()
         {
             if (!IsSupportedPlatform)
@@ -55,8 +33,6 @@ namespace GameEngine.Core.Systems
             }
             catch (Exception)
             {
-                // No device, no native library, or a mixer that refused the format. Silence is
-                // the right outcome; taking the engine down with it is not.
                 return null;
             }
         }
@@ -85,8 +61,6 @@ namespace GameEngine.Core.Systems
 
             if (soundType == SoundType.BGM)
             {
-                // -1 loops indefinitely. This used to pass 100, which was a stand-in for
-                // "enough times that nobody notices".
                 Mix_PlayChannel(BgmChannel, chunk, LoopForever);
                 return;
             }
@@ -100,15 +74,8 @@ namespace GameEngine.Core.Systems
                 }
             }
 
-            // Every effect channel is busy. Dropping this sound beats cutting one that is
-            // already playing.
         }
 
-        /// <summary>
-        /// Decoded chunks are cached and reused. This previously called Mix_LoadWAV on every
-        /// single play, putting a file read and a decode on the engine thread each time a
-        /// sound effect fired.
-        /// </summary>
         private IntPtr GetOrLoadChunk(string assetName)
         {
             if (_chunkCache.TryGetValue(assetName, out IntPtr cached))
@@ -126,10 +93,6 @@ namespace GameEngine.Core.Systems
             return chunk;
         }
 
-        /// <summary>
-        /// Nothing to reclaim per frame: chunks live in the cache until disposal, and SDL
-        /// frees channels itself when playback ends.
-        /// </summary>
         public void Update(EntityManager entityManager, double deltaSeconds) { }
 
         public void Dispose()
@@ -138,7 +101,7 @@ namespace GameEngine.Core.Systems
                 return;
             _disposed = true;
 
-            Mix_HaltChannel(-1); // stop playback before the chunks it is reading go away
+            Mix_HaltChannel(-1);
 
             foreach (IntPtr chunk in _chunkCache.Values)
                 Mix_FreeChunk(chunk);
