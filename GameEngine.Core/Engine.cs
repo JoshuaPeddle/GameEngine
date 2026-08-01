@@ -30,6 +30,10 @@ namespace GameEngine.Core
 
         private volatile bool _isRunning = true;
         private volatile bool _stopped;
+        private readonly object _lifecycleLock = new();
+        private Thread? _runThread;
+        private Task? _browserLoopTask;
+        private int _disposeStarted;
 
         public bool IsRunning => _isRunning;
         public bool IsStopped => _stopped;
@@ -155,21 +159,29 @@ namespace GameEngine.Core
         // Browser: async loop with Task.Delay/Yield to avoid blocking the single UI thread.
         public Task Start()
         {
-            if (OperatingSystem.IsBrowser())
+            lock (_lifecycleLock)
             {
-                return StartAsyncLoopBrowser();
+                ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposeStarted) != 0, this);
+                if (_stopped)
+                    throw new InvalidOperationException("A stopped engine cannot be restarted.");
+
+                if (OperatingSystem.IsBrowser())
+                    return _browserLoopTask ??= StartAsyncLoopBrowser();
+
+                if (_runThread != null)
+                    return Task.CompletedTask;
+
+                // Use dedicated thread with high priority for better frame timing
+                _runThread = new Thread(RunLoop)
+                {
+                    Name = "GameEngine-Main",
+                    IsBackground = true,
+                    Priority = ThreadPriority.AboveNormal
+                };
+                _runThread.Start();
+
+                return Task.CompletedTask;
             }
-
-            // Use dedicated thread with high priority for better frame timing
-            var thread = new Thread(RunLoop)
-            {
-                Name = "GameEngine-Main",
-                IsBackground = true,
-                Priority = ThreadPriority.AboveNormal
-            };
-            thread.Start();
-
-            return Task.CompletedTask;
         }
 
         public bool Tick(double deltaSeconds)
@@ -257,18 +269,39 @@ namespace GameEngine.Core
 
         public void SetRunning(bool running)
         {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposeStarted) != 0, this);
             _isRunning = running;
         }
 
         public void Stop()
         {
             _stopped = true;
+            _isRunning = false;
+
+            Thread? runThread;
+            lock (_lifecycleLock)
+                runThread = _runThread;
+
+            // Stop is also the synchronization boundary used by the editor before unloading
+            // a scene assembly. Never return while that scene can still be executing.
+            if (runThread != null && runThread != Thread.CurrentThread)
+                runThread.Join();
         }
 
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref _disposeStarted, 1) != 0)
+                return;
+
             Stop();
             Systems.Dispose();
+            InputManager.Reset();
+            EntityManager.Clear();
+            lock (_lifecycleLock)
+            {
+                currentScene = null;
+                Interlocked.Exchange(ref _pendingScene, null);
+            }
             GC.SuppressFinalize(this);
         }
 
@@ -290,7 +323,12 @@ namespace GameEngine.Core
         // Queue the scene change; it will be applied on the engine thread
         public void ChangeScene(Scene scene)
         {
-            Interlocked.Exchange(ref _pendingScene, scene);
+            ArgumentNullException.ThrowIfNull(scene);
+            lock (_lifecycleLock)
+            {
+                ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposeStarted) != 0, this);
+                Interlocked.Exchange(ref _pendingScene, scene);
+            }
         }
 
         // Called from engine thread
@@ -324,6 +362,7 @@ namespace GameEngine.Core
 
         public void ResetScene(Scene? scene = null)
         {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposeStarted) != 0, this);
             EntityManager.Clear();
             if (scene != null)
                 ChangeScene(scene);

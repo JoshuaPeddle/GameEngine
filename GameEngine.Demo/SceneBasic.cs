@@ -8,6 +8,8 @@ namespace GameEngine.Demo
     public class SceneBasic : Scene
     {
         private Assets? assets;
+        private Assets Assets => assets
+            ?? throw new InvalidOperationException("SceneBasic has not been initialized.");
 
         private Entity? playerEntity;
         private Entity? grenadeEntity;
@@ -44,7 +46,7 @@ namespace GameEngine.Demo
             for (int i = 0; i < 3000; i++)
             {
                 var entity = entityManager.CreateEntity("entity" + i);
-                entity.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
+                entity.AddComponent(new CAnimation(Assets.GetAnimation("Grenade")));
 
                 var transform = new CTransform(Vec2.Zero);
                 var maxWidth = 800;

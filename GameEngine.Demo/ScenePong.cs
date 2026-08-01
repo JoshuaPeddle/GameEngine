@@ -9,6 +9,8 @@ namespace GameEngine.Demo
     public class ScenePong : Scene
     {
         private Assets? assets;
+        private Assets Assets => assets
+            ?? throw new InvalidOperationException("ScenePong has not been initialized.");
         public override int VirtualWidth => 800;
         public override int VirtualHeight => 600;
 
@@ -109,6 +111,7 @@ namespace GameEngine.Demo
             var paddle2BoundingBox = paddle2.GetComponent<CBoundingBox>();
 
             var ball = entityManager.GetEntityWithTag("ball");
+            if (ball == null) return;
             var ballTransform = ball.GetComponent<CTransform>();
             var ballBoundingBox = ball.GetComponent<CBoundingBox>();
 
@@ -228,8 +231,10 @@ namespace GameEngine.Demo
         private static void HandleScore(EntityManager entityManager)
         {
             var ball = entityManager.GetEntityWithTag("ball");
+            if (ball == null) return;
             var ballTransform = ball.GetComponent<CTransform>();
             var score = entityManager.GetEntityWithTag("score");
+            if (score == null) return;
             var cScore = (CScore)score.GetComponent<CText>();
             if (ballTransform.Position.X < 400)
             {

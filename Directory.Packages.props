@@ -37,6 +37,8 @@
     <PackageVersion Include="SkiaSharp.Views.WindowsForms" Version="2.88.9" />
     <PackageVersion Include="System.CodeDom" Version="9.0.9" />
     <PackageVersion Include="TextMateSharp.Grammars" Version="2.0.3" />
+    <!-- Avalonia 11.3.x requests 0.21.2; 0.21.3 contains the CVE-2026-39959 fixes. -->
+    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.21.3" />
     <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.1" />
   </ItemGroup>
 </Project>

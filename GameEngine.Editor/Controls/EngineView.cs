@@ -83,16 +83,29 @@ namespace GameEngine.Editor.Controls
             if (_vm != null)
             {
                 _vm.SceneSelected -= OnSceneSelected;
+                _vm.ScenesReloading -= OnScenesReloading;
                 _vm.PropertyChanged -= VmOnPropertyChanged;
             }
+
+            DisposeEngine();
 
             _vm = DataContext as LevelEditorViewModel;
 
             if (_vm != null)
             {
                 _vm.SceneSelected += OnSceneSelected;
+                _vm.ScenesReloading += OnScenesReloading;
                 _vm.PropertyChanged += VmOnPropertyChanged;
             }
+        }
+
+        private void OnScenesReloading() => DisposeEngine();
+
+        private void DisposeEngine()
+        {
+            _gameEngine?.Dispose();
+            _gameEngine = null;
+            _started = false;
         }
 
         private void VmOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -122,16 +135,18 @@ namespace GameEngine.Editor.Controls
                     _gameEngine.TargetFrameRate = 120;
                     InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
                     _gameEngine.SetRunning(_vm.IsEngineRunning);
-                    _gameEngine?.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
+                    _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
                 }
 
+                var engine = _gameEngine
+                    ?? throw new InvalidOperationException("The preview engine was not created.");
                 var sceneInstance = (Scene)Activator.CreateInstance(sceneType)!;
-                _gameEngine.ChangeScene(sceneInstance);
+                engine.ChangeScene(sceneInstance);
                 InvalidateVisual();
                 if (!_started)
                 {
                     _started = true;
-                    await _gameEngine.Start();
+                    await engine.Start();
                 }
             });
         }

@@ -8,6 +8,8 @@ namespace GameEngine.Demo
     public class SceneSideScroll2 : Scene
     {
         Assets? assets;
+        private Assets Assets => assets
+            ?? throw new InvalidOperationException("SceneSideScroll2 has not been initialized.");
         public override int VirtualWidth => 4000;
         public override int VirtualHeight => 800;
 
@@ -38,9 +40,8 @@ namespace GameEngine.Demo
             inputManager.ActionMapper.MapActionToComponent<CInput>("Jump", player, (input, isActive) => {
                 if (isActive)
                 {
-                    var p = entityManager.GetEntityWithTag("player");
-                    var transform = p.GetComponent<CTransform>();
-                    var cPlayer = p.GetComponent<CPlayer>();
+                    var transform = player.GetComponent<CTransform>();
+                    var cPlayer = player.GetComponent<CPlayer>();
 
                     if (Math.Abs(transform.Velocity.Y) < 0.1 && cPlayer.CanJump)
                     {
@@ -143,7 +144,7 @@ namespace GameEngine.Demo
             {
                 var floor = entityManager.CreateEntity("floor");
                 floor.AddComponent(new CTransform(new Vec2((startX + i) * 40, y)));
-                floor.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
+                floor.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock")));
                 floor.AddComponent(new CBoundingBox(new Vec2(40, 40), false, true));
             }
         }
@@ -154,7 +155,7 @@ namespace GameEngine.Demo
             {
                 var platform = entityManager.CreateEntity("platform");
                 platform.AddComponent(new CTransform(new Vec2((x + i) * 40, y)));
-                platform.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
+                platform.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock")));
                 platform.AddComponent(new CBoundingBox(new Vec2(40, 40), false, true));
             }
         }
@@ -163,7 +164,7 @@ namespace GameEngine.Demo
         {
             var coin = entityManager.CreateEntity("coin");
             coin.AddComponent(new CTransform(new Vec2(x, y)));
-            coin.AddComponent(new CAnimation(assets.GetAnimation("Grenade")));
+            coin.AddComponent(new CAnimation(Assets.GetAnimation("Grenade")));
             coin.AddComponent(new CBoundingBox(new Vec2(30, 30), false, false));
             coin.AddComponent(new CCoin());
         }
@@ -172,7 +173,7 @@ namespace GameEngine.Demo
         {
             var enemy = entityManager.CreateEntity("enemy");
             enemy.AddComponent(new CTransform(new Vec2(x, y), new Vec2(50, 0)));
-            enemy.AddComponent(new CAnimation(assets.GetAnimation("SnakeHead"))); 
+            enemy.AddComponent(new CAnimation(Assets.GetAnimation("SnakeHead")));
             enemy.AddComponent(new CBoundingBox(new Vec2(35, 35), false, false));
             enemy.AddComponent(new CMovement(50, 50));
             enemy.AddComponent(new CEnemy { PatrolDistance = 120 });
@@ -182,7 +183,7 @@ namespace GameEngine.Demo
         {
             var goal = entityManager.CreateEntity("goal");
             goal.AddComponent(new CTransform(new Vec2(x, y)));
-            goal.AddComponent(new CAnimation(assets.GetAnimation("SnakeFood"))); 
+            goal.AddComponent(new CAnimation(Assets.GetAnimation("SnakeFood")));
             goal.AddComponent(new CBoundingBox(new Vec2(40, 60), false, false));
             goal.AddComponent(new CText("GOAL!", 24));
         }
@@ -194,23 +195,25 @@ namespace GameEngine.Demo
             var camera = entityManager.GetEntityWithTag("camera");
             var cameraComponent = camera?.GetComponent<CCamera>();
             var player = entityManager.GetEntityWithTag("player");
-            var playerTransform = player?.GetComponent<CTransform>();
+            if (player == null)
+                return;
 
-            if (cameraComponent != null && playerTransform != null)
+            var playerTransform = player.GetComponent<CTransform>();
+            var playerComponent = player.GetComponent<CPlayer>();
+
+            if (cameraComponent != null)
             {
                 double targetX = Math.Max(cameraComponent.MinX, Math.Min(cameraComponent.MaxX, playerTransform.Position.X));
                 cameraComponent.Position = new Vec2(targetX, 400);
             }
             // Handle collisions
-            var playerComponent = player?.GetComponent<CPlayer>();
             foreach (var collision in physicsSystem.CollisionEvents)
             {
                 // Ground detection for jump reset
                 if ((collision.A.Tag == "player" && (collision.B.Tag == "floor" || collision.B.Tag == "platform")) ||
                     (collision.B.Tag == "player" && (collision.A.Tag == "floor" || collision.A.Tag == "platform")))
                 {
-                    var cInput = player.GetComponent<CInput>();
-                    if (playerComponent != null && playerTransform.Velocity.Y >= 0 && !playerComponent.CanJump)
+                    if (playerTransform.Velocity.Y >= 0 && !playerComponent.CanJump)
                     {
                         playerComponent.CanJump = true;
                     }

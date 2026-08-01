@@ -32,7 +32,7 @@ public class RenderSnapshotHandoffTests
     private sealed class TaggedScene(string tag, int count, Action? onInitialized = null) : Scene
     {
         public override void Initialize(EntityManager entityManager, InputManager inputManager,
-            AudioSystem audioPlayer, Action<Scene?> resetScene)
+            AudioSystem? audioPlayer, Action<Scene?> resetScene)
         {
             for (int i = 0; i < count; i++)
                 entityManager.CreateEntity(tag).AddComponent(new CTransform(new Vec2(i, i)));
@@ -101,7 +101,7 @@ public class RenderSnapshotHandoffTests
         }
         finally
         {
-            engine.SetRunning(false);
+            engine.Dispose();
         }
 
         // Assert
@@ -172,7 +172,7 @@ public class RenderSnapshotHandoffTests
         }
         finally
         {
-            engine.SetRunning(false);
+            engine.Dispose();
         }
     }
 }
