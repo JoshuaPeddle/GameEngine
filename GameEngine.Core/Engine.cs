@@ -132,7 +132,10 @@ namespace GameEngine.Core
                     DrawBoundingBoxes = false,
                     DrawEntityCenters = false,
                     DrawFps = true,
-                    FpsSmoothingSamples = 1000
+                    // ~1 second of history at 60fps. The previous 1000 took roughly 1000 frames
+                    // to converge, so a hitch you could see with your eyes never reached the
+                    // counter.
+                    FpsSmoothingSamples = 60
                 }));
             if (false==true)
                 Systems.Add(new AudioSystem());
