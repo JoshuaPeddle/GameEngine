@@ -100,9 +100,14 @@ namespace GameEngine.Core.Utils
 
                 foreach (var componentElement in entityElement.GetProperty("components").EnumerateArray())
                 {
+                    if (!componentElement.TryGetProperty("type", out var typeElement))
+                        throw new InvalidDataException(
+                            $"Component on entity '{entityData.Tag}' has no \"type\" property.");
+
                     var componentData = new ComponentData
                     {
-                        Type = componentElement.GetProperty("type").GetString() ?? throw new InvalidDataException("Component type is required"),
+                        Type = typeElement.GetString() ?? throw new InvalidDataException(
+                            $"Component on entity '{entityData.Tag}' has a null \"type\"."),
                         Data = componentElement.Clone()
                     };
                     entityData.Components.Add(componentData);
@@ -145,8 +150,25 @@ namespace GameEngine.Core.Utils
                     writer.WriteStartArray();
                     foreach (var comp in entity.Components)
                     {
-                        // comp.Data already includes the component object with its own "type" and properties
-                        comp.Data.WriteTo(writer);
+                        // ComponentData.Type is the single source of truth for the discriminator.
+                        // Data carries only the payload when it came from LevelBuilder, but
+                        // carries a "type" of its own when it came from LoadFromJson, so that
+                        // copy is skipped rather than written twice. Writing the discriminator
+                        // here is what makes builder output loadable at all.
+                        writer.WriteStartObject();
+                        writer.WriteString("type", comp.Type);
+
+                        if (comp.Data.ValueKind == JsonValueKind.Object)
+                        {
+                            foreach (var property in comp.Data.EnumerateObject())
+                            {
+                                if (property.NameEquals("type"))
+                                    continue;
+                                property.WriteTo(writer);
+                            }
+                        }
+
+                        writer.WriteEndObject();
                     }
                     writer.WriteEndArray();
 

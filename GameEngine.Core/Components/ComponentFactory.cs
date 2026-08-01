@@ -35,7 +35,15 @@ namespace GameEngine.Core.Components
             var position = data.GetProperty("position");
             double x = position.GetProperty("x").GetDouble();
             double y = position.GetProperty("y").GetDouble();
-            return new CTransform(new Vec2(x, y));
+
+            var transform = new CTransform(new Vec2(x, y));
+
+            // LevelBuilder has always written a rotation; it was simply never read back.
+            // Optional, so levels authored before it existed still load.
+            if (data.TryGetProperty("rotation", out var rotation))
+                transform.Rotation = rotation.GetDouble();
+
+            return transform;
         }
 
         private Component CreateCAnimation(JsonElement data)
