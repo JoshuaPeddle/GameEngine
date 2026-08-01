@@ -1,4 +1,6 @@
 ﻿using GameEngine.Core.Components;
+using System.Diagnostics.CodeAnalysis;
+using static GameEngine.Core.Exceptions;
 
 namespace GameEngine.Core
 {
@@ -11,31 +13,69 @@ namespace GameEngine.Core
         private readonly List<Entity> entitiesToAdd = [];
         private readonly List<Entity> inactiveBuffer = [];
         private readonly Dictionary<Type, HashSet<Entity>> componentEntityMap = [];
+        private readonly Dictionary<int, Entity> entitiesById = [];
 
-        // Pre-allocated caches to avoid per-frame allocations
-        private readonly Dictionary<Type, List<Entity>> cachedEntityLists = [];
+        /// <summary>
+        /// Ids are handed out monotonically and never reused. They used to be derived from the
+        /// entity count, so despawning freed an id for the next spawn and two live entities
+        /// could end up sharing one.
+        /// </summary>
+        private int nextEntityId;
+
+        /// <summary>
+        /// Bumped on every structural change: an entity added or removed, or a component added
+        /// to or removed from one. Cached query results record the version they were built at
+        /// and are rebuilt only when stale.
+        /// </summary>
+        private int structuralVersion;
+
+        /// <summary>
+        /// A query result plus the <see cref="structuralVersion"/> it was built at.
+        /// <para>
+        /// A stale entry is replaced with a <em>new</em> list rather than cleared and refilled
+        /// in place. Callers hold onto these lists — systems iterate them, and
+        /// <see cref="Systems.PhysicsSystem"/> copies out of them — so mutating a list that has
+        /// already been handed out is what made the previous shared-buffer cache unsafe: a
+        /// nested query for the same component type wiped the list the outer loop was walking.
+        /// </para>
+        /// <para>
+        /// Steady state still allocates nothing. A rebuild only happens after a structural
+        /// change, which is far rarer than querying.
+        /// </para>
+        /// </summary>
+        private sealed class CachedQuery<T>
+        {
+            public int Version = -1;
+            public List<T> Items = [];
+        }
+
+        private readonly Dictionary<Type, object> cachedEntityLists = [];
         private readonly Dictionary<Type, object> cachedTupleLists = [];
         private readonly Dictionary<Type, object> cachedTuple2Lists = [];
-        private readonly Dictionary<string, List<Entity>> cachedTagLists = [];
+        private readonly Dictionary<string, object> cachedTagLists = [];
 
         public EntityManager() { }
 
         public void Update()
         {
-            foreach (var entity in entitiesToAdd)
+            if (entitiesToAdd.Count > 0)
             {
-                entities.Add(entity);
-                foreach (var componentType in entity.Components.Keys)
+                foreach (var entity in entitiesToAdd)
                 {
-                    if (!componentEntityMap.TryGetValue(componentType, out var entitySet))
+                    entities.Add(entity);
+                    foreach (var componentType in entity.Components.Keys)
                     {
-                        entitySet = [];
-                        componentEntityMap[componentType] = entitySet;
+                        if (!componentEntityMap.TryGetValue(componentType, out var entitySet))
+                        {
+                            entitySet = [];
+                            componentEntityMap[componentType] = entitySet;
+                        }
+                        entitySet.Add(entity);
                     }
-                    entitySet.Add(entity);
                 }
+                entitiesToAdd.Clear();
+                structuralVersion++;
             }
-            entitiesToAdd.Clear();
 
             inactiveBuffer.Clear();
             foreach (var e in entities)
@@ -44,9 +84,13 @@ namespace GameEngine.Core
                     inactiveBuffer.Add(e);
             }
 
+            if (inactiveBuffer.Count == 0)
+                return;
+
             foreach (var entity in inactiveBuffer)
             {
                 entities.Remove(entity);
+                entitiesById.Remove(entity.Id);
                 foreach (var componentType in entity.Components.Keys)
                 {
                     if (componentEntityMap.TryGetValue(componentType, out var entitySet))
@@ -59,12 +103,19 @@ namespace GameEngine.Core
                     }
                 }
             }
+            structuralVersion++;
         }
 
+        /// <summary>
+        /// Create an entity. It becomes visible to <see cref="GetEntities"/> on the next
+        /// <see cref="Update"/>, but is addressable by id — and by component queries, once
+        /// components are attached — straight away.
+        /// </summary>
         public Entity CreateEntity(string tag)
         {
-            Entity entity = new(entities.Count + entitiesToAdd.Count, tag, this);
+            Entity entity = new(nextEntityId++, tag, this);
             entitiesToAdd.Add(entity);
+            entitiesById[entity.Id] = entity;
             return entity;
         }
 
@@ -73,9 +124,23 @@ namespace GameEngine.Core
             return entities;
         }
 
+        /// <summary>
+        /// Look an entity up by its id. This used to index the backing list, so any removal
+        /// shifted every later entity and returned the wrong one.
+        /// </summary>
+        /// <exception cref="EntityNotFoundException">No live entity carries that id.</exception>
         public Entity GetEntity(int id)
         {
-            return entities[id];
+            if (entitiesById.TryGetValue(id, out var entity))
+                return entity;
+
+            throw new EntityNotFoundException($"No entity with id {id}.");
+        }
+
+        /// <summary>Non-throwing counterpart to <see cref="GetEntity"/>.</summary>
+        public bool TryGetEntity(int id, [NotNullWhen(true)] out Entity? entity)
+        {
+            return entitiesById.TryGetValue(id, out entity);
         }
 
         public IReadOnlyList<Entity> GetEntitiesWith<T>() where T : Component
@@ -90,19 +155,26 @@ namespace GameEngine.Core
 
         public IReadOnlyList<Entity> GetEntitiesWithTag(string tag)
         {
-            if (!cachedTagLists.TryGetValue(tag, out var cached))
+            if (!cachedTagLists.TryGetValue(tag, out var boxed))
             {
-                cached = [];
-                cachedTagLists[tag] = cached;
+                boxed = new CachedQuery<Entity>();
+                cachedTagLists[tag] = boxed;
             }
 
-            cached.Clear();
+            var cache = (CachedQuery<Entity>)boxed;
+            if (cache.Version == structuralVersion)
+                return cache.Items;
+
+            var rebuilt = new List<Entity>();
             foreach (var e in entities)
             {
                 if (e.Tag == tag)
-                    cached.Add(e);
+                    rebuilt.Add(e);
             }
-            return cached;
+
+            cache.Items = rebuilt;
+            cache.Version = structuralVersion;
+            return rebuilt;
         }
 
         public IReadOnlyList<Entity> GetEntitiesWithComponent<T>() where T : Component
@@ -113,56 +185,73 @@ namespace GameEngine.Core
         public IReadOnlyList<(Entity, T)> GetEntitiesWithComponents<T>() where T : Component
         {
             var type = typeof(T);
-            if (!cachedTupleLists.TryGetValue(type, out var cached))
+            if (!cachedTupleLists.TryGetValue(type, out var boxed))
             {
-                cached = new List<(Entity, T)>();
-                cachedTupleLists[type] = cached;
+                boxed = new CachedQuery<(Entity, T)>();
+                cachedTupleLists[type] = boxed;
             }
 
-            var result = (List<(Entity, T)>)cached;
-            result.Clear();
+            var cache = (CachedQuery<(Entity, T)>)boxed;
+            if (cache.Version == structuralVersion)
+                return cache.Items;
 
-            if (componentEntityMap.TryGetValue(type, out var entitySet))
+            componentEntityMap.TryGetValue(type, out var entitySet);
+            var rebuilt = new List<(Entity, T)>(entitySet?.Count ?? 0);
+            if (entitySet != null)
             {
                 foreach (var entity in entitySet)
                 {
-                    result.Add((entity, entity.GetComponent<T>()));
+                    rebuilt.Add((entity, entity.GetComponent<T>()));
                 }
             }
-            return result;
+
+            cache.Items = rebuilt;
+            cache.Version = structuralVersion;
+            return rebuilt;
         }
 
         public IReadOnlyList<(Entity, T1, T2)> GetEntitiesWithComponents<T1, T2>() where T1 : Component where T2 : Component
         {
             var key = typeof((T1, T2));
-            if (!cachedTuple2Lists.TryGetValue(key, out var cached))
+            if (!cachedTuple2Lists.TryGetValue(key, out var boxed))
             {
-                cached = new List<(Entity, T1, T2)>();
-                cachedTuple2Lists[key] = cached;
+                boxed = new CachedQuery<(Entity, T1, T2)>();
+                cachedTuple2Lists[key] = boxed;
             }
 
-            var result = (List<(Entity, T1, T2)>)cached;
-            result.Clear();
+            var cache = (CachedQuery<(Entity, T1, T2)>)boxed;
+            if (cache.Version == structuralVersion)
+                return cache.Items;
 
-            if (componentEntityMap.TryGetValue(typeof(T1), out var entitySet))
+            componentEntityMap.TryGetValue(typeof(T1), out var entitySet);
+            var rebuilt = new List<(Entity, T1, T2)>(entitySet?.Count ?? 0);
+            if (entitySet != null)
             {
                 foreach (var entity in entitySet)
                 {
                     if (entity.HasComponent<T2>())
                     {
-                        result.Add((entity, entity.GetComponent<T1>(), entity.GetComponent<T2>()));
+                        rebuilt.Add((entity, entity.GetComponent<T1>(), entity.GetComponent<T2>()));
                     }
                 }
             }
-            return result;
+
+            cache.Items = rebuilt;
+            cache.Version = structuralVersion;
+            return rebuilt;
         }
 
         public void Clear()
         {
             entities.Clear();
             entitiesToAdd.Clear();
+            entitiesById.Clear();
             componentEntityMap.Clear();
             ClearCaches();
+            structuralVersion++;
+
+            // nextEntityId deliberately keeps counting. Restarting it would let a reference
+            // held across a scene reset silently match a freshly created entity.
         }
 
         internal void AddEntityToComponentMap(Type componentType, Entity entity)
@@ -172,14 +261,18 @@ namespace GameEngine.Core
                 entitySet = [];
                 componentEntityMap[componentType] = entitySet;
             }
-            entitySet.Add(entity);
+
+            if (entitySet.Add(entity))
+                structuralVersion++;
         }
 
         internal void RemoveEntityFromComponentMap(Type componentType, Entity entity)
         {
             if (componentEntityMap.TryGetValue(componentType, out var entitySet))
             {
-                entitySet.Remove(entity);
+                if (entitySet.Remove(entity))
+                    structuralVersion++;
+
                 if (entitySet.Count == 0)
                 {
                     componentEntityMap.Remove(componentType);
@@ -190,35 +283,37 @@ namespace GameEngine.Core
         private IReadOnlyList<Entity> GetCachedEntityList<T>() where T : Component
         {
             var type = typeof(T);
-            if (!cachedEntityLists.TryGetValue(type, out var cached))
+            if (!cachedEntityLists.TryGetValue(type, out var boxed))
             {
-                cached = [];
-                cachedEntityLists[type] = cached;
+                boxed = new CachedQuery<Entity>();
+                cachedEntityLists[type] = boxed;
             }
 
-            cached.Clear();
-            if (componentEntityMap.TryGetValue(type, out var entitySet))
+            var cache = (CachedQuery<Entity>)boxed;
+            if (cache.Version == structuralVersion)
+                return cache.Items;
+
+            componentEntityMap.TryGetValue(type, out var entitySet);
+            var rebuilt = new List<Entity>(entitySet?.Count ?? 0);
+            if (entitySet != null)
             {
                 foreach (var entity in entitySet)
                 {
-                    cached.Add(entity);
+                    rebuilt.Add(entity);
                 }
             }
-            return cached;
+
+            cache.Items = rebuilt;
+            cache.Version = structuralVersion;
+            return rebuilt;
         }
 
         private void ClearCaches()
         {
-            foreach (var list in cachedEntityLists.Values) list.Clear();
-            foreach (var obj in cachedTupleLists.Values)
-            {
-                if (obj is System.Collections.IList l) l.Clear();
-            }
-            foreach (var obj in cachedTuple2Lists.Values)
-            {
-                if (obj is System.Collections.IList l) l.Clear();
-            }
-            foreach (var list in cachedTagLists.Values) list.Clear();
+            cachedEntityLists.Clear();
+            cachedTupleLists.Clear();
+            cachedTuple2Lists.Clear();
+            cachedTagLists.Clear();
         }
 
         /// <summary>
