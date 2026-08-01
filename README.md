@@ -35,7 +35,12 @@ Android, iOS and Browser heads need their platform workloads and SDKs installed.
 
 ```bash
 dotnet test                                              # both test suites
+docker build -f tests.Dockerfile .                       # both suites on Linux
 ```
+
+On Linux the test projects need `SkiaSharp.NativeAssets.Linux` (already referenced)
+and the system package `libfontconfig1`. Without the latter, `libSkiaSharp` fails to
+load and the test host crashes rather than reporting failures.
 
 ## Writing a scene
 
