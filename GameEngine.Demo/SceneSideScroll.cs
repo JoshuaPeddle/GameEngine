@@ -12,7 +12,7 @@ namespace GameEngine.Demo
         public override int VirtualWidth =>  4000;
         public override int VirtualHeight => 800;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
             assets ??= new Assets("assets.txt");
 

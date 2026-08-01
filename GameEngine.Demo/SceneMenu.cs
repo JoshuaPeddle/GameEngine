@@ -37,7 +37,7 @@ namespace GameEngine.Demo
         private readonly int[] fpsOptions = [10, 60, 120, 144, 240, 500, 1000, 10000];
         private bool isOnFpsMenu = false;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");

@@ -16,7 +16,7 @@ namespace GameEngine.Core
 
         private Scene? currentScene;
         private double lastUpdateTime;
-        private bool _audioEnabled;
+        private readonly bool _audioEnabled;
 
         private volatile bool _isRunning = true;
 
@@ -137,8 +137,15 @@ namespace GameEngine.Core
                     // counter.
                     FpsSmoothingSamples = 60
                 }));
-            if (false==true)
-                Systems.Add(new AudioSystem());
+            // Audio is optional: TryCreate returns null on platforms without a mixer, or when
+            // the device or native library is missing. Scenes receive a nullable AudioSystem
+            // and are expected to cope with silence.
+            if (_audioEnabled)
+            {
+                var audioSystem = AudioSystem.TryCreate();
+                if (audioSystem != null)
+                    Systems.Add(audioSystem);
+            }
         }
 
         // Start the loop without a forced 1ms delay.

@@ -15,7 +15,7 @@ namespace GameEngine.Demo
         private const int BallXSpeed = 600;
 
         private int _wallThickness = 30;
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene?> ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> ResetScene)
         {
             assets ??= new("assets.txt");
 

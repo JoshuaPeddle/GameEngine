@@ -8,6 +8,6 @@ namespace GameEngine.Demo
     {
         public SceneEmpty() { }
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene) { }
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene) { }
     }
 }
