@@ -89,8 +89,10 @@ namespace GameEngine.Demo
             }
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
+        public override void Update(EntityManager entityManager, SystemContainer systems, double deltaSeconds)
         {
+            var physicsSystem = systems.Get<PhysicsSystem>();
+
             var snakeHead = entityManager.GetEntitiesWithComponent<CSnake>()[0];
             var cSnake = snakeHead.GetComponent<CSnake>();
 

@@ -187,8 +187,10 @@ namespace GameEngine.Demo
             goal.AddComponent(new CText("GOAL!", 24));
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
+        public override void Update(EntityManager entityManager, SystemContainer systems, double deltaSeconds)
         {
+            var physicsSystem = systems.Get<PhysicsSystem>();
+
             var camera = entityManager.GetEntityWithTag("camera");
             var cameraComponent = camera?.GetComponent<CCamera>();
             var player = entityManager.GetEntityWithTag("player");
