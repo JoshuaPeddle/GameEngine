@@ -16,7 +16,7 @@ public class RenderSnapshotHandoffTests
     {
         public int Frame;
 
-        public void Update(EntityManager entityManager, double deltaTime)
+        public void Update(EntityManager entityManager, double deltaSeconds)
         {
             Frame++;
             var position = new Vec2(Frame, Frame);

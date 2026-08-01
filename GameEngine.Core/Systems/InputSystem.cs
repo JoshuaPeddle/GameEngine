@@ -11,7 +11,7 @@ namespace GameEngine.Core.Systems
             this.inputManager = inputManager;
         }
 
-        public void Update(EntityManager entityManager, double deltaTime)
+        public void Update(EntityManager entityManager, double deltaSeconds)
         {
             inputManager.DoActions();
         }

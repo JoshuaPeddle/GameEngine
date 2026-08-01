@@ -72,7 +72,7 @@ namespace GameEngine.Demo
             score.AddComponent<CText>(new CScore());
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
         {
             foreach (var collision in physicsSystem.CollisionEvents)
             {

@@ -5,12 +5,12 @@ namespace GameEngine.Core.Components
     public class CAnimation : Component
     {
         private readonly Animation animation;
-        private double elapsedTime;
+        private double elapsedSeconds;
 
         public CAnimation(Animation animation)
         {
             this.animation = animation;
-            this.elapsedTime = 0f;
+            this.elapsedSeconds = 0;
         }
 
         public SKBitmap Texture => animation.Texture;
@@ -18,12 +18,12 @@ namespace GameEngine.Core.Components
 
         public SKRect GetSourceRect()
         {
-            return animation.GetSourceRect(elapsedTime);
+            return animation.GetSourceRect(elapsedSeconds);
         }
 
-        public void Update(double deltaTime)
+        public void Update(double deltaSeconds)
         {
-            elapsedTime += deltaTime;
+            elapsedSeconds += deltaSeconds;
         }
     }
 }

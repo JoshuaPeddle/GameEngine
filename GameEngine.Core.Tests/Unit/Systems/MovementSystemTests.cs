@@ -16,7 +16,7 @@ namespace GameEngine.Core.Tests.Unit.Systems
             entity.AddComponent<CMovement>();
 
             // Act
-            movementSystem.Update(entityManager, deltaMs: 100); // 100 ms
+            movementSystem.Update(entityManager, deltaSeconds: 0.1);
             entityManager.Update(); // commit changes if your ECS defers them
 
             // Assert

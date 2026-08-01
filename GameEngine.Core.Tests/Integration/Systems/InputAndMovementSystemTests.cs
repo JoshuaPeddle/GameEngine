@@ -42,7 +42,7 @@ namespace GameEngine.Core.Tests.Integration.Systems
             inputManager.HandleKeyPress(GeKeys.W);
             inputManager.DoActions(); // triggers callback -> sets velocity to (10,0)
 
-            movementSystem.Update(entityManager, 100);
+            movementSystem.Update(entityManager, 0.1);
             entityManager.Update();
 
             // 6. Assert that position changed as we expect (10 px/sec for 0.1 seconds = 1 px)
@@ -58,7 +58,7 @@ namespace GameEngine.Core.Tests.Integration.Systems
             inputManager.DoActions();
 
             // Next update, velocity should be (0,0)
-            movementSystem.Update(entityManager, 100);
+            movementSystem.Update(entityManager, 0.1);
             entityManager.Update();
 
             Assert.Multiple(() =>

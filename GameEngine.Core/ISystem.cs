@@ -2,6 +2,7 @@
 {
     public interface ISystem
     {
-        void Update(EntityManager entityManager, double deltaTime);
+        /// <param name="deltaSeconds">Seconds elapsed since the previous frame.</param>
+        void Update(EntityManager entityManager, double deltaSeconds);
     }
 }
