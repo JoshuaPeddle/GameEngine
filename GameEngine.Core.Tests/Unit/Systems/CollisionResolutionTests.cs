@@ -151,6 +151,43 @@ public class CollisionResolutionTests
     }
 
     [Test]
+    public void CollisionEvent_CarriesVelocityFromBeforeResolution()
+    {
+        // Arrange: resolution zeroes the velocity along the separation axis. A scene that
+        // bounces rather than stops — Pong reversing the ball off a paddle — has to work from
+        // the impact value, because by the time it runs the live velocity is already zero.
+        var manager = new EntityManager();
+
+        var mover = manager.CreateEntity("ball");
+        var transform = new CTransform(new Vec2(0, 0), new Vec2(-600, 40));
+        mover.AddComponent(transform);
+        mover.AddComponent(new CBoundingBox(new Vec2(20, 20), false, false));
+
+        var paddle = manager.CreateEntity("paddle");
+        paddle.AddComponent(new CTransform(new Vec2(10, 0)));
+        paddle.AddComponent(new CBoundingBox(new Vec2(20, 20), false, true));
+        manager.Update();
+
+        // Act
+        var physics = new PhysicsSystem();
+        physics.Update(manager, 1.0 / 60.0);
+
+        // Assert
+        Assert.That(physics.CollisionEvents, Has.Count.EqualTo(1));
+        var collision = physics.CollisionEvents[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(collision.VelocityA.X, Is.EqualTo(-600).Within(0.001),
+                "the event reports the velocity at impact");
+            Assert.That(collision.VelocityA.Y, Is.EqualTo(40).Within(0.001),
+                "including the axis that was not separated");
+            Assert.That(transform.Velocity.X, Is.EqualTo(0).Within(0.001),
+                "while the live velocity has already been zeroed by resolution");
+        });
+    }
+
+    [Test]
     public void Resolution_SeparatesAlongTheShallowAxis()
     {
         // Arrange: deep overlap horizontally, shallow vertically -> separate vertically.
