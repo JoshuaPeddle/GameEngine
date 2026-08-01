@@ -4,7 +4,7 @@ namespace GameEngine.Core.Components
 {
     public class CText : Component
     {
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
         public float Size => Paint.TextSize;
 
         public CText() { }

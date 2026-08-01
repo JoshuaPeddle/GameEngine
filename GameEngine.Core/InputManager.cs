@@ -9,20 +9,19 @@ namespace GameEngine.Core
         public Vec2 RealResolution { get => _realResolution;  set => _realResolution = value; }
         public Vec2 VirtualResolution { get; set; }
 
-        private ConcurrentDictionary<GeKeys, string> actionMap;
-        private ConcurrentDictionary<string, bool> actionStates;
-        private ConcurrentDictionary<string, List<Action<bool>>> actionBindings;
-        private ConcurrentDictionary<PointerEventType, List<Action<PointerEvent>>> pointerActionBindings;
+        private const int MaxQueuedPointerEvents = 256;
+
+        private readonly ConcurrentDictionary<GeKeys, string> actionMap = [];
+        private readonly ConcurrentDictionary<string, bool> actionStates = [];
+        private readonly ConcurrentDictionary<string, IReadOnlyList<Action<bool>>> actionBindings = [];
+        private readonly ConcurrentDictionary<PointerEventType, IReadOnlyList<Action<PointerEvent>>> pointerActionBindings = [];
+        private readonly ConcurrentQueue<(PointerEventType Type, Vec2 RealPosition)> queuedPointerEvents = new();
 
         private Vec2 _realResolution;
 
         public InputManager()
         {
             ActionMapper = new ActionMapper(this);
-            actionMap = [];
-            actionStates = [];
-            actionBindings = [];
-            pointerActionBindings = [];
         }
 
         public void AddAction(GeKeys key, string actionName)
@@ -46,27 +45,25 @@ namespace GameEngine.Core
 
         public void BindAction(string actionName, Action<bool> onAction)
         {
-            if (actionStates.ContainsKey(actionName))
-            {
-                if (!actionBindings.TryGetValue(actionName, out List<Action<bool>>? value))
-                {
-                    value = new List<Action<bool>>();
-                    actionBindings[actionName] = value;
-                }
-
-                value.Add(onAction);
-            }
+            actionBindings.AddOrUpdate(actionName,
+                _ => new[] { onAction },
+                (_, existing) => AppendBinding(existing, onAction));
         }
 
-        public void BindPointerAction(PointerEventType actionName, Action<PointerEvent> onAction)
+        public void BindPointerAction(PointerEventType eventType, Action<PointerEvent> onAction)
         {
-            if (!pointerActionBindings.TryGetValue(actionName, out List<Action<PointerEvent>>? value))
-            {
-                value = new List<Action<PointerEvent>>();
-                pointerActionBindings[actionName] = value;
-            }
+            pointerActionBindings.AddOrUpdate(eventType,
+                _ => new[] { onAction },
+                (_, existing) => AppendBinding(existing, onAction));
+        }
 
-            value.Add(onAction);
+        private static IReadOnlyList<T> AppendBinding<T>(IReadOnlyList<T> existing, T addition)
+        {
+            var extended = new T[existing.Count + 1];
+            for (int i = 0; i < existing.Count; i++)
+                extended[i] = existing[i];
+            extended[existing.Count] = addition;
+            return extended;
         }
 
         public void HandleKeyPress(GeKeys key)
@@ -87,50 +84,62 @@ namespace GameEngine.Core
 
         public void HandlePointerEvent(PointerEventType eventType, PointerEvent pointerEvent)
         {
-            bool resolutionsValid = _realResolution.X > 0 && _realResolution.Y > 0 &&
-                                       VirtualResolution.X > 0 && VirtualResolution.Y > 0;
-
-            if (!resolutionsValid)
+            if (queuedPointerEvents.Count >= MaxQueuedPointerEvents)
                 return;
 
-            if (pointerActionBindings.TryGetValue(eventType, out List<Action<PointerEvent>>? actions))
+            queuedPointerEvents.Enqueue((eventType, pointerEvent.Position));
+        }
+
+        public void DispatchPointerEvents()
+        {
+            while (queuedPointerEvents.TryDequeue(out var queued))
             {
-                foreach (var action in actions)
-                {
-                    double scaleX = _realResolution.X / VirtualResolution.X;
-                    double scaleY = _realResolution.Y / VirtualResolution.Y;
+                if (!TryMapToVirtual(queued.RealPosition, out Vec2 virtualPosition))
+                    continue;
 
-                    double finalScale = Math.Min(scaleX, scaleY);
+                if (!pointerActionBindings.TryGetValue(queued.Type, out var actions))
+                    continue;
 
-                    double scaledWidth = VirtualResolution.X * finalScale;
-                    double scaledHeight = VirtualResolution.Y * finalScale;
-                    double leftoverX = (_realResolution.X - scaledWidth) / 2;
-                    double leftoverY = (_realResolution.Y - scaledHeight) / 2;
-
-                    double adjustedX = pointerEvent.Position.X - leftoverX;
-                    double adjustedY = pointerEvent.Position.Y - leftoverY;
-
-                    if (adjustedX >= 0 && adjustedX <= scaledWidth &&
-                        adjustedY >= 0 && adjustedY <= scaledHeight)
-                    {
-                        double virtualX = adjustedX / finalScale;
-                        double virtualY = adjustedY / finalScale;
-
-                        var remappedEvent = new PointerEvent(new Vec2(virtualX, virtualY));
-                        action(remappedEvent);
-                    }
-                }
+                var remappedEvent = new PointerEvent(virtualPosition);
+                for (int i = 0; i < actions.Count; i++)
+                    actions[i](remappedEvent);
             }
+        }
+
+        private bool TryMapToVirtual(Vec2 realPosition, out Vec2 virtualPosition)
+        {
+            virtualPosition = default;
+
+            if (_realResolution.X <= 0 || _realResolution.Y <= 0
+                || VirtualResolution.X <= 0 || VirtualResolution.Y <= 0)
+                return false;
+
+            double finalScale = Math.Min(
+                _realResolution.X / VirtualResolution.X,
+                _realResolution.Y / VirtualResolution.Y);
+
+            double scaledWidth = VirtualResolution.X * finalScale;
+            double scaledHeight = VirtualResolution.Y * finalScale;
+
+            double adjustedX = realPosition.X - ((_realResolution.X - scaledWidth) / 2);
+            double adjustedY = realPosition.Y - ((_realResolution.Y - scaledHeight) / 2);
+
+            if (adjustedX < 0 || adjustedX > scaledWidth || adjustedY < 0 || adjustedY > scaledHeight)
+                return false;
+
+            virtualPosition = new Vec2(adjustedX / finalScale, adjustedY / finalScale);
+            return true;
         }
 
         public void DoActions()
         {
-            foreach (var actions in actionBindings)
+            foreach (var binding in actionBindings)
             {
-                foreach (var action in actions.Value)
-                {
-                    action(actionStates[actions.Key]);
-                }
+                bool isActive = actionStates.TryGetValue(binding.Key, out bool state) && state;
+                var actions = binding.Value;
+
+                for (int i = 0; i < actions.Count; i++)
+                    actions[i](isActive);
             }
         }
 
