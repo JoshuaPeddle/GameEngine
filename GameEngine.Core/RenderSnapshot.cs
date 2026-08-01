@@ -88,20 +88,38 @@ public sealed class RenderSnapshot
     {
         public readonly int EntityId;
         public readonly string Tag;
+        public readonly int Layer;
         public readonly TransformData Transform;
         public readonly AnimationData? Animation;
         public readonly TextData? Text;
         public readonly BoundingBoxData? BoundingBox;
 
-        public Entry(int entityId, string tag, TransformData transform,
+        public Entry(int entityId, string tag, int layer, TransformData transform,
             AnimationData? animation, TextData? text, BoundingBoxData? boundingBox)
         {
             EntityId = entityId;
             Tag = tag;
+            Layer = layer;
             Transform = transform;
             Animation = animation;
             Text = text;
             BoundingBox = boundingBox;
+        }
+    }
+
+    /// <summary>
+    /// Orders entries by layer, then by entity id. Ids are handed out monotonically, so
+    /// tying on them makes this equivalent to a stable sort on spawn order without needing
+    /// a stable sort algorithm.
+    /// </summary>
+    private sealed class LayerComparer : IComparer<Entry>
+    {
+        public static readonly LayerComparer Instance = new();
+
+        public int Compare(Entry x, Entry y)
+        {
+            int byLayer = x.Layer.CompareTo(y.Layer);
+            return byLayer != 0 ? byLayer : x.EntityId.CompareTo(y.EntityId);
         }
     }
 
@@ -114,7 +132,9 @@ public sealed class RenderSnapshot
     /// </summary>
     internal int Readers;
 
-    /// <summary>The entities to draw, in no particular order.</summary>
+    /// <summary>
+    /// The entities to draw, in paint order: ascending layer, and within a layer, spawn order.
+    /// </summary>
     public ReadOnlySpan<Entry> Entries => _entries.AsSpan(0, _count);
 
     /// <summary>The active camera, or null when the scene has none.</summary>
@@ -147,4 +167,15 @@ public sealed class RenderSnapshot
 
     /// <summary>Engine thread: record the camera to render through.</summary>
     internal void SetCamera(in CameraData camera) => ActiveCamera = camera;
+
+    /// <summary>
+    /// Engine thread: order entries by layer. Entries arrive in spawn order already, so this
+    /// is only worth doing when a scene actually assigns layers — the caller skips it when
+    /// every entity sits on the default layer, which is the common case.
+    /// </summary>
+    internal void SortByLayer()
+    {
+        if (_count > 1)
+            Array.Sort(_entries, 0, _count, LayerComparer.Instance);
+    }
 }
