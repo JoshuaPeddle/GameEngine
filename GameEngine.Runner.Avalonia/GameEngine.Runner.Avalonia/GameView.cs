@@ -7,7 +7,6 @@ using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 using GameEngine.Core;
 using GameEngine.Core.Systems;
-using GameEngine.Demo;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,7 +37,9 @@ namespace GameEngine.Runner.Avalonia
             else
                 _gameEngine = new Engine(QueueInvalidate);
 
-            _gameEngine.ChangeScene(new SceneMenu());
+            var startupScene = App.StartupScene?.Invoke();
+            if (startupScene != null)
+                _gameEngine.ChangeScene(startupScene);
 
             if (!OperatingSystem.IsBrowser())
             {
@@ -104,44 +105,14 @@ namespace GameEngine.Runner.Avalonia
 
                 var startPosition = _pointerStartPosition.Value;
 
-                var deltaX = endPosition.X - startPosition.X;
-                var deltaY = endPosition.Y - startPosition.Y;
-                var distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+                var key = SwipeGesture.Classify(
+                    new Vec2(startPosition.X, startPosition.Y),
+                    new Vec2(endPosition.X, endPosition.Y),
+                    SwipeThreshold);
 
-                if (distance < SwipeThreshold)
-                {
-                    _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.Space);
-                    Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.Space));
-                }
-                else
-                {
-                    if (Math.Abs(deltaX) > Math.Abs(deltaY))
-                    {
-                        if (deltaX > 0)
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.D);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.D));
-                        }
-                        else
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.A);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.A));
-                        }
-                    }
-                    else
-                    {
-                        if (deltaY > 0)
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.S);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.S));
-                        }
-                        else
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.W);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.W));
-                        }
-                    }
-                }
+                var input = _gameEngine.Systems.Get<InputSystem>();
+                input.KeyDown(key);
+                Task.Delay(100).ContinueWith(_ => input.KeyUp(key));
 
                 _pointerStartPosition = null;
             }

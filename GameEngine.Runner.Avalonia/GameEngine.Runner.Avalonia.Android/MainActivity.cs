@@ -17,6 +17,7 @@ namespace GameEngine.Runner.Avalonia.Android
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
             App._fileFetcher = LoadFile;
+            App.StartupScene = () => new GameEngine.Demo.SceneMenu();
             builder.With (new AndroidPlatformOptions
             {
                 RenderingMode = [AndroidRenderingMode.Egl]

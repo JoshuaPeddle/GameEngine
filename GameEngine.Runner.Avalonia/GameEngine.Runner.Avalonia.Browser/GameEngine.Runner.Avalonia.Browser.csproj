@@ -17,6 +17,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj" />
+    <ProjectReference Include="..\..\GameEngine.Demo\GameEngine.Demo.csproj" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets/game/%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />

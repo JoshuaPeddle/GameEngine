@@ -44,6 +44,7 @@ internal sealed partial class Program
     private static Task Main(string[] args)
     {
         App._fileFetcher = LoadFile;
+        App.StartupScene = () => new GameEngine.Demo.SceneMenu();
 
         return BuildAvaloniaApp()
             .With(new BrowserPlatformOptions
