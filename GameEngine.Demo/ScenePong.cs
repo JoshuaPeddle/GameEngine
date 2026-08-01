@@ -13,6 +13,8 @@ namespace GameEngine.Demo
         public override int VirtualHeight => 600;
 
         private const int BallXSpeed = 600;
+        private const double PaddleSpinTransfer = 0.6;
+        private const double StallSpeedThreshold = 1.0;
 
         private int _wallThickness = 30;
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> ResetScene)
@@ -79,7 +81,21 @@ namespace GameEngine.Demo
                 HandleBallPaddleCollision(collision);
                 HandleBallWallCollision(collision, entityManager);
             }
+            KeepBallMoving(entityManager);
             HandlePlayer2(entityManager);
+        }
+
+        private static void KeepBallMoving(EntityManager entityManager)
+        {
+            var ball = entityManager.GetEntityWithTag("ball");
+            if (ball == null) return;
+
+            var ballTransform = ball.GetComponent<CTransform>();
+            if (ballTransform.Velocity.Length() > StallSpeedThreshold)
+                return;
+
+            double awayFromNearestWall = ballTransform.Position.X < 400 ? BallXSpeed : -BallXSpeed;
+            ballTransform.Velocity = new Vec2(awayFromNearestWall, ballTransform.Velocity.Y);
         }
 
         private void HandlePlayer2(EntityManager entityManager)
@@ -158,26 +174,23 @@ namespace GameEngine.Demo
                 var ballImpactVelocity = aIsBall ? collision.VelocityA : collision.VelocityB;
                 var paddleImpactVelocity = aIsPaddle ? collision.VelocityA : collision.VelocityB;
 
-                var cBall = ball.GetComponent<CBall>();
+                var ballTransform = ball.GetComponent<CTransform>();
+                var paddleTransform = paddle.GetComponent<CTransform>();
 
-                if (cBall.LastHitPaddle != paddle.Tag)
-                {
-                    cBall.LastHitPaddle = paddle.Tag;
-                    cBall.LastHitWall = "";
-                    var ballTransform = ball.GetComponent<CTransform>();
+                double awayFromPaddle = CentreOf(ball).X < CentreOf(paddle).X ? -BallXSpeed : BallXSpeed;
+                double transferredSpin = paddleImpactVelocity.Y * PaddleSpinTransfer;
 
-                    double paddleYVelocity = paddleImpactVelocity.Y;
-
-                    double yVelocityTransferFactor = 0.6;
-
-                    double newBallYVelocity = ballImpactVelocity.Y + (paddleYVelocity * yVelocityTransferFactor);
-
-                    if (ballImpactVelocity.X < 0)
-                        ballTransform.Velocity = new Vec2(BallXSpeed, newBallYVelocity);
-                    else
-                        ballTransform.Velocity = new Vec2(-BallXSpeed, newBallYVelocity);
-                }
+                ballTransform.Velocity = new Vec2(
+                    awayFromPaddle,
+                    ballImpactVelocity.Y + transferredSpin);
             }
+        }
+
+        private static Vec2 CentreOf(Entity entity)
+        {
+            var transform = entity.GetComponent<CTransform>();
+            var size = entity.GetComponent<CBoundingBox>().Size;
+            return new Vec2(transform.Position.X + (size.X / 2), transform.Position.Y + (size.Y / 2));
         }
 
         private static void HandleBallWallCollision(CollisionEvent collision, EntityManager entityManager)
@@ -193,22 +206,19 @@ namespace GameEngine.Demo
                 var wall = aIsWall ? collision.A : collision.B;
 
                 var ballImpactVelocity = aIsBall ? collision.VelocityA : collision.VelocityB;
+                var ballTransform = ball.GetComponent<CTransform>();
 
-                var cBall = ball.GetComponent<CBall>();
-
-                if (cBall.LastHitWall != wall.Tag)
+                if (wall.Tag == "wallLeft" || wall.Tag == "wallRight")
                 {
-                    cBall.LastHitWall = wall.Tag;
+                    HandleScore(entityManager);
+                }
+                else
+                {
+                    double awayFromWall = CentreOf(ball).Y < CentreOf(wall).Y
+                        ? -Math.Abs(ballImpactVelocity.Y)
+                        : Math.Abs(ballImpactVelocity.Y);
 
-                    var ballTransform = ball.GetComponent<CTransform>();
-                    if (wall.Tag == "wallLeft" || wall.Tag == "wallRight")
-                    {
-                        HandleScore(entityManager);
-                    }
-                    else if (wall.Tag == "wallTop" || wall.Tag == "wallBottom")
-                    {
-                        ballTransform.Velocity = new Vec2(ballTransform.Velocity.X, -ballImpactVelocity.Y);
-                    }
+                    ballTransform.Velocity = new Vec2(ballTransform.Velocity.X, awayFromWall);
                 }
             }
         }
@@ -216,23 +226,22 @@ namespace GameEngine.Demo
         private static void HandleScore(EntityManager entityManager)
         {
             var ball = entityManager.GetEntityWithTag("ball");
-            var cBall = ball.GetComponent<CBall>();
             var ballTransform = ball.GetComponent<CTransform>();
             var score = entityManager.GetEntityWithTag("score");
             var cScore = (CScore)score.GetComponent<CText>();
             if (ballTransform.Position.X < 400)
             {
                 cScore.Player2++;
-                ResetBall(ballTransform, cBall);
+                ResetBall(ballTransform);
             }
             else if (ballTransform.Position.X > 400)
             {
                 cScore.Player1++;
-                ResetBall(ballTransform, cBall);
+                ResetBall(ballTransform);
             }
         }
 
-        private static void ResetBall(CTransform ballTransform, CBall cBall)
+        private static void ResetBall(CTransform ballTransform)
         {
             ballTransform.Position = new Vec2(400, 300);
 
@@ -241,14 +250,10 @@ namespace GameEngine.Demo
                 ballTransform.Velocity = new Vec2(BallXSpeed, 15);
             else
                 ballTransform.Velocity = new Vec2(-BallXSpeed, 15);
-            cBall.LastHitPaddle = "";
-            cBall.LastHitWall = "";
         }
 
         class CBall : Component
         {
-            public string LastHitPaddle = "";
-            public string LastHitWall = "";
         }
         class CScore : CText
         {
