@@ -142,9 +142,18 @@ public class ComfyUiClient
     private readonly HttpClient _httpClient;
     private readonly string _baseUrl;
 
-    public ComfyUiClient(string baseUrl = "http://localhost:8000")
+    public const string BaseUrlEnvironmentVariable = "GAMEENGINE_COMFYUI_URL";
+    public const string DefaultBaseUrl = "http://localhost:8000";
+
+    public static string ResolveBaseUrl()
     {
-        _baseUrl = baseUrl.TrimEnd('/');
+        var configured = Environment.GetEnvironmentVariable(BaseUrlEnvironmentVariable);
+        return string.IsNullOrWhiteSpace(configured) ? DefaultBaseUrl : configured;
+    }
+
+    public ComfyUiClient(string? baseUrl = null)
+    {
+        _baseUrl = (baseUrl ?? ResolveBaseUrl()).TrimEnd('/');
         _httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(5)
@@ -351,62 +360,3 @@ public class ComfyUiClient
         _httpClient?.Dispose();
     }
 }
-
-/*
-using ComfyUi_Client;
-   
-var client = new ComfyUiClient("http://192.168.2.169:8000");
-
-try
-{
-   // Simple usage (still works!)
-   var imageData = await client.GenerateImageAsync("beautiful landscape");
-   
-   // SDXL with custom settings
-   var sdxlImage = await client.GenerateImageAsync(
-       ImageGenerationRequest.SDXL()
-           .WithPrompt("beautiful scenery nature glass bottle landscape")
-           .WithNegativePrompt("blurry, low quality")
-           .WithSteps(30)
-           .WithCfg(7.5)
-           .WithSeed(12345)
-   );
-   
-   // SD 1.5 with custom size
-   var sd15Image = await client.GenerateImageAsync(
-       ImageGenerationRequest.SD15()
-           .WithPrompt("portrait of a person")
-           .WithSize(768, 512)
-           .WithSampler("dpmpp_2m", "karras")
-   );
-   
-   // High quality preset
-   var hqImage = await client.GenerateImageAsync(
-       ImageGenerationRequest.HighQuality()
-           .WithPrompt("masterpiece, best quality, cyberpunk city")
-   );
-   
-   // Fully custom
-   var customImage = await client.GenerateImageAsync(
-       new ImageGenerationRequest()
-           .WithPrompt("epic fantasy castle")
-           .WithCheckpoint("v1-5-pruned-emaonly-fp16.safetensors")
-           .WithSize(1024, 768)
-           .WithSteps(40)
-           .WithCfg(9.0)
-           .WithSeed(42)
-           .WithBatchSize(4)
-   );
-   
-   await File.WriteAllBytesAsync("output.png", sdxlImage);
-   Console.WriteLine("Image generated successfully!");
-}
-catch (Exception ex)
-{
-   Console.WriteLine($"Error: {ex.Message}");
-}
-finally
-{
-   client.Dispose();
-}
-*/

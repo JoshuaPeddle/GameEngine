@@ -1,7 +1,7 @@
 ﻿namespace GameEngine.Core.Systems
 {
     [Serializable]
-    internal class MissingSystemException : Exception
+    public class MissingSystemException : Exception
     {
         public MissingSystemException(){}
 
@@ -11,7 +11,7 @@
     }
 
     [Serializable]
-    internal class DuplicateSystemException : Exception
+    public class DuplicateSystemException : Exception
     {
         public DuplicateSystemException() { }
 

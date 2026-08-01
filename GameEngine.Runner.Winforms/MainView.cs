@@ -35,8 +35,8 @@ namespace GameEngine
                 }
             });
 
+            skglControl1.SizeChanged += OnSizeChanged;
             this.Load += OnSizeChanged;
-            this.SizeChanged += OnSizeChanged;
             skglControl1.MouseDown += OnPointerPressed;
             skglControl1.MouseMove += OnPointerMoved;
             skglControl1.MouseUp += OnPointerReleased;
@@ -56,7 +56,7 @@ namespace GameEngine
 
         private void OnSizeChanged(object? sender, EventArgs args)
         {
-            _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
+            _gameEngine.SizeChanged(skglControl1.Width, skglControl1.Height);
         }
 
         private void OnPointerPressed(object? sender, MouseEventArgs e)

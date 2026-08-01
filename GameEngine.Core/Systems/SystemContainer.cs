@@ -21,19 +21,38 @@
 
         public T Get<T>() where T : ISystem
         {
-            return _byType.TryGetValue(typeof(T), out var system)
-                ? (T)system
-                : throw new MissingSystemException();
+            return TryFind<T>(out var system) ? system : throw new MissingSystemException();
         }
 
         public T? TryGet<T>() where T : class, ISystem
         {
-            return _byType.TryGetValue(typeof(T), out var system) ? (T)system : null;
+            return TryFind<T>(out var system) ? system : null;
         }
 
         public bool Contains<T>() where T : ISystem
         {
-            return _byType.ContainsKey(typeof(T));
+            return TryFind<T>(out _);
+        }
+
+        private bool TryFind<T>(out T found) where T : ISystem
+        {
+            if (_byType.TryGetValue(typeof(T), out var exact))
+            {
+                found = (T)exact;
+                return true;
+            }
+
+            foreach (var system in _systems)
+            {
+                if (system is T assignable)
+                {
+                    found = assignable;
+                    return true;
+                }
+            }
+
+            found = default!;
+            return false;
         }
 
         public void Dispose()
