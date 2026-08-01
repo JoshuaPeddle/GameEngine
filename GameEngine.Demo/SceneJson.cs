@@ -12,7 +12,7 @@ namespace GameEngine.Demo
         private AudioSystem? audioSystem;
         private LevelLoader? levelLoader;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
             assets ??= new("assets.txt");
             audioSystem = audioPlayer;
@@ -81,7 +81,7 @@ namespace GameEngine.Demo
         private int currentLevelIndex = 0;
         private readonly string[] levelPaths = { "levels/level1.json", "levels/level2.json", "levels/level3.json" };
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene> ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
             assets ??= new("assets.txt");
             audioSystem = audioPlayer;

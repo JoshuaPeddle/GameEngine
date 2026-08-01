@@ -12,5 +12,7 @@
         }
 
         public class FailedToLoadTextureException(string message) : Exception(message) { }
+
+        public class FailedToLoadSoundException(string message) : Exception(message) { }
     }
 }

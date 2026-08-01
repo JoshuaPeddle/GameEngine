@@ -24,7 +24,7 @@ namespace GameEngine.Demo
 
         private GameStates GameState { get; set; } = GameStates.Aiming;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene?> ResetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> ResetScene)
         {
             assets ??= new("assets.txt");
 

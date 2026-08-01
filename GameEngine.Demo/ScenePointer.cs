@@ -12,7 +12,7 @@ namespace GameEngine.Demo
         public override int VirtualWidth => 1000;
         public override int VirtualHeight => 1000;
 
-        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem audioPlayer, Action<Scene?> resetScene)
+        public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> resetScene)
         {
             CreatePointerTrackingEntity(entityManager, inputManager);
             CreateDemoEntities(entityManager, inputManager);
