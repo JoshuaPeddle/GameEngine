@@ -124,8 +124,16 @@ namespace GameEngine.Core
         [MemberNotNull(nameof(Systems), nameof(EntityManager), nameof(InputManager))]
         public void InitializeSystems()
         {
-            InputManager = new InputManager();
-            EntityManager = new EntityManager();
+            if (InputManager is null)
+                InputManager = new InputManager();
+            else
+                InputManager.Reset();
+
+            if (EntityManager is null)
+                EntityManager = new EntityManager();
+            else
+                EntityManager.Clear();
+
             Systems = new SystemContainer();
             lastUpdateTime = 0;
 
@@ -293,13 +301,11 @@ namespace GameEngine.Core
 
             // Rebuild systems and scene
             Systems.Dispose();
-            var realResolution = InputManager.RealResolution;
             InitializeSystems();
             currentScene.Initialize(EntityManager, InputManager, Systems.TryGet<AudioSystem>(), ResetScene);
 
             var renderSystem = Systems.Get<RenderSystem>();
             InputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);
-            InputManager.RealResolution = realResolution;
             renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
             InputManager.ScalingStrategy = renderSystem.options.ScalingStrategy;
 
