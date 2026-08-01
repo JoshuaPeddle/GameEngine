@@ -26,6 +26,16 @@ namespace GameEngine.Core
             ActionMapper = new ActionMapper(this);
         }
 
+        public void Reset()
+        {
+            actionMap.Clear();
+            actionStates.Clear();
+            actionBindings.Clear();
+            pointerActionBindings.Clear();
+
+            while (queuedPointerEvents.TryDequeue(out _)) { }
+        }
+
         public void AddAction(GeKeys key, string actionName)
         {
             if (!actionMap.ContainsKey(key))

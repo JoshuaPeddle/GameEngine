@@ -81,6 +81,70 @@ public class EngineLifecycleTests
     }
 
     [Test]
+    public void SceneChange_KeepsTheSameEntityAndInputManagers()
+    {
+        var (engine, _) = Started();
+        var entities = engine.EntityManager;
+        var input = engine.InputManager;
+
+        engine.ChangeScene(new CountingScene());
+        engine.Tick(1.0 / 60.0);
+        engine.NotifyFirstPresent();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(engine.EntityManager, Is.SameAs(entities), "a cached EntityManager must not go stale");
+            Assert.That(engine.InputManager, Is.SameAs(input), "a cached InputManager must not go stale");
+        });
+    }
+
+    [Test]
+    public void SceneChange_KeepsTheReportedScreenSize()
+    {
+        var (engine, _) = Started();
+        engine.SizeChanged(1280, 720);
+
+        engine.ChangeScene(new CountingScene());
+        engine.Tick(1.0 / 60.0);
+        engine.NotifyFirstPresent();
+
+        Assert.That(engine.InputManager.RealResolution, Is.EqualTo(new Vec2(1280, 720)));
+    }
+
+    [Test]
+    public void SceneChange_ClearsInputBoundToThePreviousScene()
+    {
+        var (engine, _) = Started();
+        bool firedFromOldScene = false;
+        engine.InputManager.AddAction(GeKeys.Space, "Jump");
+        engine.InputManager.BindAction("Jump", active => firedFromOldScene |= active);
+
+        engine.ChangeScene(new CountingScene());
+        engine.Tick(1.0 / 60.0);
+        engine.NotifyFirstPresent();
+
+        engine.InputManager.HandleKeyPress(GeKeys.Space);
+        engine.Tick(1.0 / 60.0);
+
+        Assert.That(firedFromOldScene, Is.False, "bindings from a discarded scene must not survive");
+    }
+
+    [Test]
+    public void SceneChange_ClearsEntitiesFromThePreviousScene()
+    {
+        var (engine, _) = Started();
+        int before = engine.EntityManager.GetEntities().Count;
+
+        engine.ChangeScene(new CountingScene());
+        engine.Tick(1.0 / 60.0);
+        engine.NotifyFirstPresent();
+        engine.Tick(1.0 / 60.0);
+
+        Assert.That(engine.EntityManager.GetEntities(), Has.Count.EqualTo(before),
+            "the new scene starts from a clean entity set");
+    }
+
+    [Test]
     public void Dispose_StopsAndReleasesSystems()
     {
         var engine = new Engine(audioEnabled: false);
