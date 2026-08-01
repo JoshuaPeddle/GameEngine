@@ -52,16 +52,6 @@
             return new Vec2(-a.X, -a.Y);
         }
 
-        public static bool operator >(in Vec2 a, in Vec2 b)
-        {
-            return a.Length() > b.Length();
-        }
-
-        public static bool operator <(in Vec2 a, in Vec2 b)
-        {
-            return a.Length() < b.Length();
-        }
-
         public static bool operator ==(in Vec2 a, in Vec2 b)
         {
             return a.X == b.X && a.Y == b.Y;
@@ -89,14 +79,12 @@
             return $"({X}, {Y})";
         }
 
-        public float Magnitude()
-        {
-            return (float)Math.Sqrt((X * X) + (Y * Y));
-        }
+        public double Magnitude() => Length();
 
         public Vec2 Normalize()
         {
-            return this / Magnitude();
+            double length = Length();
+            return length > 0 ? this / length : Zero;
         }
 
         public double Dot(in Vec2 other)
@@ -127,10 +115,12 @@
             return Math.Sqrt((X * X) + (Y * Y));
         }
 
-        public Vec2 Clone()
-        {
-            return new Vec2(X, Y);
-        }
+        public double LengthSquared() => (X * X) + (Y * Y);
+
+        public double DistanceTo(in Vec2 other) => (this - other).Length();
+
+        public static Vec2 Lerp(in Vec2 from, in Vec2 to, double amount) =>
+            new(from.X + ((to.X - from.X) * amount), from.Y + ((to.Y - from.Y) * amount));
 
         public bool Equals(Vec2 other)
         {

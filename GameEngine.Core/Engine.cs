@@ -1,4 +1,5 @@
 ﻿using GameEngine.Core.Systems;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics;
 using System.Threading;
 
@@ -120,6 +121,7 @@ namespace GameEngine.Core
             InitializeSystems();
         }
 
+        [MemberNotNull(nameof(Systems), nameof(EntityManager), nameof(InputManager))]
         public void InitializeSystems()
         {
             InputManager = new InputManager();

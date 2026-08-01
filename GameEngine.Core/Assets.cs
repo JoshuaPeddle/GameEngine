@@ -27,15 +27,12 @@ namespace GameEngine.Core
             // If the line begins with Animation, load an animation
             if (_fileFetcher is not null) // Allow a custom file fetcher to be used. Useful for Android and iOS.
             {
-                var stream = _fileFetcher(path);
-                using (var reader = new StreamReader(stream))
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        ParseLine(line);
-                    }
-                }
+                using var stream = _fileFetcher(path);
+                using var reader = new StreamReader(stream);
+
+                string? line;
+                while ((line = reader.ReadLine()) != null)
+                    ParseLine(line);
             }
             else
             {
@@ -49,23 +46,40 @@ namespace GameEngine.Core
 
         private void ParseLine(string line)
         {
-            var parts = line.Split(' ');
-            if (parts[0] == "Texture")
+            var trimmed = line.Trim();
+            if (trimmed.Length == 0 || trimmed.StartsWith('#'))
+                return;
+
+            var parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            switch (parts[0])
             {
-                LoadTexture(parts[1], parts[2]);
+                case "Texture":
+                    Require(parts, 3, line);
+                    LoadTexture(parts[1], parts[2]);
+                    break;
+                case "Font":
+                    Require(parts, 3, line);
+                    LoadFont(parts[1], parts[2]);
+                    break;
+                case "Animation":
+                    Require(parts, 5, line);
+                    LoadAnimation(parts[1], parts[2], int.Parse(parts[3]), int.Parse(parts[4]));
+                    break;
+                case "Sound":
+                    Require(parts, 3, line);
+                    LoadSound(parts[1], parts[2]);
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown asset directive '{parts[0]}' in: {line}");
             }
-            else if (parts[0] == "Font")
-            {
-                LoadFont(parts[1], parts[2]);
-            }
-            else if (parts[0] == "Animation")
-            {
-                LoadAnimation(parts[1], parts[2], int.Parse(parts[3]), int.Parse(parts[4]));
-            }
-            else if (parts[0] == "Sound")
-            {
-                LoadSound(parts[1], parts[2]);
-            }
+        }
+
+        private static void Require(string[] parts, int count, string line)
+        {
+            if (parts.Length < count)
+                throw new InvalidDataException(
+                    $"Asset directive '{parts[0]}' needs {count - 1} arguments but got {parts.Length - 1} in: {line}");
         }
 
         public SKBitmap GetTexture(string name)

@@ -131,14 +131,14 @@ namespace GameEngine.Demo
                 }
 
                 var headTransform = snakeHead.GetComponent<CTransform>();
-                headTransform.PreviousPosition = headTransform.Position.Clone();
+                headTransform.PreviousPosition = headTransform.Position;
                 headTransform.Position += cSnake.Direction * cSnake.TileSize;
                 UpdateSnakeHeadRotation(cSnake.Direction, headTransform);
 
                 for (int i = 1; i < cSnake.Segments.Count; i++)
                 {
                     var segmentTransform = cSnake.Segments[i].GetComponent<CTransform>();
-                    segmentTransform.PreviousPosition = segmentTransform.Position.Clone();
+                    segmentTransform.PreviousPosition = segmentTransform.Position;
                     segmentTransform.Position = oldPositions[i - 1];
                 }
 
