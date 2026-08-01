@@ -139,6 +139,8 @@ public sealed class RenderSnapshot
     {
         if (_entries.Length < expectedCount)
             Array.Resize(ref _entries, Math.Max(expectedCount, _entries.Length * 2));
+        else if (_count > 0)
+            Array.Clear(_entries, 0, _count);
 
         _count = 0;
         ActiveCamera = null;

@@ -138,7 +138,8 @@ namespace GameEngine.Demo
                 if (isActive && isOnFpsMenu)
                 {
                     int selectedIndex = (int)(transform.Position.Y - MenuStartY) / FpsItemYSpacing;
-                    Engine.TargetFrameRate = fpsOptions[selectedIndex];
+                    if (Engine != null)
+                        Engine.TargetFrameRate = fpsOptions[selectedIndex];
                 }
             }, oneShot: true);
         }

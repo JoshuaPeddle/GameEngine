@@ -4,6 +4,8 @@ namespace GameEngine.Core
 {
     public abstract class Scene
     {
+        public Engine? Engine { get; internal set; }
+
         public virtual int VirtualWidth => 1600;
         public virtual int VirtualHeight => 1600;
 

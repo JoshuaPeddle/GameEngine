@@ -57,7 +57,7 @@ namespace GameEngine.Runner.Avalonia
                 if (_started) return;
                 _started = true;
 
-                Engine.TargetFrameRate = OperatingSystem.IsBrowser() ? 60 : 14400;
+                _gameEngine.TargetFrameRate = OperatingSystem.IsBrowser() ? 60 : 240;
                 _gameEngine.Start();
             };
         }
