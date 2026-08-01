@@ -1,6 +1,5 @@
 ﻿using GameEngine.Core.Components;
 using System.Diagnostics.CodeAnalysis;
-using static GameEngine.Core.Exceptions;
 
 namespace GameEngine.Core
 {

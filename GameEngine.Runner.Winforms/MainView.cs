@@ -12,6 +12,7 @@ namespace GameEngine
         private readonly Engine _gameEngine;
         private Point? _pointerStartPosition;
         private const double SwipeThreshold = 20.0;
+        private const int SyntheticKeyHoldMs = 100;
 
         // Coalesce pending invalidations
         private int _invalidationsPending = 0;
@@ -54,6 +55,12 @@ namespace GameEngine
             _gameEngine.Start(); // Dont await this, it will block the UI thread
         }
 
+        private async Task ReleaseKeyAfterTapAsync(GeKeys key)
+        {
+            await Task.Delay(SyntheticKeyHoldMs);
+            _gameEngine.Systems.Get<InputSystem>().KeyUp(key);
+        }
+
         private void OnSizeChanged(object? sender, EventArgs args)
         {
             _gameEngine.SizeChanged(skglControl1.Width, skglControl1.Height);
@@ -88,9 +95,8 @@ namespace GameEngine
                     new Vec2(endPosition.X, endPosition.Y),
                     SwipeThreshold);
 
-                var input = _gameEngine.Systems.Get<InputSystem>();
-                input.KeyDown(key);
-                Task.Delay(100).ContinueWith(_ => input.KeyUp(key));
+                _gameEngine.Systems.Get<InputSystem>().KeyDown(key);
+                _ = ReleaseKeyAfterTapAsync(key);
 
                 _pointerStartPosition = null;
             }

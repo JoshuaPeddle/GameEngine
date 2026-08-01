@@ -18,12 +18,16 @@ namespace GameEngine.Runner.Avalonia
 {
     public class GameView : Control
     {
-        public static Engine _gameEngine;
+        private static Engine? _current;
+        public static Engine? Current => _current;
+
+        private Engine _gameEngine;
         private readonly IDisposable? _keyboardHook;
         
 
         private Point? _pointerStartPosition;
         private const double SwipeThreshold = 20.0;
+        private const int SyntheticKeyHoldMs = 100;
 
         private int _invalidationsPending = 0;
         private bool _started;
@@ -36,6 +40,8 @@ namespace GameEngine.Runner.Avalonia
                 _gameEngine = new Engine(QueueInvalidate, audioEnabled: false);
             else
                 _gameEngine = new Engine(QueueInvalidate);
+
+            _current = _gameEngine;
 
             var startupScene = App.StartupScene?.Invoke();
             if (startupScene != null)
@@ -75,6 +81,12 @@ namespace GameEngine.Runner.Avalonia
             }
         }
 
+        private async Task ReleaseKeyAfterTapAsync(GeKeys key)
+        {
+            await Task.Delay(SyntheticKeyHoldMs);
+            _gameEngine.Systems.Get<InputSystem>().KeyUp(key);
+        }
+
         private void OnSizeChanged(object? sender, EventArgs args)
         {
             _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
@@ -110,9 +122,8 @@ namespace GameEngine.Runner.Avalonia
                     new Vec2(endPosition.X, endPosition.Y),
                     SwipeThreshold);
 
-                var input = _gameEngine.Systems.Get<InputSystem>();
-                input.KeyDown(key);
-                Task.Delay(100).ContinueWith(_ => input.KeyUp(key));
+                _gameEngine.Systems.Get<InputSystem>().KeyDown(key);
+                _ = ReleaseKeyAfterTapAsync(key);
 
                 _pointerStartPosition = null;
             }

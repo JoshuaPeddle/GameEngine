@@ -1,4 +1,3 @@
-using static GameEngine.Core.Exceptions;
 using static SDL2.SDL;
 using static SDL2.SDL_mixer;
 
