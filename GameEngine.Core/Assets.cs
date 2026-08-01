@@ -1,5 +1,4 @@
 ﻿using SkiaSharp;
-using static GameEngine.Core.Exceptions;
 
 namespace GameEngine.Core
 {

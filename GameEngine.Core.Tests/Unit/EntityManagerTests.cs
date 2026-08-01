@@ -76,7 +76,7 @@ public class EntityManagerTests
         var manager = new EntityManager();
         manager.Update();
 
-        Assert.Throws<Exceptions.EntityNotFoundException>(() => manager.GetEntity(4242));
+        Assert.Throws<EntityNotFoundException>(() => manager.GetEntity(4242));
     }
 
     [Test]
@@ -88,7 +88,7 @@ public class EntityManagerTests
         a.Active = false;
         manager.Update();
 
-        Assert.Throws<Exceptions.EntityNotFoundException>(() => manager.GetEntity(a.Id));
+        Assert.Throws<EntityNotFoundException>(() => manager.GetEntity(a.Id));
     }
 
     [Test]

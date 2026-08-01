@@ -27,7 +27,7 @@ public static partial class KeyboardInterop
     public static void HandleKeyDown(string key)
     {
         if (KeyMap.TryGetValue(key, out GeKeys value))
-            GameView._gameEngine.Systems.Get<InputSystem>().KeyDown(value);
+            GameView.Current?.Systems.Get<InputSystem>().KeyDown(value);
     }
 
     [SupportedOSPlatform("browser")]
@@ -35,7 +35,7 @@ public static partial class KeyboardInterop
     public static void HandleKeyUp(string key)
     {
         if (KeyMap.TryGetValue(key, out GeKeys value))
-            GameView._gameEngine.Systems.Get<InputSystem>().KeyUp(value);
+            GameView.Current?.Systems.Get<InputSystem>().KeyUp(value);
     }
 }
 
