@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace GameEngine.Core
 {
-    public class Engine
+    public class Engine : IDisposable
     {
         public Action? InvalidateAction { get; }
 
@@ -28,8 +28,10 @@ namespace GameEngine.Core
         private readonly bool _audioEnabled;
 
         private volatile bool _isRunning = true;
+        private volatile bool _stopped;
 
         public bool IsRunning => _isRunning;
+        public bool IsStopped => _stopped;
 
         // Pooled render snapshots: filled on the engine thread, read on the UI thread.
         // Three buffers are enough for a single reader — at most one is published and one is
@@ -162,6 +164,9 @@ namespace GameEngine.Core
 
         public bool Tick(double deltaSeconds)
         {
+            if (_stopped)
+                return false;
+
             var scene = Interlocked.Exchange(ref _pendingScene, null);
             if (scene != null)
                 ApplySceneChange(scene);
@@ -178,9 +183,8 @@ namespace GameEngine.Core
             stopwatch.Start();
             lastUpdateTime = 0;
 
-            while (true)
+            while (!_stopped)
             {
-                // Keep the browser responsive
                 await Task.Delay(1);
 
                 if (!Tick(CalculateDeltaTime()))
@@ -198,8 +202,8 @@ namespace GameEngine.Core
         {
             stopwatch.Start();
             lastUpdateTime = 0;
-            
-            while (true)
+
+            while (!_stopped)
             {
                 double frameDurationMs = TargetFrameRate.HasValue
                     ? 1000.0 / TargetFrameRate.Value
@@ -246,6 +250,18 @@ namespace GameEngine.Core
             _isRunning = running;
         }
 
+        public void Stop()
+        {
+            _stopped = true;
+        }
+
+        public void Dispose()
+        {
+            Stop();
+            Systems.Dispose();
+            GC.SuppressFinalize(this);
+        }
+
         private void Update(double deltaSeconds)
         {
             foreach (var system in Systems.Systems)
@@ -253,8 +269,6 @@ namespace GameEngine.Core
                 system.Update(EntityManager, deltaSeconds);
             }
 
-            var physicsSystem = Systems.Get<PhysicsSystem>();
-            currentScene?.Update(EntityManager, physicsSystem, deltaSeconds);
             currentScene?.Update(EntityManager, Systems, deltaSeconds);
             EntityManager.Update();
 

@@ -10,7 +10,6 @@ namespace GameEngine.Core
         public virtual int VirtualHeight => 1600;
 
         public abstract void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> ResetScene);
-        public virtual void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds) { }
         public virtual void Update(EntityManager entityManager, SystemContainer systems, double deltaSeconds) { }
     }
 }

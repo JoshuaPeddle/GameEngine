@@ -74,8 +74,10 @@ namespace GameEngine.Demo
             score.AddComponent<CText>(new CScore());
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
+        public override void Update(EntityManager entityManager, SystemContainer systems, double deltaSeconds)
         {
+            var physicsSystem = systems.Get<PhysicsSystem>();
+
             foreach (var collision in physicsSystem.CollisionEvents)
             {
                 HandleBallPaddleCollision(collision);
