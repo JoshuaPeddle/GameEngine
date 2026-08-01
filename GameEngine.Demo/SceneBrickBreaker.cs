@@ -12,7 +12,7 @@ namespace GameEngine.Demo
     // 4. Player releases the screen
     // 5. Ball moves in the direction of the aimer
 
-    class SceneBrickBreaker : Scene
+    public class SceneBrickBreaker : Scene
     {
         private Assets? assets;
         public override int VirtualWidth => 600;

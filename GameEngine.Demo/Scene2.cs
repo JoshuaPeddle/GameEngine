@@ -58,7 +58,7 @@ namespace GameEngine.Demo
 
         private void LoadLevel(string levelFilePath, EntityManager entityManager)
         {
-            var filestream = Assets._fileFetcher(levelFilePath);
+            var filestream = Assets.OpenAsset(levelFilePath);
 
             var lines = 
                 new StreamReader(filestream).ReadToEnd()

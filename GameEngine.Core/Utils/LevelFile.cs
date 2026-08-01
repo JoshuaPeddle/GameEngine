@@ -46,12 +46,7 @@ namespace GameEngine.Core.Utils
         // Static factory methods for loading
         public static LevelFile LoadFromFile(string filePath)
         {
-            Stream fileStream;
-            if (Assets._fileFetcher != null)
-                fileStream = Assets._fileFetcher(filePath);
-            else
-                fileStream = File.OpenRead(filePath);
-            using (fileStream)
+            using (Stream fileStream = Assets.OpenAsset(filePath))
             {
                 using var reader = new StreamReader(fileStream);
                 var json = reader.ReadToEnd();

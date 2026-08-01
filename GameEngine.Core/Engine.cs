@@ -170,6 +170,35 @@ namespace GameEngine.Core
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Advance the simulation by one frame, applying any queued scene change first.
+        /// <para>
+        /// Both run loops are built on this, and it is public so a headless harness can drive
+        /// the engine deterministically — a fixed delta, no thread, no clock — which is how the
+        /// demo scenes are smoke-tested. Call it only from one thread.
+        /// </para>
+        /// </summary>
+        /// <param name="deltaSeconds">Seconds to advance by.</param>
+        /// <returns>
+        /// True when the simulation advanced. False when the frame was consumed by a scene
+        /// change, or while paused awaiting the first paint, or while stopped — in which case
+        /// the caller should not treat it as a rendered frame.
+        /// </returns>
+        public bool Tick(double deltaSeconds)
+        {
+            // Scene changes are queued from other threads and applied here, on the thread that
+            // owns the simulation.
+            var scene = Interlocked.Exchange(ref _pendingScene, null);
+            if (scene != null)
+                ApplySceneChange(scene);
+
+            if (_pauseUntilFirstPresent || !_isRunning)
+                return false;
+
+            Update(deltaSeconds);
+            return true;
+        }
+
         private async Task StartAsyncLoopBrowser()
         {
             stopwatch.Start();
@@ -180,19 +209,13 @@ namespace GameEngine.Core
                 // Keep the browser responsive
                 await Task.Delay(1);
 
-                // Apply queued scene change on engine thread
-                var scene = Interlocked.Exchange(ref _pendingScene, null);
-                if (scene != null)
-                    ApplySceneChange(scene);
-
-                if (_pauseUntilFirstPresent || !_isRunning)
+                if (!Tick(CalculateDeltaTime()))
                 {
                     lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
                     await Task.Delay(1);
                     continue;
                 }
 
-                Update(CalculateDeltaTime());
                 InvalidateAction?.Invoke();
             }
         }
@@ -207,22 +230,16 @@ namespace GameEngine.Core
                 double frameDurationMs = TargetFrameRate.HasValue
                     ? 1000.0 / TargetFrameRate.Value
                     : 0.0;
-                
-                // Apply queued scene change on engine thread
-                var scene = Interlocked.Exchange(ref _pendingScene, null);
-                if (scene != null)
-                    ApplySceneChange(scene);
 
-                if (_pauseUntilFirstPresent || !_isRunning)
+                double frameStartMs = stopwatch.Elapsed.TotalMilliseconds;
+
+                if (!Tick(CalculateDeltaTime()))
                 {
                     lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
                     Thread.Sleep(1);
                     continue;
                 }
 
-                double frameStartMs = stopwatch.Elapsed.TotalMilliseconds;
-
-                Update(CalculateDeltaTime());
                 InvalidateAction?.Invoke();
 
                 if (TargetFrameRate.HasValue)
