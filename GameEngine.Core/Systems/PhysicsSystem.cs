@@ -27,26 +27,44 @@ namespace GameEngine.Core.Systems
         // Use List instead of ConcurrentBag to avoid allocations
         public List<CollisionEvent> CollisionEvents { get; private set; } = new(100);
 
+        private const double MinimumCellSize = 1.0;
+
         private readonly List<(Entity entity, CBoundingBox bbox, CTransform transform)> _validEntities = new(1000);
         private readonly List<(Entity entity, CGravity gravity, CTransform transform)> _entitiesWithGravity = new(100);
+
+        private readonly Dictionary<long, List<int>> _grid = new(1024);
+        private readonly List<int> _candidates = new(64);
+        private int[] _lastPairedWith = [];
+        private double _cellSize = MinimumCellSize;
 
         public void Update(EntityManager entityManager, double deltaSeconds)
         {
             ResetEntityLists();
             PopulateEntityLists(entityManager);
             ProcessGravity(deltaSeconds);
-            ProcessCollisionsOptimized();
+            ProcessCollisions();
         }
 
-        private void ProcessCollisionsOptimized()
+        private void ProcessCollisions()
         {
             int count = _validEntities.Count;
+            if (count < 2)
+                return;
 
-            for (int i = 0; i < count - 1; i++)
+            BuildSpatialGrid();
+
+            if (_lastPairedWith.Length < count)
+                _lastPairedWith = new int[Math.Max(count, _lastPairedWith.Length * 2)];
+            Array.Fill(_lastPairedWith, -1, 0, count);
+
+            for (int i = 0; i < count; i++)
             {
                 (Entity entity, CBoundingBox bbox, CTransform transform) entityA = _validEntities[i];
 
-                for (int j = i + 1; j < count; j++)
+                CollectCandidates(i, entityA.transform.Position, entityA.bbox.Size);
+                _candidates.Sort();
+
+                foreach (int j in _candidates)
                 {
                     (Entity entity, CBoundingBox bbox, CTransform transform) entityB = _validEntities[j];
 
@@ -73,6 +91,82 @@ namespace GameEngine.Core.Systems
                 }
             }
         }
+
+        private void BuildSpatialGrid()
+        {
+            foreach (var bucket in _grid.Values)
+                bucket.Clear();
+
+            _cellSize = ChooseCellSize();
+
+            for (int i = 0; i < _validEntities.Count; i++)
+            {
+                var (_, bbox, transform) = _validEntities[i];
+                CellRange(transform.Position, bbox.Size, out int minX, out int minY, out int maxX, out int maxY);
+
+                for (int cellY = minY; cellY <= maxY; cellY++)
+                {
+                    for (int cellX = minX; cellX <= maxX; cellX++)
+                    {
+                        long key = CellKey(cellX, cellY);
+                        if (!_grid.TryGetValue(key, out var bucket))
+                        {
+                            bucket = new List<int>(8);
+                            _grid[key] = bucket;
+                        }
+                        bucket.Add(i);
+                    }
+                }
+            }
+        }
+
+        private double ChooseCellSize()
+        {
+            double largestExtent = MinimumCellSize;
+
+            foreach (var (_, bbox, _) in _validEntities)
+            {
+                if (bbox.Size.X > largestExtent) largestExtent = bbox.Size.X;
+                if (bbox.Size.Y > largestExtent) largestExtent = bbox.Size.Y;
+            }
+
+            return largestExtent;
+        }
+
+        private void CollectCandidates(int index, Vec2 position, Vec2 size)
+        {
+            _candidates.Clear();
+            CellRange(position, size, out int minX, out int minY, out int maxX, out int maxY);
+
+            for (int cellY = minY; cellY <= maxY; cellY++)
+            {
+                for (int cellX = minX; cellX <= maxX; cellX++)
+                {
+                    if (!_grid.TryGetValue(CellKey(cellX, cellY), out var bucket))
+                        continue;
+
+                    foreach (int other in bucket)
+                    {
+                        if (other <= index || _lastPairedWith[other] == index)
+                            continue;
+
+                        _lastPairedWith[other] = index;
+                        _candidates.Add(other);
+                    }
+                }
+            }
+        }
+
+        private void CellRange(Vec2 position, Vec2 size, out int minX, out int minY, out int maxX, out int maxY)
+        {
+            minX = (int)Math.Floor(position.X / _cellSize);
+            minY = (int)Math.Floor(position.Y / _cellSize);
+            maxX = (int)Math.Floor((position.X + Math.Max(size.X, 0)) / _cellSize);
+            maxY = (int)Math.Floor((position.Y + Math.Max(size.Y, 0)) / _cellSize);
+        }
+
+        private static long CellKey(int cellX, int cellY) =>
+            ((long)cellX << 32) ^ (uint)cellY;
 
         private static bool QuickAABBTest(Vec2 pos1, Vec2 size1, Vec2 pos2, Vec2 size2)
         {
