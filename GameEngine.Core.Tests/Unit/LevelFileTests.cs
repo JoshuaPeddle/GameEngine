@@ -156,6 +156,93 @@ public class LevelFileTests
     }
 
     [Test]
+    public void EveryBuilderComponent_RoundTripsIntoALiveEntity()
+    {
+        var level = new LevelBuilder("All Components")
+            .AddEntity("everything", e => e
+                .AddTransform(10, 20, rotation: 30, layer: 4, scaleX: 2, scaleY: 3)
+                .AddBoundingBox(11, 12, blockVision: true, blockMovement: true)
+                .AddInput()
+                .AddMovement(speed: 700, maxSpeed: 350)
+                .AddText("hello", size: 18)
+                .AddCamera(x: 5, y: 6, zoom: 2.5)
+                .AddGravity(acceleration: 450))
+            .Build();
+
+        var reloaded = LevelFile.LoadFromJson(level.ToJson());
+
+        var manager = new EntityManager();
+        new LevelLoader(new ComponentFactory(assets: null!)).LoadLevel(reloaded, manager);
+        manager.Update();
+
+        var entity = manager.GetEntityWithTag("everything")!;
+        var transform = entity.GetComponent<CTransform>();
+        var box = entity.GetComponent<CBoundingBox>();
+        var movement = entity.GetComponent<CMovement>();
+        var text = entity.GetComponent<CText>();
+        var camera = entity.GetComponent<CCamera>();
+        var gravity = entity.GetComponent<CGravity>();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(transform.Position.X, Is.EqualTo(10));
+            Assert.That(transform.Rotation, Is.EqualTo(30));
+            Assert.That(transform.Layer, Is.EqualTo(4));
+            Assert.That(transform.Scale.X, Is.EqualTo(2));
+            Assert.That(transform.Scale.Y, Is.EqualTo(3));
+            Assert.That(box.Width, Is.EqualTo(11));
+            Assert.That(box.BlockMovement, Is.True);
+            Assert.That(entity.HasComponent<CInput>(), Is.True);
+            Assert.That(movement.Speed, Is.EqualTo(700));
+            Assert.That(movement.MaxSpeed, Is.EqualTo(350));
+            Assert.That(text.Text, Is.EqualTo("hello"));
+            Assert.That(camera.Position.X, Is.EqualTo(5));
+            Assert.That(camera.Zoom, Is.EqualTo(2.5f));
+            Assert.That(gravity.Acceleration, Is.EqualTo(450));
+        });
+    }
+
+    [Test]
+    public void LevelLoader_RunsRegisteredEntityHandlers()
+    {
+        var level = new LevelBuilder("Handlers")
+            .AddEntity("player", p => p.AddTransform(0, 0).AddInput())
+            .AddEntity("tile", t => t.AddTransform(1, 1))
+            .Build();
+
+        var loader = new LevelLoader(new ComponentFactory(assets: null!));
+        var handled = new List<string>();
+        loader.RegisterEntityHandler("player", (entity, _, _) => handled.Add(entity.Tag));
+
+        var manager = new EntityManager();
+        loader.LoadLevel(LevelFile.LoadFromJson(level.ToJson()), manager, new InputManager());
+
+        Assert.That(handled, Is.EqualTo(new[] { "player" }).AsCollection);
+    }
+
+    [Test]
+    public void LevelLoader_HasNoBuiltInEntityPolicy()
+    {
+        var level = new LevelBuilder("No Policy")
+            .AddEntity("player", p => p.AddTransform(0, 0).AddInput())
+            .Build();
+
+        var manager = new EntityManager();
+        var inputManager = new InputManager();
+        inputManager.AddAction(GeKeys.W, "Up");
+
+        new LevelLoader(new ComponentFactory(assets: null!))
+            .LoadLevel(LevelFile.LoadFromJson(level.ToJson()), manager, inputManager);
+        manager.Update();
+
+        inputManager.HandleKeyPress(GeKeys.W);
+        inputManager.DoActions();
+
+        Assert.That(manager.GetEntityWithTag("player")!.GetComponent<CInput>().Up, Is.False,
+            "wiring an entity tagged 'player' to movement keys is game policy, not engine policy");
+    }
+
+    [Test]
     public void LoadFromJson_RejectsAComponentWithNoType()
     {
         const string json = """

@@ -19,6 +19,7 @@ namespace GameEngine.Demo
 
             // Create the level loader
             levelLoader = LevelManager.CreateLoader(assets);
+            levelLoader.RegisterEntityHandler("player", WirePlayerInput);
 
             // Set up input actions
             SetupInputActions(inputManager);
@@ -28,6 +29,25 @@ namespace GameEngine.Demo
 
             // Play background music
             audioSystem?.Play("Level1", SoundType.BGM);
+        }
+
+        internal static void WirePlayerInput(Entity entity, InputManager inputManager, AudioSystem? audioSystem)
+        {
+            if (!entity.HasComponent<CInput>()) return;
+
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Up", entity, (input, isActive) => input.Up = isActive, true);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Down", entity, (input, isActive) => input.Down = isActive, true);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Left", entity, (input, isActive) => input.Left = isActive, true);
+            inputManager.ActionMapper.MapActionToComponent<CInput>("Right", entity, (input, isActive) => input.Right = isActive, true);
+
+            if (audioSystem != null)
+            {
+                inputManager.ActionMapper.MapActionToComponent<CInput>("PlaySound", entity, (input, isActive) =>
+                {
+                    if (isActive)
+                        audioSystem.Play("Hit", SoundType.SoundEffect);
+                }, true);
+            }
         }
 
         private void SetupInputActions(InputManager inputManager)
@@ -86,6 +106,7 @@ namespace GameEngine.Demo
             assets ??= new("assets.txt");
             audioSystem = audioPlayer;
             levelLoader = LevelManager.CreateLoader(assets);
+            levelLoader.RegisterEntityHandler("player", SceneJson.WirePlayerInput);
 
             SetupInputActions(inputManager);
             LoadCurrentLevel(entityManager, inputManager);

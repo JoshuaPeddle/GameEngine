@@ -16,8 +16,10 @@ namespace GameEngine.Core.Components
                     { "CAnimation", CreateCAnimation },
                     { "CBoundingBox", CreateCBoundingBox },
                     { "CInput", CreateCInput },
-                    { "CMovement", CreateCMovement }
-                    // Add other components here
+                    { "CMovement", CreateCMovement },
+                    { "CText", CreateCText },
+                    { "CCamera", CreateCCamera },
+                    { "CGravity", CreateCGravity }
                 };
         }
 
@@ -41,7 +43,48 @@ namespace GameEngine.Core.Components
             if (data.TryGetProperty("rotation", out var rotation))
                 transform.Rotation = rotation.GetDouble();
 
+            if (data.TryGetProperty("layer", out var layer))
+                transform.Layer = layer.GetInt32();
+
+            if (data.TryGetProperty("scale", out var scale))
+                transform.Scale = new Vec2(
+                    scale.GetProperty("x").GetDouble(),
+                    scale.GetProperty("y").GetDouble());
+
             return transform;
+        }
+
+        private Component CreateCText(JsonElement data)
+        {
+            string text = data.TryGetProperty("text", out var value) ? value.GetString() ?? string.Empty : string.Empty;
+            int size = data.TryGetProperty("size", out var sizeValue) ? sizeValue.GetInt32() : 24;
+
+            return new CText(text, size);
+        }
+
+        private Component CreateCCamera(JsonElement data)
+        {
+            var camera = new CCamera();
+
+            if (data.TryGetProperty("position", out var position))
+                camera.Position = new Vec2(
+                    position.GetProperty("x").GetDouble(),
+                    position.GetProperty("y").GetDouble());
+
+            if (data.TryGetProperty("zoom", out var zoom))
+                camera.Zoom = (float)zoom.GetDouble();
+
+            return camera;
+        }
+
+        private Component CreateCGravity(JsonElement data)
+        {
+            var gravity = new CGravity();
+
+            if (data.TryGetProperty("acceleration", out var acceleration))
+                gravity.Acceleration = acceleration.GetDouble();
+
+            return gravity;
         }
 
         private Component CreateCAnimation(JsonElement data)

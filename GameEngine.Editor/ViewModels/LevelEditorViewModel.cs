@@ -92,7 +92,11 @@ namespace GameEngine.Editor.ViewModels
                     ? File.Open(Path.Combine("GameEngine.Demo", path), FileMode.Open)
                     : File.Open(Path.Combine("GameEngine.Demo", "assets", path), FileMode.Open);
 
-            SelectedEntity = EntityData.ToEntity(level.Entities.FirstOrDefault(), new EntityManager(), new Core.Components.ComponentFactory(new Assets("assets.txt")));
+            var designEntities = new EntityManager();
+            new LevelLoader(new Core.Components.ComponentFactory(new Assets("assets.txt")))
+                .LoadLevel(level, designEntities);
+            designEntities.Update();
+            SelectedEntity = designEntities.GetEntities().FirstOrDefault();
         }
 
         private readonly ObservableCollection<string> _scenes = new();
