@@ -15,6 +15,7 @@
     </PackageReference>
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Core\GameEngine.Core.csproj" />
