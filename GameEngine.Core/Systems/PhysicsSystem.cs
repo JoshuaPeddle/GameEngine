@@ -85,8 +85,7 @@ namespace GameEngine.Core.Systems
 
                         ResolveCollision(
                             entityA.bbox, entityA.transform,
-                            entityB.bbox, entityB.transform,
-                            overlap);
+                            entityB.bbox, entityB.transform);
                     }
                 }
             }
@@ -199,16 +198,65 @@ namespace GameEngine.Core.Systems
 
         private static void ResolveCollision(
             CBoundingBox boxA, CTransform transformA,
-            CBoundingBox boxB, CTransform transformB,
-            in Vec2 overlap)
+            CBoundingBox boxB, CTransform transformB)
         {
             if (!boxA.BlockMovement && !boxB.BlockMovement)
                 return;
 
-            if (overlap.X < overlap.Y)
-                SeparateOnX(transformA, boxA.BlockMovement, transformB, boxB.BlockMovement, overlap.X);
+            double deltaX = transformA.Position.X - transformA.PreviousPosition.X
+                          - (transformB.Position.X - transformB.PreviousPosition.X);
+            double deltaY = transformA.Position.Y - transformA.PreviousPosition.Y
+                          - (transformB.Position.Y - transformB.PreviousPosition.Y);
+
+            // Intersection width/height is not a penetration depth when one rectangle can
+            // contain the other (for example SceneBasic's 50x80 Jeep and 20x20 grenades).
+            // Compute the actual signed distance to each exit edge instead.
+            double separationX = MinimumAxisSeparation(
+                transformA.Position.X, boxA.Size.X,
+                transformB.Position.X, boxB.Size.X,
+                deltaX);
+            double separationY = MinimumAxisSeparation(
+                transformA.Position.Y, boxA.Size.Y,
+                transformB.Position.Y, boxB.Size.Y,
+                deltaY);
+
+            double magnitudeX = Math.Abs(separationX);
+            double magnitudeY = Math.Abs(separationY);
+            bool separateOnX = magnitudeX < magnitudeY
+                || (Math.Abs(magnitudeX - magnitudeY) <= epsilon
+                    && Math.Abs(deltaX) > Math.Abs(deltaY));
+
+            if (separateOnX)
+                SeparateOnX(transformA, boxA.BlockMovement, transformB, boxB.BlockMovement, separationX);
             else
-                SeparateOnY(transformA, boxA.BlockMovement, transformB, boxB.BlockMovement, overlap.Y);
+                SeparateOnY(transformA, boxA.BlockMovement, transformB, boxB.BlockMovement, separationY);
+        }
+
+        private static double MinimumAxisSeparation(
+            double positionA, double sizeA,
+            double positionB, double sizeB,
+            double relativeDelta)
+        {
+            double towardNegative = positionB - (positionA + sizeA);
+            double towardPositive = positionB + sizeB - positionA;
+            double negativeMagnitude = Math.Abs(towardNegative);
+            double positiveMagnitude = Math.Abs(towardPositive);
+
+            if (negativeMagnitude < positiveMagnitude)
+                return towardNegative;
+            if (positiveMagnitude < negativeMagnitude)
+                return towardPositive;
+
+            // Equal-depth containment is ambiguous from the current rectangles alone.
+            // Back out against relative motion; stationary coincident bodies use centers.
+            if (relativeDelta > epsilon)
+                return towardNegative;
+            if (relativeDelta < -epsilon)
+                return towardPositive;
+
+            double centerA = positionA + sizeA * 0.5;
+            double centerB = positionB + sizeB * 0.5;
+            return centerA <= centerB ? towardNegative : towardPositive;
         }
 
         private static void GetSeparationShares(
@@ -228,52 +276,42 @@ namespace GameEngine.Core.Systems
             shareB = 0.5;
         }
 
-        private static void SeparateOnX(CTransform a, bool aSolid, CTransform b, bool bSolid, double overlapX)
+        private static void SeparateOnX(CTransform a, bool aSolid, CTransform b, bool bSolid, double separationA)
         {
             double deltaA = a.Position.X - a.PreviousPosition.X;
             double deltaB = b.Position.X - b.PreviousPosition.X;
 
             GetSeparationShares(aSolid, bSolid, deltaA, deltaB, out double shareA, out double shareB);
 
-            double relativeDelta = deltaA - deltaB;
-            double directionA = Math.Abs(relativeDelta) > epsilon
-                ? (relativeDelta > 0 ? -1.0 : 1.0)
-                : (a.Position.X < b.Position.X ? -1.0 : 1.0);
-
             if (shareA > 0)
             {
-                a.Position += new Vec2(directionA * overlapX * shareA, 0);
+                a.Position += new Vec2(separationA * shareA, 0);
                 a.Velocity = new Vec2(0, a.Velocity.Y);
             }
 
             if (shareB > 0)
             {
-                b.Position += new Vec2(-directionA * overlapX * shareB, 0);
+                b.Position += new Vec2(-separationA * shareB, 0);
                 b.Velocity = new Vec2(0, b.Velocity.Y);
             }
         }
 
-        private static void SeparateOnY(CTransform a, bool aSolid, CTransform b, bool bSolid, double overlapY)
+        private static void SeparateOnY(CTransform a, bool aSolid, CTransform b, bool bSolid, double separationA)
         {
             double deltaA = a.Position.Y - a.PreviousPosition.Y;
             double deltaB = b.Position.Y - b.PreviousPosition.Y;
 
             GetSeparationShares(aSolid, bSolid, deltaA, deltaB, out double shareA, out double shareB);
 
-            double relativeDelta = deltaA - deltaB;
-            double directionA = Math.Abs(relativeDelta) > epsilon
-                ? (relativeDelta > 0 ? -1.0 : 1.0)
-                : (a.Position.Y < b.Position.Y ? -1.0 : 1.0);
-
             if (shareA > 0)
             {
-                a.Position += new Vec2(0, directionA * overlapY * shareA);
+                a.Position += new Vec2(0, separationA * shareA);
                 a.Velocity = new Vec2(a.Velocity.X, 0);
             }
 
             if (shareB > 0)
             {
-                b.Position += new Vec2(0, -directionA * overlapY * shareB);
+                b.Position += new Vec2(0, -separationA * shareB);
                 b.Velocity = new Vec2(b.Velocity.X, 0);
             }
         }

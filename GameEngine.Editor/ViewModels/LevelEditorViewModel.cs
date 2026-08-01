@@ -156,6 +156,7 @@ namespace GameEngine.Editor.ViewModels
         public ReactiveCommand<Unit, Unit> EditSceneCommand { get; }
 
         public event Action<Type>? SceneSelected;
+        public event Action? ScenesReloading;
 
         public async Task EnsureScenesLoadedAsync()
         {
@@ -175,7 +176,14 @@ namespace GameEngine.Editor.ViewModels
                 if (_sceneService == null || forceReload)
                 {
                     if (_sceneService != null)
+                    {
+                        // Runtime scene Types and the preview engine both keep the collectible
+                        // load context alive. Release them before asking the compiler to unload.
+                        _lastCompileResult = null;
+                        SetSelectedEntity(null);
+                        ScenesReloading?.Invoke();
                         await _sceneService.DisposeAsync();
+                    }
 
                     _sceneService = new SceneSelectionService(ProjectPath);
                     await _sceneService.InitializeAsync();

@@ -207,4 +207,38 @@ public class CollisionResolutionTests
             Assert.That(transform.Velocity.X, Is.EqualTo(30).Within(0.001), "horizontal motion is preserved");
         });
     }
+
+    [TestCase(50, 70, 75, 70, 50, 70, TestName = "UnequalBoxes_JeepReturnsToImpactSide_FromLeft")]
+    [TestCase(120, 70, 95, 70, 120, 70, TestName = "UnequalBoxes_JeepReturnsToImpactSide_FromRight")]
+    [TestCase(85, 20, 85, 45, 85, 20, TestName = "UnequalBoxes_JeepReturnsToImpactSide_FromTop")]
+    [TestCase(85, 120, 85, 95, 85, 120, TestName = "UnequalBoxes_JeepReturnsToImpactSide_FromBottom")]
+    public void UnequalBoxes_SeparateByTheTrueMinimumTranslation(
+        double previousX, double previousY,
+        double currentX, double currentY,
+        double expectedX, double expectedY)
+    {
+        var manager = new EntityManager();
+
+        var jeep = manager.CreateEntity("jeep");
+        var jeepTransform = new CTransform(new Vec2(currentX, currentY))
+        {
+            PreviousPosition = new Vec2(previousX, previousY),
+            Velocity = new Vec2(currentX - previousX, currentY - previousY)
+        };
+        jeep.AddComponent(jeepTransform);
+        jeep.AddComponent(new CBoundingBox(new Vec2(50, 80), false, false));
+
+        var grenade = manager.CreateEntity("grenade");
+        grenade.AddComponent(new CTransform(new Vec2(100, 100)));
+        grenade.AddComponent(new CBoundingBox(new Vec2(20, 20), true, true));
+        manager.Update();
+
+        new PhysicsSystem().Update(manager, 1.0 / 60.0);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(jeepTransform.Position.X, Is.EqualTo(expectedX).Within(0.001));
+            Assert.That(jeepTransform.Position.Y, Is.EqualTo(expectedY).Within(0.001));
+        });
+    }
 }

@@ -15,6 +15,8 @@ namespace GameEngine.Demo
     public class SceneBrickBreaker : Scene
     {
         private Assets? assets;
+        private Assets Assets => assets
+            ?? throw new InvalidOperationException("SceneBrickBreaker has not been initialized.");
         public override int VirtualWidth => 600;
         public override int VirtualHeight => 1000;
 
@@ -75,7 +77,7 @@ namespace GameEngine.Demo
         private void CreateBall(EntityManager entityManager)
         {
             var ball1 = entityManager.CreateEntity("ball");
-            ball1.AddComponent(new CAnimation(assets.GetAnimation("Ball")));
+            ball1.AddComponent(new CAnimation(Assets.GetAnimation("Ball")));
             ball1.AddComponent(new CTransform(new Vec2(ballStartX ?? VirtualWidth / 2, VirtualHeight - 60)));
             ball1.AddComponent(new CBoundingBox(new Vec2(20, 20), blockVision: false, blockMove: false));
             ball1.AddComponent(new CMovement(1300, 600));
@@ -184,6 +186,7 @@ namespace GameEngine.Demo
             var aimerTransform = aimer.GetComponent<CTransform>();
 
             var ball = entityManager.GetEntityWithTag("ball");
+            if (ball == null) return;
             var ballTransform = ball.GetComponent<CTransform>();
 
             aimerTransform.Position = ballTransform.Position;
@@ -235,7 +238,7 @@ namespace GameEngine.Demo
                 if (random.Next(0, 2) == 0)
                 {
                     var block = entityManager.CreateEntity("block");
-                    block.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock").AsScaledAnimation(new Vec2(blockWidth, blockHeight))));
+                    block.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock").AsScaledAnimation(new Vec2(blockWidth, blockHeight))));
                     block.AddComponent(new CTransform(new Vec2(_wallThickness + (blockWidth + blockSpacing) * i, topPadding + _wallThickness + (blockHeight + blockSpacing) * row)));
                     block.AddComponent(new CBoundingBox(new Vec2(blockWidth, blockHeight), blockVision: true, blockMove: false));
                 }

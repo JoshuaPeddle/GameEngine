@@ -9,6 +9,8 @@ namespace GameEngine.Demo
     public class Scene2 : Scene
     {
         private Assets? assets;
+        private Assets Assets => assets
+            ?? throw new InvalidOperationException("Scene2 has not been initialized.");
 
         private Entity? playerEntity;
         private Entity? secondEntity;
@@ -87,7 +89,7 @@ namespace GameEngine.Demo
                 {
                     // Create entity
                     var entity = entityManager.CreateEntity("tile");
-                    var animation = assets.GetAnimation(animationName);
+                    var animation = Assets.GetAnimation(animationName);
 
                     // Get the frame dimensions from the animation
                     var sourceRect = animation.GetSourceRect(0);

@@ -8,8 +8,12 @@ namespace GameEngine.Demo
 {
     public class SceneSnake : Scene
     {
-        Assets assets;
-        private Action<Scene> _resetScene;
+        private Assets? assets;
+        private Assets Assets => assets
+            ?? throw new InvalidOperationException("SceneSnake has not been initialized.");
+        private Action<Scene>? _resetScene;
+        private Action<Scene> ResetSceneCallback => _resetScene
+            ?? throw new InvalidOperationException("SceneSnake has not been initialized.");
 
         int _width = 20;
         int _height = 20;
@@ -70,22 +74,22 @@ namespace GameEngine.Demo
                 var top = entityManager.CreateEntity("Wall");
                 top.AddComponent(new CTransform(new Vec2(x * 40, 0)));
                 top.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                top.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
+                top.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock")));
                 var bottom = entityManager.CreateEntity("Wall");
                 bottom.AddComponent(new CTransform(new Vec2(x * 40, (_height - 1) * 40)));
                 bottom.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                bottom.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
+                bottom.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock")));
             }
             for (int y = 1; y < _height - 1; y++)
             {
                 var left = entityManager.CreateEntity("Wall");
                 left.AddComponent(new CTransform(new Vec2(0, y * 40)));
                 left.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                left.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
+                left.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock")));
                 var right = entityManager.CreateEntity("Wall");
                 right.AddComponent(new CTransform(new Vec2((_width - 1) * 40, y * 40)));
                 right.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-                right.AddComponent(new CAnimation(assets.GetAnimation("BrickBlock")));
+                right.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock")));
             }
         }
 
@@ -115,12 +119,12 @@ namespace GameEngine.Demo
                     else if ((tagA == "SnakeHead" && tagB == "Wall") ||
                              (tagB == "SnakeHead" && tagA == "Wall"))
                     {
-                        _resetScene(this);
+                        ResetSceneCallback(this);
                     }
                     else if ((tagA == "SnakeHead" && tagB == "SnakeBody") ||
                              (tagB == "SnakeHead" && tagA == "SnakeBody"))
                     {
-                        _resetScene(this);
+                        ResetSceneCallback(this);
                     }
                 }
 
@@ -174,7 +178,7 @@ namespace GameEngine.Demo
             var bodySegment = entityManager.CreateEntity("SnakeBody");
             bodySegment.AddComponent(new CTransform(lastTransform.Position));
             bodySegment.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-            bodySegment.AddComponent(new CAnimation(assets.GetAnimation("SnakeBody")));
+            bodySegment.AddComponent(new CAnimation(Assets.GetAnimation("SnakeBody")));
 
             cSnake.Segments.Add(bodySegment);
         }
@@ -188,7 +192,7 @@ namespace GameEngine.Demo
             var food = entityManager.CreateEntity("Food");
             food.AddComponent(new CTransform(new Vec2(x, y)));
             food.AddComponent(new CBoundingBox(new Vec2(40, 40), false, false));
-            food.AddComponent(new CAnimation(assets.GetAnimation("SnakeFood")));
+            food.AddComponent(new CAnimation(Assets.GetAnimation("SnakeFood")));
         }
 
         private static void UpdateSnakeHeadRotation(Vec2 direction, CTransform headTransform)

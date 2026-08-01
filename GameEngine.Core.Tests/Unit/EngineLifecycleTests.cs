@@ -23,6 +23,18 @@ public class EngineLifecycleTests
         }
     }
 
+    private sealed class BlockingSystem : ISystem
+    {
+        public readonly ManualResetEventSlim Entered = new(false);
+        public readonly ManualResetEventSlim Release = new(false);
+
+        public void Update(EntityManager entityManager, double deltaSeconds)
+        {
+            Entered.Set();
+            Release.Wait();
+        }
+    }
+
     private static (Engine engine, CountingScene scene) Started()
     {
         var engine = new Engine(audioEnabled: false);
@@ -58,6 +70,7 @@ public class EngineLifecycleTests
             Assert.That(engine.Tick(1.0 / 60.0), Is.False);
             Assert.That(scene.Updates, Is.EqualTo(before));
             Assert.That(engine.IsStopped, Is.True);
+            Assert.That(engine.IsRunning, Is.False);
         });
     }
 
@@ -159,6 +172,51 @@ public class EngineLifecycleTests
     }
 
     [Test]
+    public async Task Dispose_WaitsForAnInFlightUpdateBeforeReleasingState()
+    {
+        var engine = new Engine(audioEnabled: false);
+        var blocking = new BlockingSystem();
+        engine.Systems.Add(blocking);
+        Task? dispose = null;
+        try
+        {
+            await engine.Start();
+            Assert.That(blocking.Entered.Wait(TimeSpan.FromSeconds(2)), Is.True,
+                "the engine loop never entered the blocking system");
+
+            dispose = Task.Run(engine.Dispose);
+            await Task.Delay(50);
+            Assert.That(dispose.IsCompleted, Is.False,
+                "Dispose returned while an update was still executing");
+        }
+        finally
+        {
+            blocking.Release.Set();
+            dispose ??= Task.Run(engine.Dispose);
+            await dispose.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(engine.IsStopped, Is.True);
+            Assert.That(engine.Systems.Systems, Is.Empty);
+            Assert.That(engine.EntityManager.GetEntities(), Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Start_IsIdempotentWhileTheLoopIsRunning()
+    {
+        using var engine = new Engine(audioEnabled: false);
+
+        Assert.DoesNotThrow(() =>
+        {
+            engine.Start();
+            engine.Start();
+        });
+    }
+
+    [Test]
     public void Dispose_IsIdempotent()
     {
         var engine = new Engine(audioEnabled: false);
@@ -168,6 +226,15 @@ public class EngineLifecycleTests
             engine.Dispose();
             engine.Dispose();
         });
+    }
+
+    [Test]
+    public void DisposedEngine_CannotAcquireAnotherScene()
+    {
+        var engine = new Engine(audioEnabled: false);
+        engine.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => engine.ChangeScene(new CountingScene()));
     }
 
     [Test]

@@ -8,6 +8,8 @@ namespace GameEngine.Demo
     public class SceneSideScroll : Scene
     {
         Assets? assets;
+        private Assets Assets => assets
+            ?? throw new InvalidOperationException("SceneSideScroll has not been initialized.");
 
         public override int VirtualWidth =>  4000;
         public override int VirtualHeight => 800;
@@ -58,6 +60,8 @@ namespace GameEngine.Demo
             var cameraTransform = camera.GetComponent<CCamera>();
 
             var player = entityManager.GetEntityWithTag("player");
+            if (player == null)
+                return;
             var playerTransform = player.GetComponent<CTransform>();
 
             cameraTransform.Position = new Vec2(playerTransform.Position.X, playerTransform.Position.Y);

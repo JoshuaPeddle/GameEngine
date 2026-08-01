@@ -14,16 +14,16 @@ The engine follows ECS architecture where:
 Architecture (essentials)
 - Entities (GameEngine.Core.Entity): containers of Components. Use AddComponent/RemoveComponent. Components are keyed by exact Type.
 - Components (derive from GameEngine.Core.Component): data-only. Examples: CTransform, CBoundingBox, CAnimation, CMovement, CInput, CGravity, CCamera, CText.
-- Systems (implement GameEngine.Core.ISystem): Update(EntityManager em, double deltaMs). Use em queries to process entities that have specific components.
+- Systems (implement GameEngine.Core.ISystem): Update(EntityManager em, double deltaSeconds). Use em queries to process entities that have specific components.
 - EntityManager: CreateEntity(tag), GetEntitiesWithComponent<T>(), GetEntitiesWithComponents<T>(), GetEntitiesWithComponents<T1,T2>(), GetEntitiesWith<T>(). Maintains component→entity maps. Entities created are added on next Update().
-- Engine: Initializes systems in order: Input, Movement, Physics, Animation, Render, Audio (optional). Update loop supplies delta in milliseconds.
-- Scene: abstract; Initialize(em, input, audio, ResetScene). Optional Update overloads, VirtualWidth/VirtualHeight for scaling.
+- Engine: Initializes systems in order: Input, Movement, Physics, Animation, Render, Audio (optional). Update loop supplies delta in seconds. `Stop()` ends and joins the desktop loop; dispose engines that own a loop.
+- Scene: abstract; Initialize(em, input, optional audio, ResetScene). One `Update` overload receives the system container and delta seconds. VirtualWidth/VirtualHeight control scaling.
 - Rendering: RenderSystem.DrawEntitiesToCanvas(SKCanvas). Honors RenderOptions (VirtualWidth/Height, ScalingStrategy, FPS, debug flags) and optional CCamera.
 - Assets: Assets reads assets.txt; supports Texture, Animation, Sound. _fileFetcher enables platform-specific loading.
 - Physics: PhysicsSystem handles gravity and AABB collisions (CBoundingBox, CTransform, CGravity). Emits CollisionEvents.
 
 Key usage patterns
-- Delta time is milliseconds. Convert when needed: seconds = deltaMs / 1000.0.
+- Delta time is seconds throughout engine, scene, and system updates. Animation asset delays remain milliseconds because they are file-format values.
 - When a System needs components, use EntityManager queries to ensure presence:
   - em.GetEntitiesWithComponent<T>() returns entities that have T.
   - em.GetEntitiesWithComponents<T>() returns (Entity,T) tuples.
@@ -37,12 +37,11 @@ Best practices (do/avoid)
 - Do: Keep per-frame loops allocation-free where possible. Avoid LINQ in tight loops.
 - Do: Respect existing style and visibility (public fields are used in components like CTransform).
 - Do: Keep new files small and focused. Prefer adding a new System over ad-hoc logic.
-- Avoid: Modifying Engine main loop control flow. Avoid changing delta units. Avoid UI/framework code in Core.
+- Avoid: UI/framework code in Core. Preserve the lifecycle and scene-change synchronization guarantees when modifying the engine loop.
 
 Common extensions (how to implement)
 - New Component: create GameEngine.Core/Components/MyComponent.cs, derive from Component, add data fields/properties only.
-- New System: create GameEngine.Core/Systems/MySystem.cs implementing ISystem.Update. Query entities via EntityManager, convert deltaMs to seconds if needed, mutate component data.
-s
+- New System: create GameEngine.Core/Systems/MySystem.cs implementing ISystem.Update. Query entities via EntityManager and consume the supplied delta in seconds.
 
 Notes
-- Target frameworks: .NET 8/9. Use modern C# features already present (records/readonly structs, target-typed new, collection expressions).
+- Target framework: .NET 10. Use modern C# features already present (records/readonly structs, target-typed new, collection expressions).
