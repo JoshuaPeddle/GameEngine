@@ -20,14 +20,17 @@ namespace GameEngine.Core.Systems
             this.options = options;
         }
 
-        public void Update(EntityManager entityManager, double deltaTime)
+        /// <summary>Smoothed frames per second, over <see cref="RenderOptions.FpsSmoothingSamples"/> frames.</summary>
+        public double Fps => _fps;
+
+        public void Update(EntityManager entityManager, double deltaSeconds)
         {
-            if (deltaTime <= 0)
+            if (deltaSeconds <= 0)
                 return;
 
             if (options.DrawFps)
             {
-                double currentFps = 1000.0 / deltaTime;
+                double currentFps = 1.0 / deltaSeconds;
 
                 if (options.FpsSmoothingSamples <= 1)
                 {

@@ -26,11 +26,11 @@ namespace GameEngine.Core.Systems
         private readonly List<(Entity entity, CBoundingBox bbox, CTransform transform)> _validEntities = new(1000);
         private readonly List<(Entity entity, CGravity gravity, CTransform transform)> _entitiesWithGravity = new(100);
 
-        public void Update(EntityManager entityManager, double deltaTime)
+        public void Update(EntityManager entityManager, double deltaSeconds)
         {
             ResetEntityLists();
             PopulateEntityLists(entityManager);
-            ProcessGravity(deltaTime);
+            ProcessGravity(deltaSeconds);
             ProcessCollisionsOptimized();
         }
 
@@ -74,13 +74,11 @@ namespace GameEngine.Core.Systems
                    pos1.Y + size1.Y > pos2.Y;
         }
 
-        private void ProcessGravity(double deltaTime)
+        private void ProcessGravity(double deltaSeconds)
         {
-            double gravityDelta = deltaTime;
-
             foreach ((Entity entity, CGravity gravity, CTransform transform) in _entitiesWithGravity)
             {
-                transform.Velocity += new Vec2(0, gravity.Acceleration * gravityDelta);
+                transform.Velocity += new Vec2(0, gravity.Acceleration * deltaSeconds);
             }
         }
 

@@ -104,7 +104,7 @@ namespace GameEngine.Core
         private volatile bool _pauseUntilFirstPresent;
 
         // Clamp extreme dt spikes
-        private const double MaxDeltaMs = 100.0; // cap to 100ms (10 FPS) to avoid catch-up bursts
+        private const double MaxDeltaSeconds = 0.1; // cap to 100ms (10 FPS) to avoid catch-up bursts
 
         public Engine(Action? invalidateAction = null, bool audioEnabled = true)
         {
@@ -248,16 +248,16 @@ namespace GameEngine.Core
             _isRunning = running;
         }
 
-        private void Update(double deltaTime)
+        private void Update(double deltaSeconds)
         {
             foreach (var system in Systems.Systems)
             {
-                system.Update(EntityManager, deltaTime);
+                system.Update(EntityManager, deltaSeconds);
             }
-            
+
             var physicsSystem = Systems.Get<PhysicsSystem>();
-            currentScene?.Update(EntityManager, physicsSystem, deltaTime);
-            currentScene?.Update(EntityManager, Systems, deltaTime);
+            currentScene?.Update(EntityManager, physicsSystem, deltaSeconds);
+            currentScene?.Update(EntityManager, Systems, deltaSeconds);
             EntityManager.Update();
 
             // Snapshot all renderable state. The UI thread reads only from this snapshot,
@@ -309,16 +309,22 @@ namespace GameEngine.Core
                 ChangeScene(currentScene!);
         }
 
+        /// <summary>
+        /// Seconds elapsed since the previous frame. Seconds are the engine's one time unit:
+        /// every <see cref="ISystem.Update"/> and <see cref="Scene.Update"/> receives them, so
+        /// component values like <see cref="Components.CGravity.Acceleration"/> can be written
+        /// in the physical units they document.
+        /// </summary>
         private double CalculateDeltaTime()
         {
             double currentTime = stopwatch.Elapsed.TotalSeconds;
-            double deltaMs = (currentTime - lastUpdateTime) * 1000.0;
+            double deltaSeconds = currentTime - lastUpdateTime;
             lastUpdateTime = currentTime;
 
-            if (deltaMs < 0) deltaMs = 0;
-            if (deltaMs > MaxDeltaMs) deltaMs = MaxDeltaMs;
+            if (deltaSeconds < 0) deltaSeconds = 0;
+            if (deltaSeconds > MaxDeltaSeconds) deltaSeconds = MaxDeltaSeconds;
 
-            return deltaMs;
+            return deltaSeconds;
         }
 
         public void SizeChanged(int width, int height)

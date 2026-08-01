@@ -66,7 +66,7 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        public void Update(EntityManager entityManager, double deltaTime)
+        public void Update(EntityManager entityManager, double deltaSeconds)
         {
             for (int i = _activeChannels.Count - 1; i >= 0; i--)
             {

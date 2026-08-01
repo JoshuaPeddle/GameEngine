@@ -89,12 +89,12 @@ namespace GameEngine.Demo
             }
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTimeMs)
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
         {
             var snakeHead = entityManager.GetEntitiesWithComponent<CSnake>()[0];
             var cSnake = snakeHead.GetComponent<CSnake>();
 
-            cSnake.TimeSinceLastMove += (float)(deltaTimeMs / 1000.0);
+            cSnake.TimeSinceLastMove += (float)deltaSeconds;
 
             if (cSnake.TimeSinceLastMove >= cSnake.MoveInterval)
             {

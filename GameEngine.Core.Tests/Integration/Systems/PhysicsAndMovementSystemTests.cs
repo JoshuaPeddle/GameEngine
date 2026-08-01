@@ -25,8 +25,8 @@ public class PhysicsAndMovementSystemTests
 
         for (int i = 0; i < 10; i++)
         {
-            movementSystem.Update(entityManager, 16.0); // 16 ms per frame
-            physicsSystem.Update(entityManager, 16.0);
+            movementSystem.Update(entityManager, 0.016); // 16 ms per frame
+            physicsSystem.Update(entityManager, 0.016);
             entityManager.Update();
         }
 

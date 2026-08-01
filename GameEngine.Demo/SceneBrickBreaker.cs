@@ -82,7 +82,7 @@ namespace GameEngine.Demo
             ball1.AddComponent(new CBall());
         }
 
-        public override void Update(EntityManager entityManager, SystemContainer systems, double deltaTime)
+        public override void Update(EntityManager entityManager, SystemContainer systems, double deltaSeconds)
         {
             if (GameState == GameStates.Aiming)
             {

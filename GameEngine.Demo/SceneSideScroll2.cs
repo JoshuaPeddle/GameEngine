@@ -27,7 +27,7 @@ namespace GameEngine.Demo
             player.AddComponent(new CTransform(new Vec2(100, 600)));
             player.AddComponent(new CAnimation(assets.GetAnimation("Mario")));
             player.AddComponent(new CBoundingBox(new Vec2(35, 38), false, false));
-            player.AddComponent(new CGravity { Acceleration = 0.7 });
+            player.AddComponent(new CGravity { Acceleration = 700 });
             player.AddComponent(new CMovement(1200, 400));
             var playerInput = player.AddComponent<CInput>();
             player.AddComponent(new CPlayer());
@@ -187,7 +187,7 @@ namespace GameEngine.Demo
             goal.AddComponent(new CText("GOAL!", 24));
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
         {
             var camera = entityManager.GetEntityWithTag("camera");
             var cameraComponent = camera?.GetComponent<CCamera>();
@@ -246,7 +246,7 @@ namespace GameEngine.Demo
                 var enemyTransform = enemy.GetComponent<CTransform>();
                 var enemyData = enemy.GetComponent<CEnemy>();
 
-                enemyData.DistanceTraveled += Math.Abs(enemyTransform.Velocity.X * deltaTime / 1000);
+                enemyData.DistanceTraveled += Math.Abs(enemyTransform.Velocity.X * deltaSeconds);
 
                 if (enemyData.DistanceTraveled >= enemyData.PatrolDistance)
                 {

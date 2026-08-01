@@ -48,7 +48,7 @@ namespace GameEngine.Demo
             camera.AddComponent(cameraComponent);
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
         {
             var camera = entityManager.GetEntityWithTag("camera");
             if (camera == null)

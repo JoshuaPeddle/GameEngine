@@ -86,7 +86,7 @@ namespace GameEngine.Demo
             }
         }
 
-        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaTime)
+        public override void Update(EntityManager entityManager, PhysicsSystem physicsSystem, double deltaSeconds)
         {
             var entity = entityManager.GetEntityWithTag("entity");
             if (entity == null) return;

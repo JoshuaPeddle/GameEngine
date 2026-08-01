@@ -7,10 +7,8 @@ namespace GameEngine.Core.Systems
     {
         private const double DecelerationBase = 0.2;
         
-        public void Update(EntityManager entityManager, double deltaMs)
+        public void Update(EntityManager entityManager, double deltaSeconds)
         {
-            double deltaSeconds = deltaMs * 0.001;
-
             var entities = entityManager.GetEntitiesWithComponents<CMovement, CTransform>();
 
             foreach (var (entity, movement, transform) in entities)
