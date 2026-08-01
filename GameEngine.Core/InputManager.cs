@@ -90,7 +90,12 @@ namespace GameEngine.Core
             bool resolutionsValid = _realResolution.X > 0 && _realResolution.Y > 0 &&
                                        VirtualResolution.X > 0 && VirtualResolution.Y > 0;
 
-            if (!resolutionsValid) { throw new InvalidOperationException("Real and Virtual dimensions must be set to handle pointer events."); }
+            // Pointer events can arrive before the host has reported its size — a click during
+            // window creation, or before the first SizeChanged. There is no meaningful virtual
+            // coordinate to map to yet, so drop the event rather than throwing: this runs on the
+            // UI thread, and throwing here took the whole host down.
+            if (!resolutionsValid)
+                return;
 
             if (pointerActionBindings.TryGetValue(eventType, out List<Action<PointerEvent>>? actions))
             {

@@ -11,6 +11,7 @@ namespace GameEngine.Core.Systems
         private double[] _fpsSamples = [];
         private int _fpsSampleIndex;
         private int _fpsSampleCount;
+        private double _fpsSampleSum;
         private double _fps;
 
         public RenderSystem(EntityManager entityManager, RenderOptions options)
@@ -40,18 +41,22 @@ namespace GameEngine.Core.Systems
                     _fpsSamples = new double[options.FpsSmoothingSamples];
                     _fpsSampleIndex = 0;
                     _fpsSampleCount = 0;
+                    _fpsSampleSum = 0;
                 }
 
+                // Maintain a running total: drop the sample being evicted, add the new one.
+                // Re-summing the whole window every frame made this O(window), which is what
+                // the ring buffer was supposed to have removed. Slots not yet written hold 0,
+                // so the subtraction is a no-op while the window is still filling.
+                _fpsSampleSum -= _fpsSamples[_fpsSampleIndex];
                 _fpsSamples[_fpsSampleIndex] = currentFps;
+                _fpsSampleSum += currentFps;
+
                 _fpsSampleIndex = (_fpsSampleIndex + 1) % _fpsSamples.Length;
                 if (_fpsSampleCount < _fpsSamples.Length)
                     _fpsSampleCount++;
 
-                double sum = 0;
-                for (int i = 0; i < _fpsSampleCount; i++)
-                    sum += _fpsSamples[i];
-
-                _fps = sum / _fpsSampleCount;
+                _fps = _fpsSampleSum / _fpsSampleCount;
             }
         }
 
