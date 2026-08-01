@@ -29,59 +29,53 @@ namespace GameEngine.Editor.Controls
         {
             SizeChanged += OnSizeChanged;
             DataContextChanged += OnDataContextChanged;
-            PointerPressed += (s, e) => 
+            PointerPressed += (s, e) => SelectEntityAt(e.GetPosition(this));
+        }
+
+        private void SelectEntityAt(Point screenPosition)
+        {
+            if (_gameEngine == null || _vm == null)
+                return;
+
+            var viewport = _gameEngine.Systems.Get<RenderSystem>()
+                .ViewportFor(_gameEngine.InputManager.RealResolution);
+
+            if (!viewport.TryToVirtual(new Vec2(screenPosition.X, screenPosition.Y), out var pick))
+                return;
+
+            foreach (var entity in _gameEngine.EntityManager.GetEntities())
             {
-                var entityManager = _gameEngine?.EntityManager.GetEntities();
-                if (entityManager == null || _vm == null) return;
-                foreach (var entity in entityManager)
+                if (!entity.TryGetComponent<Core.Components.CTransform>(out var transform))
+                    continue;
+
+                if (!TryGetPickSize(entity, out var size))
+                    continue;
+
+                if (pick.X >= transform.Position.X && pick.X <= transform.Position.X + size.X &&
+                    pick.Y >= transform.Position.Y && pick.Y <= transform.Position.Y + size.Y)
                 {
-                    if (entity.HasComponent<Core.Components.CTransform>() && entity.HasComponent<Core.Components.CAnimation>())
-                    {
-                        var transform = entity.GetComponent<Core.Components.CTransform>();
-                        var sprite = entity.GetComponent<Core.Components.CAnimation>();
-                        var inputManager = _gameEngine.InputManager;
-
-                        var realResolution = inputManager.RealResolution;
-                        var virtualResolution = inputManager.VirtualResolution;
-
-                        double scaleX = realResolution.X / virtualResolution.X;
-                        double scaleY = realResolution.Y / virtualResolution.Y;
-
-                        double finalScale = Math.Min(scaleX, scaleY);
-
-                        double scaledWidth = virtualResolution.X * finalScale;
-                        double scaledHeight = virtualResolution.Y * finalScale;
-                        double leftoverX = (realResolution.X - scaledWidth) / 2;
-                        double leftoverY = (realResolution.Y - scaledHeight) / 2;
-
-                        double adjustedX = e.GetPosition(this).X - leftoverX;
-                        double adjustedY = e.GetPosition(this).Y - leftoverY;
-                        double virtualX = adjustedX / finalScale;
-                        double virtualY = adjustedY / finalScale;
-
-                        if (entity.TryGetComponent<Core.Components.CBoundingBox>(out var boundingBox))
-                        {
-                            var boxPos = transform.Position - (boundingBox.Size / 2);
-                            if (virtualX >= boxPos.X + boundingBox.Size.X/2 && virtualX <= boxPos.X + boundingBox.Size.X *1.5 &&
-                                virtualY >= boxPos.Y + boundingBox.Size.Y/2 && virtualY <= boxPos.Y + boundingBox.Size.Y *1.5)
-                            {
-                                _vm?.EntitySelectedCommand.Execute(entity).Subscribe();
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            var boxPos = transform.Position - new Vec2(sprite.GetSourceRect().Size);
-                            if (virtualX >= boxPos.X && virtualX <= boxPos.X + new Vec2(sprite.GetSourceRect().Size).X &&
-                                virtualY >= boxPos.Y && virtualY <= boxPos.Y + new Vec2(sprite.GetSourceRect().Size).Y)
-                            {
-                                _vm?.EntitySelectedCommand.Execute(entity).Subscribe();
-                                break;
-                            }
-                        }
-                    }
+                    _vm.EntitySelectedCommand.Execute(entity).Subscribe();
+                    return;
                 }
-            };
+            }
+        }
+
+        private static bool TryGetPickSize(Core.Entity entity, out Vec2 size)
+        {
+            if (entity.TryGetComponent<Core.Components.CBoundingBox>(out var boundingBox))
+            {
+                size = boundingBox.Size;
+                return true;
+            }
+
+            if (entity.TryGetComponent<Core.Components.CAnimation>(out var animation))
+            {
+                size = new Vec2(animation.GetSourceRect().Size);
+                return true;
+            }
+
+            size = default;
+            return false;
         }
 
         private void OnDataContextChanged(object? sender, EventArgs e)
@@ -124,10 +118,9 @@ namespace GameEngine.Editor.Controls
                         _gameEngine = new Engine(QueueInvalidate, audioEnabled: false);
                     else
                         _gameEngine = new Engine(QueueInvalidate);
-                    _gameEngine.Systems.TryGet<RenderSystem>().options.DrawBoundingBoxes = true;
+                    _gameEngine.RenderOptions.DrawBoundingBoxes = true;
                     _gameEngine.TargetFrameRate = 120;
                     InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
-                    _gameEngine.InitializeSystems();
                     _gameEngine.SetRunning(_vm.IsEngineRunning);
                     _gameEngine?.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
                 }

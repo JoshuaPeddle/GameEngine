@@ -6,9 +6,7 @@ public class RenderSystemTests
 {
     private static RenderSystem NewRenderSystem(int smoothingSamples)
     {
-        var manager = new EntityManager();
-        manager.Update();
-        return new RenderSystem(manager, new RenderOptions
+        return new RenderSystem(new RenderOptions
         {
             DrawFps = true,
             FpsSmoothingSamples = smoothingSamples

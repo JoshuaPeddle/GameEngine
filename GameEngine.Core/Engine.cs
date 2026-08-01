@@ -10,6 +10,15 @@ namespace GameEngine.Core
 
         public SystemContainer Systems;
 
+        public RenderOptions RenderOptions { get; } = new()
+        {
+            DrawAnimations = true,
+            DrawBoundingBoxes = false,
+            DrawEntityCenters = false,
+            DrawFps = true,
+            FpsSmoothingSamples = 60
+        };
+
         public EntityManager EntityManager;
         public InputManager InputManager;
         private readonly Stopwatch stopwatch = new Stopwatch();
@@ -120,16 +129,7 @@ namespace GameEngine.Core
             Systems.Add(new MovementSystem());
             Systems.Add(new PhysicsSystem());
             Systems.Add(new AnimationSystem());
-            Systems.Add(new RenderSystem(
-                EntityManager,
-                new RenderOptions()
-                {
-                    DrawAnimations = true,
-                    DrawBoundingBoxes = false,
-                    DrawEntityCenters = false,
-                    DrawFps = true,
-                    FpsSmoothingSamples = 60
-                }));
+            Systems.Add(new RenderSystem(RenderOptions));
             if (_audioEnabled)
             {
                 var audioSystem = AudioSystem.TryCreate();
@@ -285,6 +285,7 @@ namespace GameEngine.Core
             InputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);
             InputManager.RealResolution = realResolution;
             renderSystem.SetVirtualDimensions(currentScene.VirtualWidth, currentScene.VirtualHeight);
+            InputManager.ScalingStrategy = renderSystem.options.ScalingStrategy;
 
             // Flush the entities the scene just created and publish them. Update() is skipped
             // while paused, so without this the paint requested below would still be showing
