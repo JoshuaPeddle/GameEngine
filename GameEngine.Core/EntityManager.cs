@@ -65,7 +65,6 @@ namespace GameEngine.Core
 
             foreach (var entity in inactiveBuffer)
             {
-                entities.Remove(entity);
                 entitiesById.Remove(entity.Id);
                 foreach (var componentType in entity.Components.Keys)
                 {
@@ -79,7 +78,21 @@ namespace GameEngine.Core
                     }
                 }
             }
+
+            CompactActiveEntities();
             structuralVersion++;
+        }
+
+        private void CompactActiveEntities()
+        {
+            int write = 0;
+            for (int read = 0; read < entities.Count; read++)
+            {
+                if (entities[read].Active)
+                    entities[write++] = entities[read];
+            }
+
+            entities.RemoveRange(write, entities.Count - write);
         }
 
         public Entity CreateEntity(string tag)
@@ -115,7 +128,13 @@ namespace GameEngine.Core
 
         public Entity? GetEntityWithTag(string tag)
         {
-            return entities.FirstOrDefault(e => e.Tag == tag);
+            foreach (var entity in entities)
+            {
+                if (entity.Tag == tag)
+                    return entity;
+            }
+
+            return null;
         }
 
         public IReadOnlyList<Entity> GetEntitiesWithTag(string tag)

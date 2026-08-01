@@ -3,6 +3,7 @@
     public class SystemContainer : IDisposable
     {
         private readonly List<ISystem> _systems = [];
+        private readonly Dictionary<Type, ISystem> _byType = [];
 
         /// <summary>
         /// Systems in insertion (execution) order.
@@ -13,25 +14,26 @@
 
         public void Add(ISystem system)
         {
-            if (_systems.Any(s => s.GetType() == system.GetType()))
+            if (!_byType.TryAdd(system.GetType(), system))
                 throw new DuplicateSystemException();
             _systems.Add(system);
         }
 
         public T Get<T>() where T : ISystem
         {
-            var system = _systems.FirstOrDefault(s => s.GetType() == typeof(T));
-            return system != null ? (T)system : throw new MissingSystemException();
+            return _byType.TryGetValue(typeof(T), out var system)
+                ? (T)system
+                : throw new MissingSystemException();
         }
 
         public T? TryGet<T>() where T : class, ISystem
         {
-            return _systems.FirstOrDefault(s => s.GetType() == typeof(T)) as T;
+            return _byType.TryGetValue(typeof(T), out var system) ? (T)system : null;
         }
 
         public bool Contains<T>() where T : ISystem
         {
-            return _systems.Any(s => s.GetType() == typeof(T));
+            return _byType.ContainsKey(typeof(T));
         }
 
         public void Dispose()
@@ -42,6 +44,7 @@
                     disposable.Dispose();
             }
             _systems.Clear();
+            _byType.Clear();
             GC.SuppressFinalize(this);
         }
     }

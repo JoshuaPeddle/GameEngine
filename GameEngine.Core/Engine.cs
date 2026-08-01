@@ -93,7 +93,7 @@ namespace GameEngine.Core
         }
 
         // Optional frame limiter (null = unlimited)
-        public static int? TargetFrameRate { get; set; } = null;
+        public int? TargetFrameRate { get; set; } = null;
 
         // Scene-change handoff to engine thread
         private Scene? _pendingScene;
@@ -273,6 +273,7 @@ namespace GameEngine.Core
         private void ApplySceneChange(Scene scene)
         {
             currentScene = scene;
+            scene.Engine = this;
 
             // Rebuild systems and scene
             Systems.Dispose();
