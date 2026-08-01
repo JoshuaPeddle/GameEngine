@@ -15,6 +15,7 @@ namespace GameEngine.Runner.Avalonia
     public partial class App : Application
     {
         public static Func<string, Stream>? _fileFetcher;
+        public static Func<Core.Scene>? StartupScene;
 
         public override void Initialize()
         {

@@ -17,6 +17,7 @@ namespace GameEngine.Runner.Avalonia.iOS
     {
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
+            App.StartupScene = () => new Demo.SceneMenu();
             return base.CustomizeAppBuilder(builder)
                 .WithInterFont();
         }

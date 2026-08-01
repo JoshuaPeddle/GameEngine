@@ -83,51 +83,14 @@ namespace GameEngine
 
                 var startPosition = _pointerStartPosition.Value;
 
-                var deltaX = endPosition.X - startPosition.X;
-                var deltaY = endPosition.Y - startPosition.Y;
-                var distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+                var key = SwipeGesture.Classify(
+                    new Vec2(startPosition.X, startPosition.Y),
+                    new Vec2(endPosition.X, endPosition.Y),
+                    SwipeThreshold);
 
-                // If the distance is small, consider it a tap
-                if (distance < SwipeThreshold)
-                {
-                    Console.WriteLine("Tap detected - Space key");
-                    _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.Space);
-                    // Simulate key up after a brief delay to mimic key press behavior
-                    Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.Space));
-                }
-                // Otherwise it's a swipe - determine direction
-                else
-                {
-                    // Determine if horizontal or vertical swipe based on which delta is larger
-                    if (Math.Abs(deltaX) > Math.Abs(deltaY))
-                    {
-                        // Horizontal swipe
-                        if (deltaX > 0)
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.D);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.D));
-                        }
-                        else
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.A);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.A));
-                        }
-                    }
-                    else
-                    {
-                        // Vertical swipe
-                        if (deltaY > 0)
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.S);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.S));
-                        }
-                        else
-                        {
-                            _gameEngine.Systems.Get<InputSystem>().KeyDown(GeKeys.W);
-                            Task.Delay(100).ContinueWith(_ => _gameEngine.Systems.Get<InputSystem>().KeyUp(GeKeys.W));
-                        }
-                    }
-                }
+                var input = _gameEngine.Systems.Get<InputSystem>();
+                input.KeyDown(key);
+                Task.Delay(100).ContinueWith(_ => input.KeyUp(key));
 
                 _pointerStartPosition = null;
             }
