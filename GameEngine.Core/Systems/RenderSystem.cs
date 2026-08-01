@@ -5,7 +5,6 @@ namespace GameEngine.Core.Systems
 {
     public class RenderSystem : ISystem
     {
-        private readonly EntityManager entityManager;
         public readonly RenderOptions options;
 
         private double[] _fpsSamples = [];
@@ -14,9 +13,8 @@ namespace GameEngine.Core.Systems
         private double _fpsSampleSum;
         private double _fps;
 
-        public RenderSystem(EntityManager entityManager, RenderOptions options)
+        public RenderSystem(RenderOptions options)
         {
-            this.entityManager = entityManager;
             this.options = options;
         }
 
@@ -67,29 +65,11 @@ namespace GameEngine.Core.Systems
             canvas.Clear(SKColors.White);
 
             var canvasBounds = canvas.LocalClipBounds;
-            float screenWidth = canvasBounds.Width;
-            float screenHeight = canvasBounds.Height;
-
-            float scaleX = screenWidth / options.VirtualWidth;
-            float scaleY = screenHeight / options.VirtualHeight;
-
-            float finalScale = options.ScalingStrategy switch
-            {
-                ScalingStrategy.Letterbox => Math.Min(scaleX, scaleY),
-                ScalingStrategy.Stretch => scaleX,
-                ScalingStrategy.Crop => Math.Max(scaleX, scaleY),
-                _ => 1.0f
-            };
-
-            float scaledWidth = options.VirtualWidth * finalScale;
-            float scaledHeight = options.VirtualHeight * finalScale;
-
-            float leftoverX = (screenWidth - scaledWidth) / 2f;
-            float leftoverY = (screenHeight - scaledHeight) / 2f;
+            var viewport = ViewportFor(new Vec2(canvasBounds.Width, canvasBounds.Height));
 
             canvas.Save();
-            canvas.Translate(leftoverX, leftoverY);
-            canvas.Scale(finalScale, finalScale);
+            canvas.Translate((float)viewport.OffsetX, (float)viewport.OffsetY);
+            canvas.Scale((float)viewport.ScaleX, (float)viewport.ScaleY);
 
             if (snapshot.ActiveCamera is { } camera)
             {
@@ -118,57 +98,6 @@ namespace GameEngine.Core.Systems
         /// Every runner has moved to the <see cref="RenderSnapshot"/> overload above;
         /// the only remaining caller is Runner.Avalonia.Old's SkiaCanvasControl.
         /// </summary>
-        public void DrawEntitiesToCanvas(SKCanvas canvas)
-        {
-            canvas.Clear(SKColors.White);
-
-            var canvasBounds = canvas.LocalClipBounds;
-            float screenWidth = canvasBounds.Width;
-            float screenHeight = canvasBounds.Height;
-
-            float scaleX = screenWidth / options.VirtualWidth;
-            float scaleY = screenHeight / options.VirtualHeight;
-
-            float finalScale = options.ScalingStrategy switch
-            {
-                ScalingStrategy.Letterbox => Math.Min(scaleX, scaleY),
-                ScalingStrategy.Stretch => scaleX,
-                ScalingStrategy.Crop => Math.Max(scaleX, scaleY),
-                _ => 1.0f
-            };
-
-            float scaledWidth = options.VirtualWidth * finalScale;
-            float scaledHeight = options.VirtualHeight * finalScale;
-
-            float leftoverX = (screenWidth - scaledWidth) / 2f;
-            float leftoverY = (screenHeight - scaledHeight) / 2f;
-
-            canvas.Save();
-            canvas.Translate(leftoverX, leftoverY);
-            canvas.Scale(finalScale, finalScale);
-
-            var cameraEntity = entityManager.GetEntityWithTag("camera");
-            if (cameraEntity != null && cameraEntity.TryGetComponent<CCamera>(out var camera))
-            {
-                canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
-                canvas.Scale(camera.Zoom, camera.Zoom);
-                canvas.Translate(-((float)camera.Position.X), -((float)camera.Position.Y));
-
-                DrawEntities(canvas, camera);
-            }
-            else
-            {
-                DrawEntities(canvas);
-            }
-
-            canvas.Restore();
-
-            if (options.DrawFps)
-            {
-                DrawFpsCounter(canvas, _fps);
-            }
-        }
-
         // ── Snapshot-based rendering ────────────────────────────────────────
 
         private void DrawSnapshotEntries(SKCanvas canvas, RenderSnapshot snapshot,
@@ -290,146 +219,6 @@ namespace GameEngine.Core.Systems
             return entry.Transform.Position;
         }
 
-        // ── Legacy EntityManager-based rendering ────────────────────────────
-
-        private void DrawEntities(SKCanvas canvas, CCamera? camera = null)
-        {
-            IReadOnlyList<(Entity, CTransform)> entities = entityManager.GetEntitiesWithComponents<CTransform>();
-            if (camera != null)
-                entities = GetVisibleEntities(entities, camera);
-
-            foreach (var entity in entities)
-            {
-                if (options.DrawAnimations && entity.Item1.TryGetComponent<CAnimation>(out var cAnimation))
-                {  
-                    if (cAnimation.ShouldDraw)
-                        DrawAnimation(canvas, entity.Item1, entity.Item2, cAnimation);
-                }
-
-                if (entity.Item1.TryGetComponent<CText>(out var text))
-                {
-                    if (text.ShouldDraw)
-                        canvas.DrawText(text.Text, (float)entity.Item2.Position.X, (float)entity.Item2.Position.Y, text.Paint);
-                }
-
-                if (options.DrawBoundingBoxes && entity.Item1.TryGetComponent<CBoundingBox>(out var boundingBox))
-                {
-                    DrawBoundingBox(canvas, entity.Item1, boundingBox);
-                }
-
-                if (options.DrawEntityCenters)
-                {
-                    DrawEntityCenterDebugPoints(canvas, FindEntityCenter(entity.Item1));
-                }
-            }
-        }
-
-        private List<(Entity, CTransform)> GetVisibleEntities(IReadOnlyList<(Entity, CTransform)> entities, CCamera camera)
-        {
-            float viewWidth = options.VirtualWidth / camera.Zoom;
-            float viewHeight = options.VirtualHeight / camera.Zoom;
-
-            float halfWidth = viewWidth / 2;
-            float halfHeight = viewHeight / 2;
-
-            // The camera position is the centre of the view, so the box extends half a view
-            // height above it as well as below.
-            var cameraBounds = new SKRect(
-                (float)camera.Position.X - halfWidth,
-                (float)camera.Position.Y - halfHeight,
-                (float)camera.Position.X + halfWidth,
-                (float)camera.Position.Y + halfHeight
-            );
-            cameraBounds.Inflate(100, 100);
-
-            var visibleEntities = new List<(Entity, CTransform)>(entities.Count);
-
-            foreach (var entity in entities)
-            {
-                var transform = entity.Item2;
-                if (entity.Item1.TryGetComponent<CBoundingBox>(out var boundingBox))
-                {
-                    var entityRect = new SKRect(
-                        (float)transform.Position.X,
-                        (float)transform.Position.Y,
-                        (float)(transform.Position.X + boundingBox.Width),
-                        (float)(transform.Position.Y + boundingBox.Height)
-                    );
-
-                    if (cameraBounds.IntersectsWith(entityRect))
-                        visibleEntities.Add(entity);
-                }
-                else if (cameraBounds.Contains((float)transform.Position.X, (float)transform.Position.Y))
-                {
-                    visibleEntities.Add(entity);
-                }
-            }
-            return visibleEntities;
-        }
-
-        private static void DrawAnimation(SKCanvas canvas, Entity entity, CTransform transform, CAnimation animation)
-        {
-            SKBitmap texture = animation.Texture;
-            SKRect sourceRect = animation.GetSourceRect();
-
-            float frameWidth = sourceRect.Width;
-            float frameHeight = sourceRect.Height;
-            var animationSize = new Vec2(frameWidth, frameHeight);
-
-            var entityCenter = FindEntityCenter(entity);
-
-            var rotationAngle = transform.Rotation;
-
-            canvas.Save();
-
-            canvas.Translate((float)entityCenter.X, (float)entityCenter.Y);
-
-            canvas.RotateDegrees((float)rotationAngle);
-
-            SKRect destRect = new SKRect(
-                -(float)(animationSize.X / 2),
-                -(float)(animationSize.Y / 2),
-                (float)(animationSize.X / 2),
-                (float)(animationSize.Y / 2)
-            );
-
-            canvas.DrawBitmap(texture, sourceRect, destRect, _animationPaint);
-
-            canvas.Restore();
-        }
-
-        private static Vec2 FindEntityCenter(Entity entity)
-        {
-            var transform = entity.GetComponent<CTransform>();
-            if (entity.TryGetComponent<CBoundingBox>(out var boundingBox))
-            {
-                return new Vec2(transform.Position.X + (boundingBox.Width / 2),
-                                transform.Position.Y + (boundingBox.Height / 2));
-            }
-            else
-            {
-                return new Vec2(transform.Position.X, transform.Position.Y);
-            }
-        }
-
-        private static void DrawEntityCenterDebugPoints(SKCanvas canvas, Vec2 position)
-        {
-            canvas.DrawPoint((float)position.X, (float)position.Y, _debugPointPaint);
-        }
-
-        private void DrawBoundingBox(SKCanvas canvas, Entity entity, CBoundingBox boundingBox)
-        {
-            var transform = entity.GetComponent<CTransform>();
-
-            var rect = new SKRect(
-                (float)transform.Position.X,
-                (float)transform.Position.Y,
-                (float)transform.Position.X + (float)boundingBox.Width,
-                (float)transform.Position.Y + (float)boundingBox.Height);
-
-            canvas.DrawRect(rect, _boundingBoxPaint);
-        }
-
         private static void DrawFpsCounter(SKCanvas canvas, double fps)
         {
             string fpsText = $"FPS: {fps:0.0}";
@@ -437,6 +226,12 @@ namespace GameEngine.Core.Systems
             canvas.DrawText(fpsText, margin, margin + _fpsPaint.TextSize, _fpsPaint);
 
         }
+
+        public ViewportTransform ViewportFor(Vec2 realResolution) =>
+            ViewportTransform.Create(
+                realResolution,
+                new Vec2(options.VirtualWidth, options.VirtualHeight),
+                options.ScalingStrategy);
 
         public void SetVirtualDimensions(float width, float height)
         {

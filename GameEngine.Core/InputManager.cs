@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using GameEngine.Core.Systems;
 using static GameEngine.Core.Pointer;
 
 namespace GameEngine.Core
@@ -8,6 +9,7 @@ namespace GameEngine.Core
         public ActionMapper ActionMapper { get; }
         public Vec2 RealResolution { get => _realResolution;  set => _realResolution = value; }
         public Vec2 VirtualResolution { get; set; }
+        public ScalingStrategy ScalingStrategy { get; set; } = ScalingStrategy.Letterbox;
 
         private const int MaxQueuedPointerEvents = 256;
 
@@ -106,30 +108,10 @@ namespace GameEngine.Core
             }
         }
 
-        private bool TryMapToVirtual(Vec2 realPosition, out Vec2 virtualPosition)
-        {
-            virtualPosition = default;
-
-            if (_realResolution.X <= 0 || _realResolution.Y <= 0
-                || VirtualResolution.X <= 0 || VirtualResolution.Y <= 0)
-                return false;
-
-            double finalScale = Math.Min(
-                _realResolution.X / VirtualResolution.X,
-                _realResolution.Y / VirtualResolution.Y);
-
-            double scaledWidth = VirtualResolution.X * finalScale;
-            double scaledHeight = VirtualResolution.Y * finalScale;
-
-            double adjustedX = realPosition.X - ((_realResolution.X - scaledWidth) / 2);
-            double adjustedY = realPosition.Y - ((_realResolution.Y - scaledHeight) / 2);
-
-            if (adjustedX < 0 || adjustedX > scaledWidth || adjustedY < 0 || adjustedY > scaledHeight)
-                return false;
-
-            virtualPosition = new Vec2(adjustedX / finalScale, adjustedY / finalScale);
-            return true;
-        }
+        private bool TryMapToVirtual(Vec2 realPosition, out Vec2 virtualPosition) =>
+            ViewportTransform
+                .Create(_realResolution, VirtualResolution, ScalingStrategy)
+                .TryToVirtual(realPosition, out virtualPosition);
 
         public void DoActions()
         {
