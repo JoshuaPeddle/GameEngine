@@ -193,7 +193,7 @@ namespace GameEngine.Demo
             if (!cAimer.PressPosition.Equals(Vec2.Zero))
             {
                 Vec2 direction;
-                if (cAimer.MovePosition > new Vec2(0, 0))
+                if (!cAimer.MovePosition.Equals(Vec2.Zero))
                     direction = cAimer.MovePosition - ballTransform.Position;
                 else
                     direction = cAimer.PressPosition - ballTransform.Position;
