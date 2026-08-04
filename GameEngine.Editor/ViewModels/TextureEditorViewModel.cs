@@ -1,13 +1,12 @@
 ﻿using Avalonia.Media.Imaging;
-using DynamicData;
 using GameEngine.Editor.Models;
 using GameEngine.Editor.Services;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Reactive;
 using System.Threading.Tasks;
+using Unit = ReactiveUI.Primitives.RxVoid;
 
 namespace GameEngine.Editor.ViewModels;
 
@@ -37,11 +36,12 @@ public class TextureEditorViewModel : ViewModelBase
     public TextureEditorViewModel() // Designer constructor
     {
         _parentViewModel = new AssetEditorViewModel(new FilePickerService());
-        Textures.AddRange(
-        [
+        foreach (var texture in new[]
+        {
             new Texture { Name = "Texture 1", Path = "path/to/texture1.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png")) },
             new Texture { Name = "Texture 2", Path = "path/to/texture2.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/grenade.png")) }
-        ]);
+        })
+            Textures.Add(texture);
         Image = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png"));
         ImageHeight = 100;
         ImageWidth = 80;

@@ -50,12 +50,16 @@ public sealed class RenderSnapshot
     {
         public readonly string Text;
         public readonly SKPaint Paint;
+        public readonly float Size;
+        public readonly SKTextAlign TextAlign;
         public readonly bool ShouldDraw;
 
         public TextData(CText t)
         {
             Text = t.Text;
             Paint = t.Paint; // SKPaint is only read during render; safe to share
+            Size = t.Size;
+            TextAlign = t.TextAlign;
             ShouldDraw = t.ShouldDraw;
         }
     }

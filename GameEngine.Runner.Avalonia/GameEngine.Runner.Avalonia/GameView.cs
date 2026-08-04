@@ -117,7 +117,7 @@ namespace GameEngine.Runner.Avalonia
 
                 var startPosition = _pointerStartPosition.Value;
 
-                var key = SwipeGesture.Classify(
+                var key = Core.SwipeGesture.Classify(
                     new Vec2(startPosition.X, startPosition.Y),
                     new Vec2(endPosition.X, endPosition.Y),
                     SwipeThreshold);

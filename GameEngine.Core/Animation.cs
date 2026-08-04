@@ -65,7 +65,13 @@ namespace GameEngine.Core
         }
         private void RescaleTexture()
         {
-            var scaledBitmap = texture.Resize(new SKImageInfo((int)_scaleSize.X, (int)_scaleSize.Y), SKFilterQuality.High);
+            bool isDownscaling = _scaleSize.X < texture.Width || _scaleSize.Y < texture.Height;
+            SKSamplingOptions sampling = isDownscaling
+                ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
+                : new SKSamplingOptions(SKCubicResampler.Mitchell);
+            var scaledBitmap = texture.Resize(
+                new SKImageInfo((int)_scaleSize.X, (int)_scaleSize.Y),
+                sampling);
             texture = scaledBitmap;
             frameWidth = texture.Width / frames;
             frameHeight = texture.Height;
