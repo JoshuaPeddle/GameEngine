@@ -12,6 +12,10 @@ Texture TexWallHorizontal images/wallHorizontal.png
 Texture TexWallVertical images/wallVertical.png
 Texture TexAimer images/aimer.png
 Texture TextPillar images/Pillar.png
+Texture TexAstralArena images/astral-relay/arena-final.png
+Texture TexAstralPlayer images/astral-relay/player.png
+Texture TexAstralHunter images/astral-relay/hunter.png
+Texture TexAstralCore images/astral-relay/core.png
 Animation Grenade TexGrenade 4 250
 Animation JeepBack TexJeep 1 1
 Animation StoneBlock TexStoneBlock 1 0
@@ -28,5 +32,9 @@ Animation WallHorizontal TexWallHorizontal 1 1
 Animation WallVertical TexWallVertical 1 1
 Animation Aimer TexAimer 1 1
 Animation Pillar TextPillar 1 0
+Animation AstralArena TexAstralArena 1 0
+Animation AstralPlayer TexAstralPlayer 1 0
+Animation AstralHunter TexAstralHunter 1 0
+Animation AstralCore TexAstralCore 1 0
 Sound Hit sounds/hit.wav
 Sound Level1 sounds/level1.wav
