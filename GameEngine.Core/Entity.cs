@@ -19,6 +19,9 @@ namespace GameEngine.Core
             this.entityManager = manager;
         }
 
+        public EntitySnapshot Capture() =>
+            new(Id, Tag, Active, Components.Keys.Select(t => t.Name).OrderBy(n => n).ToArray());
+
         public Component AddComponent(Component component)
         {
             Components[component.GetType()] = component;

@@ -1,4 +1,5 @@
 ﻿using GameEngine.Core.Systems;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics;
 using System.Threading;
@@ -120,6 +121,36 @@ namespace GameEngine.Core
 
         public IAssetSource AssetSource { get; }
 
+        private const int MaxQueuedEngineWork = 256;
+        private readonly ConcurrentQueue<Action<Engine>> _postedWork = new();
+        private int _queuedWorkCount;
+
+        public bool Post(Action<Engine> work)
+        {
+            ArgumentNullException.ThrowIfNull(work);
+
+            if (Volatile.Read(ref _disposeStarted) != 0 || _stopped)
+                return false;
+
+            if (Interlocked.Increment(ref _queuedWorkCount) > MaxQueuedEngineWork)
+            {
+                Interlocked.Decrement(ref _queuedWorkCount);
+                return false;
+            }
+
+            _postedWork.Enqueue(work);
+            return true;
+        }
+
+        private void DrainPostedWork()
+        {
+            while (_postedWork.TryDequeue(out var work))
+            {
+                Interlocked.Decrement(ref _queuedWorkCount);
+                work(this);
+            }
+        }
+
         public Engine(Action? invalidateAction = null, bool audioEnabled = true, IAssetSource? assetSource = null)
         {
             InvalidateAction = invalidateAction;
@@ -195,6 +226,8 @@ namespace GameEngine.Core
             var scene = Interlocked.Exchange(ref _pendingScene, null);
             if (scene != null)
                 ApplySceneChange(scene);
+
+            DrainPostedWork();
 
             if (_pauseUntilFirstPresent || !_isRunning)
                 return false;
