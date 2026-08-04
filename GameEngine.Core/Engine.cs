@@ -384,8 +384,10 @@ namespace GameEngine.Core
 
         public void SizeChanged(int width, int height)
         {
-            var inputSystem = Systems.Get<InputSystem>();
-            inputSystem.SetRealDimensions(width, height);
+            // InputManager survives scene changes, while the SystemContainer is rebuilt.
+            // Platform layout events can arrive during that rebuild, so recording the
+            // dimensions must not depend on a transient InputSystem lookup.
+            InputManager.RealResolution = new Vec2(width, height);
         }
 
         // Runners should call this after finishing a frame to resume post-scene-change
