@@ -125,6 +125,16 @@ public class EngineLifecycleTests
     }
 
     [Test]
+    public void SizeChanged_DoesNotDependOnTheTransientSystemContainer()
+    {
+        using var engine = new Engine(audioEnabled: false);
+        engine.Systems.Dispose();
+
+        Assert.DoesNotThrow(() => engine.SizeChanged(1080, 2400));
+        Assert.That(engine.InputManager.RealResolution, Is.EqualTo(new Vec2(1080, 2400)));
+    }
+
+    [Test]
     public void SceneChange_ClearsInputBoundToThePreviousScene()
     {
         var (engine, _) = Started();

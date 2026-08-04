@@ -9,7 +9,8 @@ namespace GameEngine.Runner.Avalonia;
 
 /// <summary>
 /// Isolates all SharpHook types into a separate class so they are never loaded
-/// on platforms that don't support native hooks (e.g. Browser/WASM).
+/// on platforms that don't support native desktop hooks (for example Android,
+/// iOS, and Browser/WASM).
 /// </summary>
 internal static class KeyboardHookHelper
 {
@@ -42,4 +43,3 @@ internal static class KeyboardHookHelper
         return hook;
     }
 }
-

@@ -14,6 +14,7 @@ namespace GameEngine.Runner.Avalonia
     {
         public static Func<string, Stream>? _fileFetcher;
         public static Func<Core.Scene>? StartupScene;
+        public static Action? FirstFramePresented;
 
         public override void Initialize()
         {
@@ -32,16 +33,25 @@ namespace GameEngine.Runner.Avalonia
                     DataContext = new MainViewModel()
                 };
             }
+            else if (ApplicationLifetime is IActivityApplicationLifetime activityPlatform)
+            {
+                activityPlatform.MainViewFactory = CreateMainView;
+            }
             else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
             {
-                singleViewPlatform.MainView = new MainView
-                {
-                    DataContext = new MainViewModel()
-                };
+                singleViewPlatform.MainView = CreateMainView();
                 singleViewPlatform.MainView.AttachedToVisualTree += (_, _) =>
                 TopLevel.GetTopLevel(singleViewPlatform.MainView)!.BackRequested += OnBackRequested;
             }
             base.OnFrameworkInitializationCompleted();
+        }
+
+        private static MainView CreateMainView()
+        {
+            return new MainView
+            {
+                DataContext = new MainViewModel()
+            };
         }
 
         private void OnBackRequested(object? sender, RoutedEventArgs e)
@@ -49,10 +59,7 @@ namespace GameEngine.Runner.Avalonia
             // Reload the MainView with a new instance of the MainView
             if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
             {
-                singleViewPlatform.MainView = new MainView
-                {
-                    DataContext = new MainViewModel()
-                };
+                singleViewPlatform.MainView = CreateMainView();
                 singleViewPlatform.MainView.AttachedToVisualTree += (_, _) =>
                 TopLevel.GetTopLevel(singleViewPlatform.MainView)!.BackRequested += OnBackRequested;
             }

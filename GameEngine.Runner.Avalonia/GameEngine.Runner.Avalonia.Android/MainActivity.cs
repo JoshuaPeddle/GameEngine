@@ -30,6 +30,9 @@ namespace GameEngine.Runner.Avalonia.Android
         {
             App._fileFetcher = LoadFile;
             App.StartupScene = () => new GameEngine.Demo.SceneMenu();
+            App.FirstFramePresented = () => global::Android.Util.Log.Info(
+                "GameEngineSmoke",
+                "FIRST_FRAME_PRESENTED");
 
             return base.CustomizeAppBuilder(builder).With(new AndroidPlatformOptions
             {
