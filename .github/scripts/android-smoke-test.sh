@@ -14,8 +14,7 @@ collect_diagnostics() {
 
 trap collect_diagnostics EXIT
 
-apk_path="$(find GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release \
-  -type f -name '*-Signed.apk' -print -quit)"
+apk_path="$(find artifacts/android-apk -type f -name '*-Signed.apk' -print -quit)"
 
 if [[ -z "$apk_path" ]]; then
   echo "No signed Android APK was produced."

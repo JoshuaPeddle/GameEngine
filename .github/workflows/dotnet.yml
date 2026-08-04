@@ -72,6 +72,13 @@ jobs:
     - name: Publish Android APK
       run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj --configuration Release
 
+    - name: Stage APK and reclaim emulator space
+      run: |
+        mkdir -p artifacts/android-apk
+        find GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release -type f -name '*-Signed.apk' -exec cp {} artifacts/android-apk/ \;
+        find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
+        dotnet nuget locals all --clear
+
     - name: Enable KVM
       run: |
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -82,12 +89,13 @@ jobs:
       uses: ReactiveCircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808
       with:
         api-level: 35
+        target: google_atd
         arch: x86_64
         profile: pixel_6
         cores: 2
         ram-size: 2048M
         disk-size: 2048M
-        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics -partition-size 2048
         script: bash .github/scripts/android-smoke-test.sh
 
     - name: Upload Android smoke diagnostics
