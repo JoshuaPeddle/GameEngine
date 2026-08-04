@@ -4,10 +4,10 @@ using ReactiveUI.Primitives;
 
 namespace GameEngine.Editor.Tests;
 
-public class LevelEditorViewModelTests
+public class LevelDocumentViewModelTests
 {
-    private static LevelEditorViewModel NewLevelEditor() =>
-        new AssetEditorViewModel(new StubFilePicker()).LevelEditor;
+    private static LevelDocumentViewModel NewLevelEditor() =>
+        new AssetEditorViewModel(new StubFilePicker()).LevelEditor.Level;
 
     private static void Run(IObservable<RxVoid> command) => ObservableExtensions.Subscribe(command);
 
@@ -107,6 +107,6 @@ public class LevelEditorViewModelTests
     [Test]
     public void ComponentTypes_CoverEveryTypeTheLoaderRegisters()
     {
-        Assert.That(LevelEditorViewModel.ComponentTypes, Is.Not.Empty);
+        Assert.That(LevelDocumentViewModel.ComponentTypes, Is.Not.Empty);
     }
 }
