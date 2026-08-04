@@ -111,7 +111,7 @@ public class LevelFileTests
         try
         {
             SampleLevel().SaveToFile(path);
-            var reloaded = LevelFile.LoadFromFile(path);
+            var reloaded = LevelFile.LoadFromFile(path, new FileAssetSource());
             Assert.That(reloaded.Entities, Has.Count.EqualTo(2));
         }
         finally

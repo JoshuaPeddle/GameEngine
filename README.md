@@ -58,7 +58,7 @@ public class MyScene : Scene
     public override void Initialize(EntityManager entities, InputManager input,
         AudioSystem? audio, Action<Scene?> resetScene)
     {
-        assets ??= new Assets("assets.txt");
+        assets ??= new Assets("assets.txt", AssetSource);
 
         input.AddAction(GeKeys.W, "Up");
         input.AddAction(GeKeys.S, "Down");
@@ -129,6 +129,21 @@ Sound    Hit         sounds/hit.wav
 `Animation` takes a texture name, a frame count, and a per-frame delay in
 milliseconds. Frames are read left to right across a single horizontal strip. A
 delay of `0` means a static image. `Font` is parsed but not yet implemented.
+
+### Where assets are read from
+
+Every read goes through an `IAssetSource` that the host supplies when it builds
+the engine:
+
+```csharp
+var engine = new Engine(invalidate, assetSource: new FileAssetSource());
+```
+
+`FileAssetSource` is the default: it opens rooted or already-existing paths as
+given, and resolves everything else under `assets/`. Platforms whose content is
+packaged rather than on disk — Android, browser, MAUI — pass a
+`DelegateAssetSource` wrapping their own loader. A scene reads the engine's
+source through the inherited `AssetSource` property, so nothing needs a global.
 
 ## Level files
 

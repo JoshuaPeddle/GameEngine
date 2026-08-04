@@ -23,7 +23,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
-            assets ??= new("assets.txt");
+            assets ??= new("assets.txt", AssetSource);
 
             var snakeHead = entityManager.CreateEntity("SnakeHead");
             snakeHead.AddComponent(new CTransform(new Vec2(40, 80)));

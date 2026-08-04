@@ -14,7 +14,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
-            assets ??= new("assets.txt");
+            assets ??= new("assets.txt", AssetSource);
             audioSystem = audioPlayer;
 
             // Create the level loader
@@ -63,7 +63,7 @@ namespace GameEngine.Demo
         {
             try
             {
-                var levelFile = LevelFile.LoadFromFile(levelFilePath);
+                var levelFile = LevelFile.LoadFromFile(levelFilePath, AssetSource);
                 levelLoader!.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
 
                 Console.WriteLine($"Loaded level: {levelFile.Metadata.Name}");
@@ -103,7 +103,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
-            assets ??= new("assets.txt");
+            assets ??= new("assets.txt", AssetSource);
             audioSystem = audioPlayer;
             levelLoader = LevelManager.CreateLoader(assets);
             levelLoader.RegisterEntityHandler("player", SceneJson.WirePlayerInput);
@@ -131,7 +131,7 @@ namespace GameEngine.Demo
                 entityManager.Clear();
 
                 // Load new level
-                var levelFile = LevelFile.LoadFromFile(levelPaths[currentLevelIndex]);
+                var levelFile = LevelFile.LoadFromFile(levelPaths[currentLevelIndex], AssetSource);
                 levelLoader!.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
 
                 Console.WriteLine($"Loaded level {currentLevelIndex + 1}: {levelFile.Metadata.Name}");

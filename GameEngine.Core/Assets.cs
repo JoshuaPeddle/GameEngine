@@ -8,39 +8,27 @@ namespace GameEngine.Core
         private Dictionary<string, Sound> sounds = new(); 
         private readonly Dictionary<string, Animation> animations = [];
 
-        public static Func<string, Stream>? _fileFetcher;
+        private readonly IAssetSource source;
 
-        public static Stream OpenAsset(string path) => _fileFetcher?.Invoke(path) ?? File.OpenRead(path);
-
-        public Assets(string path)
+        public Assets(string manifestPath, IAssetSource source)
         {
-            LoadFromPath(path);
+            ArgumentNullException.ThrowIfNull(source);
+            this.source = source;
+            LoadFromPath(manifestPath);
         }
+
+        public IAssetSource Source => source;
+
+        public Stream Open(string path) => source.Open(path);
 
         private void LoadFromPath(string path)
         {
-            // Read each line
-            // If the line begins with Texture, load a texture
-            // If the line begins with Sound, load a sound
-            // If the line begins with Font, load a font
-            // If the line begins with Animation, load an animation
-            if (_fileFetcher is not null) // Allow a custom file fetcher to be used. Useful for Android and iOS.
-            {
-                using var stream = _fileFetcher(path);
-                using var reader = new StreamReader(stream);
+            using var stream = source.Open(path);
+            using var reader = new StreamReader(stream);
 
-                string? line;
-                while ((line = reader.ReadLine()) != null)
-                    ParseLine(line);
-            }
-            else
-            {
-                var lines = File.ReadAllLines(path);
-                foreach (var line in lines)
-                {
-                    ParseLine(line);
-                }
-            }
+            string? line;
+            while ((line = reader.ReadLine()) != null)
+                ParseLine(line);
         }
 
         private void ParseLine(string line)
@@ -102,17 +90,10 @@ namespace GameEngine.Core
 
         private void LoadTexture(string name, string path)
         {
-            if (_fileFetcher is not null)
-            {
-                var stream = _fileFetcher(path);
-                var bitmap = SKBitmap.Decode(stream) ?? throw new FailedToLoadTextureException($"Failed to load texture {name} from {path}");
-                textures.Add(name, bitmap);
-                return;
-            }
-            else{
-                var bitmap = SKBitmap.Decode(Path.Combine("assets", path)) ?? throw new FailedToLoadTextureException($"Failed to load texture {name} from {path}");
-                textures.Add(name, bitmap);
-            }
+            using var stream = source.Open(path);
+            var bitmap = SKBitmap.Decode(stream)
+                ?? throw new FailedToLoadTextureException($"Failed to load texture {name} from {path}");
+            textures.Add(name, bitmap);
         }
 
         private void LoadSound(string name, string path)

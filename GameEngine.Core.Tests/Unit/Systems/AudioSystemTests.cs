@@ -8,7 +8,7 @@ public class AudioSystemTests
     public void TryCreate_NeverThrows()
     {
         AudioSystem? audioSystem = null;
-        Assert.DoesNotThrow(() => audioSystem = AudioSystem.TryCreate());
+        Assert.DoesNotThrow(() => audioSystem = AudioSystem.TryCreate(new FileAssetSource()));
         audioSystem?.Dispose();
     }
 
@@ -18,7 +18,7 @@ public class AudioSystemTests
         if (AudioSystem.IsSupportedPlatform)
             Assert.Ignore("This platform supports SDL2_mixer; nothing to assert.");
 
-        Assert.That(AudioSystem.TryCreate(), Is.Null);
+        Assert.That(AudioSystem.TryCreate(new FileAssetSource()), Is.Null);
     }
 
     [Test]
@@ -43,7 +43,7 @@ public class AudioSystemTests
     [Test]
     public void Dispose_IsIdempotent()
     {
-        var audioSystem = AudioSystem.TryCreate();
+        var audioSystem = AudioSystem.TryCreate(new FileAssetSource());
         if (audioSystem is null)
             Assert.Ignore("No audio device on this machine.");
 
@@ -57,7 +57,7 @@ public class AudioSystemTests
     [Test]
     public void Play_AfterDispose_DoesNothing()
     {
-        var audioSystem = AudioSystem.TryCreate();
+        var audioSystem = AudioSystem.TryCreate(new FileAssetSource());
         if (audioSystem is null)
             Assert.Ignore("No audio device on this machine.");
 

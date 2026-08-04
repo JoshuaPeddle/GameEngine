@@ -118,10 +118,13 @@ namespace GameEngine.Core
         // Clamp extreme dt spikes
         private const double MaxDeltaSeconds = 0.1;
 
-        public Engine(Action? invalidateAction = null, bool audioEnabled = true)
+        public IAssetSource AssetSource { get; }
+
+        public Engine(Action? invalidateAction = null, bool audioEnabled = true, IAssetSource? assetSource = null)
         {
             InvalidateAction = invalidateAction;
             _audioEnabled = audioEnabled;
+            AssetSource = assetSource ?? new FileAssetSource();
             InitializeSystems();
         }
 
@@ -148,7 +151,7 @@ namespace GameEngine.Core
             Systems.Add(new RenderSystem(RenderOptions));
             if (_audioEnabled)
             {
-                var audioSystem = AudioSystem.TryCreate();
+                var audioSystem = AudioSystem.TryCreate(AssetSource);
                 if (audioSystem != null)
                     Systems.Add(audioSystem);
             }

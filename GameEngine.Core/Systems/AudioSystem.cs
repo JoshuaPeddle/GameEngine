@@ -13,6 +13,7 @@ namespace GameEngine.Core.Systems
         private readonly int _numSfxChannels = 31;
         private readonly Dictionary<string, IntPtr> _chunkCache = [];
 
+        private readonly IAssetSource _assetSource;
         private Assets? _assets;
         private bool _disposed;
 
@@ -21,14 +22,14 @@ namespace GameEngine.Core.Systems
             && !OperatingSystem.IsAndroid()
             && !OperatingSystem.IsIOS();
 
-        public static AudioSystem? TryCreate()
+        public static AudioSystem? TryCreate(IAssetSource assetSource)
         {
             if (!IsSupportedPlatform)
                 return null;
 
             try
             {
-                return new AudioSystem();
+                return new AudioSystem(assetSource);
             }
             catch (Exception)
             {
@@ -36,8 +37,10 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        public AudioSystem()
+        public AudioSystem(IAssetSource assetSource)
         {
+            ArgumentNullException.ThrowIfNull(assetSource);
+            _assetSource = assetSource;
             InitializeSDL();
         }
 
@@ -80,7 +83,7 @@ namespace GameEngine.Core.Systems
             if (_chunkCache.TryGetValue(assetName, out IntPtr cached))
                 return cached;
 
-            _assets ??= new Assets("assets.txt");
+            _assets ??= new Assets("assets.txt", _assetSource);
             var sound = _assets.GetSound(assetName);
 
             IntPtr chunk = Mix_LoadWAV(Path.Combine("assets", sound.Path));

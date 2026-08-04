@@ -28,7 +28,7 @@ namespace GameEngine.Runner.Avalonia.Android
 
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
-            App._fileFetcher = LoadFile;
+            App.AssetSource = new GameEngine.Core.DelegateAssetSource(LoadFile);
             App.StartupScene = () => new GameEngine.Demo.SceneMenu();
             App.FirstFramePresented = () => global::Android.Util.Log.Info(
                 "GameEngineSmoke",
