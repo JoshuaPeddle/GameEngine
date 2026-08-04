@@ -54,3 +54,28 @@ or removals, where the concurrent type is marginally ahead (~3.4 us per frame at
 entities — negligible). A spawn-heavy scene pays 728 bytes and ~128 ns per entity created,
 plus the enumeration cost on every despawn. Deciding it properly means measuring the swap
 end to end against an entity-churn benchmark, not just these microbenchmarks.
+
+### End-to-end A/B
+
+`EntityChurnBenchmarks` and `EngineBenchmarks` measured through the real `EntityManager`
+and `Entity` accessors, both variants in one session on the same machine:
+
+| Benchmark | `ConcurrentDictionary` | `Dictionary` | Change |
+| --- | ---: | ---: | ---: |
+| Spawn 1000 entities | 401.2 us / 1,651,580 B | 208.5 us / 843,559 B | -48% time, -49% bytes |
+| Spawn then despawn 1000 | 535.1 us / 1,772,151 B | 254.9 us / 860,127 B | -52% time, -51% bytes |
+| Steady-state lookups (4000) | 12.69 us | 12.09 us | -5% |
+| BuildRenderSnapshot | 159.7 us | 153.0 us | -4% |
+| PhysicsUpdate | 75.65 us | 71.62 us | -5% |
+
+**Every path improves, including lookups.** The concurrent type's read advantage in the
+isolated microbenchmark does not survive going through `TryGetComponent<T>()` on real
+entities — different working set, and `typeof(T)` is a constant there. That reversal is why
+the end-to-end run mattered: the microbenchmark alone would have argued for keeping it.
+
+`Entity.Components` is a plain `Dictionary` as of this measurement.
+
+*Note on comparing runs:* the dependency-upgrade table above was recorded in an earlier
+session and its absolute numbers are not comparable with these — the same
+`BuildRenderSnapshot` benchmark measures 300 us there and 160 us here on unchanged rendering
+code. Always measure both sides of a comparison in one sitting.
