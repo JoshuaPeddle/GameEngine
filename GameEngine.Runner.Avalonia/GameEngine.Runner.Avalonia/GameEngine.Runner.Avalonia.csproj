@@ -18,7 +18,6 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Skia" />
-    <PackageReference Include="SharpHook.Reactive" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="SkiaSharp" />
   </ItemGroup>

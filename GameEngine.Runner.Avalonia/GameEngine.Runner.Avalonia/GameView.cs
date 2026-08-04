@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Rendering.SceneGraph;
@@ -22,8 +23,9 @@ namespace GameEngine.Runner.Avalonia
         public static Engine? Current => _current;
 
         private Engine _gameEngine;
-        private readonly IDisposable? _keyboardHook;
-        
+
+        private static readonly Dictionary<Key, GeKeys> KeyMap = BuildKeyMap();
+        private readonly HashSet<GeKeys> _heldKeys = new();
 
         private Point? _pointerStartPosition;
         private const double SwipeThreshold = 20.0;
@@ -36,6 +38,7 @@ namespace GameEngine.Runner.Avalonia
         public GameView()
         {
             IsHitTestVisible = true;
+            Focusable = true;
 
             var assetSource = App.AssetSource ?? new FileAssetSource();
 
@@ -50,14 +53,7 @@ namespace GameEngine.Runner.Avalonia
             if (startupScene != null)
                 _gameEngine.ChangeScene(startupScene);
 
-            // SharpHook uses native desktop window-system libraries (X11, Win32,
-            // or AppKit). Loading it on Android crashes before the first frame.
-            if (OperatingSystem.IsWindows() ||
-                OperatingSystem.IsLinux() ||
-                OperatingSystem.IsMacOS())
-            {
-                _keyboardHook = KeyboardHookHelper.Create(_gameEngine);
-            }
+            LostFocus += OnLostFocus;
 
             PointerPressed += OnPointerPressed;
             PointerMoved += OnPointerMoved;
@@ -68,6 +64,8 @@ namespace GameEngine.Runner.Avalonia
 
             AttachedToVisualTree += (_, __) =>
             {
+                Focus();
+
                 if (_started) return;
                 _started = true;
 
@@ -99,8 +97,57 @@ namespace GameEngine.Runner.Avalonia
             _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
         }
 
+        private static Dictionary<Key, GeKeys> BuildKeyMap()
+        {
+            var map = new Dictionary<Key, GeKeys>();
+
+            foreach (var engineKey in Enum.GetValues<GeKeys>())
+            {
+                if (Enum.TryParse<Key>(engineKey.ToString(), out var avaloniaKey))
+                    map[avaloniaKey] = engineKey;
+            }
+
+            return map;
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (KeyMap.TryGetValue(e.Key, out var key))
+            {
+                _heldKeys.Add(key);
+                _gameEngine.Systems.Get<InputSystem>().KeyDown(key);
+                e.Handled = true;
+            }
+
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            if (KeyMap.TryGetValue(e.Key, out var key))
+            {
+                _heldKeys.Remove(key);
+                _gameEngine.Systems.Get<InputSystem>().KeyUp(key);
+                e.Handled = true;
+            }
+
+            base.OnKeyUp(e);
+        }
+
+        private void OnLostFocus(object? sender, RoutedEventArgs e)
+        {
+            var input = _gameEngine.Systems.Get<InputSystem>();
+
+            foreach (var key in _heldKeys)
+                input.KeyUp(key);
+
+            _heldKeys.Clear();
+        }
+
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
+            Focus();
+
             var point = e.GetPosition(this);
             _pointerStartPosition = point;
             _gameEngine.Systems.Get<InputSystem>().PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
