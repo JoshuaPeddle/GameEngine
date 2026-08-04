@@ -30,6 +30,7 @@ namespace GameEngine.Runner.Avalonia
         private const int SyntheticKeyHoldMs = 100;
 
         private int _invalidationsPending = 0;
+        private int _firstPresentReported;
         private bool _started;
 
         public GameView()
@@ -131,7 +132,18 @@ namespace GameEngine.Runner.Avalonia
 
         public override void Render(DrawingContext context)
         {
-            context.Custom(new CustomDrawOp(new Rect(0, 0, Bounds.Width, Bounds.Height), _gameEngine));
+            context.Custom(new CustomDrawOp(
+                new Rect(0, 0, Bounds.Width, Bounds.Height),
+                _gameEngine,
+                ReportFirstPresent));
+        }
+
+        private void ReportFirstPresent()
+        {
+            _gameEngine.NotifyFirstPresent();
+
+            if (Interlocked.Exchange(ref _firstPresentReported, 1) == 0)
+                App.FirstFramePresented?.Invoke();
         }
     }
 
@@ -139,11 +151,13 @@ namespace GameEngine.Runner.Avalonia
     {
         public Rect Bounds { get; set; }
         private readonly Engine _engine;
+        private readonly Action _reportFirstPresent;
 
-        public CustomDrawOp(Rect bounds, Engine engine)
+        public CustomDrawOp(Rect bounds, Engine engine, Action reportFirstPresent)
         {
             Bounds = bounds;
             _engine = engine;
+            _reportFirstPresent = reportFirstPresent;
         }
 
         public void Dispose() { }
@@ -161,8 +175,8 @@ namespace GameEngine.Runner.Avalonia
             var canvas = lease.SkCanvas;
             _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
 
-            // Resume updates immediately after first visible frame
-            _engine.NotifyFirstPresent();
+            // Resume updates and report that the first visible frame reached the platform surface.
+            _reportFirstPresent();
         }
     }
 }
