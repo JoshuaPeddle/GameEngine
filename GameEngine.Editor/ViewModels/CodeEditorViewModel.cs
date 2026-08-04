@@ -1,7 +1,7 @@
 ﻿using ReactiveUI;
 using System;
 using System.IO;
-using System.Reactive;
+using Unit = ReactiveUI.Primitives.RxVoid;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 

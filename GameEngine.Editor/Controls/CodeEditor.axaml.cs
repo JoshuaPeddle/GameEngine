@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using AvaloniaEdit;
 using AvaloniaEdit.TextMate;
 using GameEngine.Editor.ViewModels;
@@ -72,14 +73,12 @@ public partial class CodeEditor : Window
             saveAsMenu.Click += async (_, _) => await SaveAsAsync();
         }
 
-        vm.WhenAnyValue(v => v.SourceCode)
-          .ObserveOn(RxApp.MainThreadScheduler)
-          .Subscribe(text =>
+        _disposables.Add(vm.WhenAnyValue(v => v.SourceCode)
+          .Subscribe(text => Dispatcher.UIThread.Post(() =>
           {
               if (Editor.Text != text)
                   Editor.Text = text ?? string.Empty;
-          })
-          .DisposeWith(_disposables);
+          })));
 
         Editor.TextChanged += (_, _) =>
         {

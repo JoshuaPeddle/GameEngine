@@ -1,16 +1,16 @@
 ﻿using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using DynamicData;
+using Avalonia.Threading;
 using GameEngine.Editor.Models;
 using GameEngine.Editor.Services;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Unit = ReactiveUI.Primitives.RxVoid;
 
 namespace GameEngine.Editor.ViewModels
 {
@@ -45,16 +45,19 @@ namespace GameEngine.Editor.ViewModels
         public AnimationEditorViewModel() // Designer constructor
         {
             _parentViewModel = new AssetEditorViewModel(new FilePickerService());
-            Textures.AddRange(
-            [
+            foreach (var texture in new[]
+            {
                 new Texture { Name = "Texture 1", Path = "path/to/texture1.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png")) },
                 new Texture { Name = "Texture 2", Path = "path/to/texture2.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/grenade.png")) }
-            ]);
-            Animations.AddRange(
-            [
+            })
+                Textures.Add(texture);
+
+            foreach (var animation in new[]
+            {
                 new Animation { Name = "Animation 1", Texture = Textures[0], FrameCount = 1 },
                 new Animation { Name = "Animation 2", Texture = Textures[1], FrameCount = 4, Delay = 250 }
-            ]);
+            })
+                Animations.Add(animation);
 
             SelectedTexture = Textures[0];
         }
@@ -167,14 +170,13 @@ namespace GameEngine.Editor.ViewModels
                 FrameDelay = 100; // Default to 100ms if not set
 
             _animationTimer = Observable.Interval(TimeSpan.FromMilliseconds(FrameDelay))
-                .ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(_ =>
+                .Subscribe(_ => Dispatcher.UIThread.Post(() =>
                 {
                     if (_frames.Count == 0)
                         return;
                     _currentFrameIndex = (_currentFrameIndex + 1) % _frames.Count;
                     this.RaisePropertyChanged(nameof(Image));
-                });
+                }));
         }
 
         private void StopAnimation()

@@ -301,8 +301,8 @@ namespace GameEngine.Demo
             public CScore() : base("0   0", 24)
             {
                 Paint.Color = SKColors.Black;
-                Paint.TextSize = 48;
-                Paint.TextAlign = SKTextAlign.Center;
+                Size = 48;
+                TextAlign = SKTextAlign.Center;
             }
         }
     }

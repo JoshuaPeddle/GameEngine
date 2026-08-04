@@ -160,9 +160,12 @@ namespace GameEngine.Core.Systems
                 // Draw text
                 if (entry.Text is { ShouldDraw: true } text)
                 {
+                    _textFont.Size = text.Size;
                     canvas.DrawText(text.Text,
                         (float)entry.Transform.Position.X,
                         (float)entry.Transform.Position.Y,
+                        text.TextAlign,
+                        _textFont,
                         text.Paint);
                 }
 
@@ -204,7 +207,7 @@ namespace GameEngine.Core.Systems
                 (frameWidth / 2),
                 (frameHeight / 2));
 
-            canvas.DrawBitmap(anim.Texture, anim.SourceRect, destRect, _animationPaint);
+            canvas.DrawBitmap(anim.Texture, anim.SourceRect, destRect, _animationSampling, _animationPaint);
             canvas.Restore();
         }
 
@@ -223,7 +226,13 @@ namespace GameEngine.Core.Systems
         {
             string fpsText = $"FPS: {fps:0.0}";
             float margin = 10;
-            canvas.DrawText(fpsText, margin, margin + _fpsPaint.TextSize, _fpsPaint);
+            canvas.DrawText(
+                fpsText,
+                margin,
+                margin + _fpsFont.Size,
+                SKTextAlign.Left,
+                _fpsFont,
+                _fpsPaint);
 
         }
 
@@ -239,9 +248,13 @@ namespace GameEngine.Core.Systems
             options.VirtualHeight = height;
         }
 
+        private readonly SKFont _textFont = new(SKTypeface.Default, 24);
+
+        private readonly static SKSamplingOptions _animationSampling =
+            new(SKFilterMode.Linear, SKMipmapMode.None);
+
         private readonly static SKPaint _animationPaint = new SKPaint
         {
-            FilterQuality = SKFilterQuality.High,
             IsAntialias = true
         };
 
@@ -261,9 +274,10 @@ namespace GameEngine.Core.Systems
         private readonly static SKPaint _fpsPaint = new SKPaint
         {
             Color = SKColors.Black,
-            TextSize = 24,
             IsAntialias = true
         };
+
+        private readonly static SKFont _fpsFont = new(SKTypeface.Default, 24);
     }
 
     public class RenderOptions

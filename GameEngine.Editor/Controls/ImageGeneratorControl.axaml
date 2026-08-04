@@ -25,7 +25,7 @@
                 <!-- Prompt Section -->
                 <TextBlock Text="Prompt" Classes="SectionHeader"/>
                 <TextBox Name="PromptTextBox" 
-                         Watermark="Enter your prompt here..."
+                         PlaceholderText="Enter your prompt here..."
                          MinHeight="60"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"/>
@@ -33,7 +33,7 @@
                 <TextBlock Text="Negative Prompt" Classes="SectionHeader"/>
                 <TextBox Name="NegativePromptTextBox" 
                          Text="text, watermark"
-                         Watermark="Elements to avoid..."
+                         PlaceholderText="Elements to avoid..."
                          MinHeight="40"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"/>
@@ -53,7 +53,7 @@
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Checkpoint:" Classes="Label" Margin="0,5,10,0"/>
                     <TextBox Grid.Row="1" Grid.Column="1" Name="CheckpointTextBox" 
                              Text="v1-5-pruned-emaonly-fp16.safetensors"
-                             Watermark="Model checkpoint file"
+                             PlaceholderText="Model checkpoint file"
                              Margin="0,5,0,0"/>
                     
                     <CheckBox Grid.Row="2" Grid.Column="1" Name="RemoveBackgroundCheckBox" 
@@ -135,7 +135,7 @@
                 <TextBlock Text="Seed" Classes="SectionHeader"/>
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBox Grid.Column="0" Name="SeedTextBox" 
-                             Watermark="Random (leave empty for random seed)"/>
+                             PlaceholderText="Random (leave empty for random seed)"/>
                     <Button Grid.Column="1" Content="Random" 
                             Name="RandomSeedButton"
                             Margin="5,0,0,0" Padding="10,5"/>

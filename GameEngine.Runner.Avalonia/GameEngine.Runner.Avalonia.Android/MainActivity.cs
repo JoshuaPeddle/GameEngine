@@ -1,7 +1,9 @@
 ﻿using Android.App;
 using Android.Content.PM;
+using Android.Runtime;
 using Avalonia;
 using Avalonia.Android;
+using System;
 using System.IO;
 
 namespace GameEngine.Runner.Avalonia.Android
@@ -12,7 +14,7 @@ namespace GameEngine.Runner.Avalonia.Android
         Icon = "@drawable/icon",
         MainLauncher = true,
         ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
-    public class MainActivity : AvaloniaMainActivity<App>
+    public class MainActivity : AvaloniaMainActivity
     {
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
@@ -33,6 +35,15 @@ namespace GameEngine.Runner.Avalonia.Android
             }
 
             return Assets.Open("game/" + path);
+        }
+    }
+
+    [Application]
+    public class AndroidApp : AvaloniaAndroidApplication<App>
+    {
+        protected AndroidApp(IntPtr javaReference, JniHandleOwnership transfer)
+            : base(javaReference, transfer)
+        {
         }
     }
 }
