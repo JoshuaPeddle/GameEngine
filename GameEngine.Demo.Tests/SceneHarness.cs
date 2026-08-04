@@ -109,8 +109,8 @@ public sealed class SceneHarness
 public class AssetEnvironment
 {
     [OneTimeSetUp]
-    public void PointWorkingDirectoryAtStagedAssets()
+    public void RunFromADirectoryWithNoAssets()
     {
-        Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!);
+        Directory.SetCurrentDirectory(Path.GetTempPath());
     }
 }
