@@ -20,19 +20,19 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Scene:" VerticalAlignment="Center"/>
             <ComboBox Width="250"
-                      ItemsSource="{Binding Scenes}"
-                      SelectedItem="{Binding SelectedScene, Mode=TwoWay}"
+                      ItemsSource="{Binding SceneCatalog.Scenes}"
+                      SelectedItem="{Binding SceneCatalog.SelectedScene, Mode=TwoWay}"
                       PlaceholderText="Select a scene..." />
             <Button Content="Reload Scenes"
-                    Command="{Binding ReloadScenesCommand}"
-                    IsEnabled="{Binding IsBusy, Converter={x:Static conv:BoolInvertConverter.Instance}, FallbackValue=True}"/>
+                    Command="{Binding SceneCatalog.ReloadScenesCommand}"
+                    IsEnabled="{Binding SceneCatalog.IsBusy, Converter={x:Static conv:BoolInvertConverter.Instance}, FallbackValue=True}"/>
             <CheckBox Content="Run"
                       IsChecked="{Binding IsEngineRunning, Mode=TwoWay}"
                       VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding StatusMessage}" Margin="12,0,0,0"
+            <TextBlock Text="{Binding Status.Message}" Margin="12,0,0,0"
                        Foreground="LightGray" VerticalAlignment="Center"/>
             <Button Content="Edit"
-                    Command="{Binding EditSceneCommand}"/>
+                    Command="{Binding SceneCatalog.EditSceneCommand}"/>
           </StackPanel>
         </Border>
 
@@ -75,14 +75,14 @@
                            FontWeight="Bold"
                            Foreground="#DDD"/>
                 <TextBlock Text="No entity selected." Foreground="#888" TextWrapping="Wrap"
-                           IsVisible="{Binding HasEntitySelection, Converter={x:Static conv:BoolInvertConverter.Instance}}"/>
-                <StackPanel Spacing="4" IsVisible="{Binding HasEntitySelection}">
-                  <TextBlock><Run Text="ID: "/><Run Text="{Binding SelectedEntityId}"/></TextBlock>
-                  <TextBlock><Run Text="Tag: "/><Run Text="{Binding SelectedEntityTag}"/></TextBlock>
-                  <TextBlock><Run Text="Active: "/><Run Text="{Binding SelectedEntityActive}"/></TextBlock>
+                           IsVisible="{Binding Inspector.HasEntitySelection, Converter={x:Static conv:BoolInvertConverter.Instance}}"/>
+                <StackPanel Spacing="4" IsVisible="{Binding Inspector.HasEntitySelection}">
+                  <TextBlock><Run Text="ID: "/><Run Text="{Binding Inspector.SelectedEntityId}"/></TextBlock>
+                  <TextBlock><Run Text="Tag: "/><Run Text="{Binding Inspector.SelectedEntityTag}"/></TextBlock>
+                  <TextBlock><Run Text="Active: "/><Run Text="{Binding Inspector.SelectedEntityActive}"/></TextBlock>
                   <Separator/>
                   <TextBlock Text="Components" FontWeight="Bold"/>
-                  <ItemsControl ItemsSource="{Binding SelectedEntityComponents}">
+                  <ItemsControl ItemsSource="{Binding Inspector.SelectedEntityComponents}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
                         <TextBlock Text="{Binding}"/>
@@ -102,19 +102,19 @@
         <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="0">
           <TextBlock Text="File:" VerticalAlignment="Center"/>
           <ComboBox Width="300"
-                    ItemsSource="{Binding LevelFileOptions}"
-                    SelectedItem="{Binding SelectedLevelFile, Mode=TwoWay}"
+                    ItemsSource="{Binding Level.LevelFileOptions}"
+                    SelectedItem="{Binding Level.SelectedLevelFile, Mode=TwoWay}"
                     PlaceholderText="Select a level file..."/>
-          <Button Content="Load Level" Command="{Binding LoadLevelFileCommand}"/>
-          <Button Content="Save Level" Command="{Binding SaveLevelFileCommand}"/>
-          <TextBlock Text="{Binding LevelFilePath}" Foreground="#ccc" VerticalAlignment="Center"/>
+          <Button Content="Load Level" Command="{Binding Level.LoadLevelFileCommand}"/>
+          <Button Content="Save Level" Command="{Binding Level.SaveLevelFileCommand}"/>
+          <TextBlock Text="{Binding Level.LevelFilePath}" Foreground="#ccc" VerticalAlignment="Center"/>
         </StackPanel>
 
         <Grid Grid.Row="1" ColumnDefinitions="250,5,*,5,350" RowDefinitions="*">
           <Border Grid.Column="0" BorderBrush="#444" BorderThickness="1" Padding="4">
             <StackPanel>
               <TextBlock Text="Entities" FontWeight="Bold"/>
-              <ListBox ItemsSource="{Binding LevelEntities}" SelectedItem="{Binding SelectedLevelEntity}">
+              <ListBox ItemsSource="{Binding Level.LevelEntities}" SelectedItem="{Binding Level.SelectedLevelEntity}">
                 <ListBox.ItemTemplate>
                   <DataTemplate>
                     <TextBox Text="{Binding Tag, Mode=TwoWay}" BorderThickness="0" Background="Transparent"/>
@@ -122,8 +122,8 @@
                 </ListBox.ItemTemplate>
               </ListBox>
               <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
-                <Button Content="+" Width="30" Command="{Binding AddEntityCommand}"/>
-                <Button Content="-" Width="30" Command="{Binding RemoveEntityCommand}"/>
+                <Button Content="+" Width="30" Command="{Binding Level.AddEntityCommand}"/>
+                <Button Content="-" Width="30" Command="{Binding Level.RemoveEntityCommand}"/>
               </StackPanel>
             </StackPanel>
           </Border>
@@ -133,14 +133,14 @@
           <Border Grid.Column="2" BorderBrush="#444" BorderThickness="1" Padding="8">
             <StackPanel>
               <TextBlock Text="Components" FontWeight="Bold"/>
-              <ListBox ItemsSource="{Binding SelectedLevelEntity.Components}" SelectedItem="{Binding SelectedLevelComponent}">
+              <ListBox ItemsSource="{Binding Level.SelectedLevelEntity.Components}" SelectedItem="{Binding Level.SelectedLevelComponent}">
                 <ListBox.ItemTemplate>
                   <DataTemplate>
                     <StackPanel Spacing="6">
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Type:" VerticalAlignment="Center"/>
                         <ComboBox Width="180"
-                                  ItemsSource="{x:Static vm:LevelEditorViewModel.ComponentTypes}"
+                                  ItemsSource="{x:Static vm:LevelDocumentViewModel.ComponentTypes}"
                                   SelectedItem="{Binding Type, Mode=TwoWay}"/>
                       </StackPanel>
 
@@ -215,8 +215,8 @@
                 </ListBox.ItemTemplate>
               </ListBox>
               <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
-                <Button Content="+" Width="30" Command="{Binding AddComponentCommand}"/>
-                <Button Content="-" Width="30" Command="{Binding RemoveComponentCommand}"/>
+                <Button Content="+" Width="30" Command="{Binding Level.AddComponentCommand}"/>
+                <Button Content="-" Width="30" Command="{Binding Level.RemoveComponentCommand}"/>
               </StackPanel>
             </StackPanel>
           </Border>
@@ -226,7 +226,7 @@
           <Border Grid.Column="4" BorderBrush="#444" BorderThickness="1" Padding="4">
             <StackPanel>
               <TextBlock Text="Component JSON (Selected)" FontWeight="Bold"/>
-              <TextBox Text="{Binding SelectedLevelComponent.RawJson, Mode=TwoWay}" AcceptsReturn="True" FontFamily="Consolas, Courier New" FontSize="12" TextWrapping="NoWrap"/>
+              <TextBox Text="{Binding Level.SelectedLevelComponent.RawJson, Mode=TwoWay}" AcceptsReturn="True" FontFamily="Consolas, Courier New" FontSize="12" TextWrapping="NoWrap"/>
             </StackPanel>
           </Border>
         </Grid>

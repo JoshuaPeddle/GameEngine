@@ -56,7 +56,7 @@ public class LevelComponentViewModelTests
     [Test]
     public void RawJson_CarriesTheTypeDiscriminatorForEveryEditableType()
     {
-        foreach (var type in LevelEditorViewModel.ComponentTypes)
+        foreach (var type in LevelDocumentViewModel.ComponentTypes)
         {
             var component = ComponentOfType(type);
 
@@ -101,7 +101,7 @@ public class LevelComponentViewModelTests
     {
         var factory = new ComponentFactory(assets: null!);
 
-        foreach (var type in LevelEditorViewModel.ComponentTypes)
+        foreach (var type in LevelDocumentViewModel.ComponentTypes)
         {
             if (type == "CAnimation")
                 continue;
