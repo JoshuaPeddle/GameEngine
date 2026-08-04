@@ -86,7 +86,8 @@ jobs:
         profile: pixel_6
         cores: 2
         ram-size: 2048M
-        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disk-size: 2048M
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
         script: bash .github/scripts/android-smoke-test.sh
 
     - name: Upload Android smoke diagnostics
