@@ -26,7 +26,7 @@ namespace GameEngine.Editor.ViewModels
             SceneCatalog.SceneSelected += type => SceneSelected?.Invoke(type);
             SceneCatalog.ScenesReloading += () => ScenesReloading?.Invoke();
 
-            EntitySelectedCommand = ReactiveCommand.Create<Entity>(entity => Inspector.Select(entity));
+            EntitySelectedCommand = ReactiveCommand.Create<EntitySnapshot>(entity => Inspector.Select(entity));
         }
 
         public LevelEditorViewModel()
@@ -37,7 +37,7 @@ namespace GameEngine.Editor.ViewModels
             Inspector = new EntityInspectorViewModel();
             Level = new LevelDocumentViewModel(() => ProjectPath, Status);
             SceneCatalog = new SceneCatalogViewModel(() => ProjectPath, Status, () => Inspector.Select(null));
-            EntitySelectedCommand = ReactiveCommand.Create<Entity>(entity => Inspector.Select(entity));
+            EntitySelectedCommand = ReactiveCommand.Create<EntitySnapshot>(entity => Inspector.Select(entity));
 
             SceneCatalog.Scenes.Add("No Project Loaded");
 
@@ -76,7 +76,7 @@ namespace GameEngine.Editor.ViewModels
                 new LevelLoader(new ComponentFactory(new Assets("assets.txt", designAssetSource)))
                     .LoadLevel(level, designEntities);
                 designEntities.Update();
-                Inspector.Select(designEntities.GetEntities().FirstOrDefault());
+                Inspector.Select(designEntities.GetEntities().FirstOrDefault()?.Capture());
             }
             catch (IOException)
             {
@@ -89,7 +89,7 @@ namespace GameEngine.Editor.ViewModels
         public EntityInspectorViewModel Inspector { get; }
         public LevelDocumentViewModel Level { get; }
 
-        public ReactiveCommand<Entity, Unit> EntitySelectedCommand { get; }
+        public ReactiveCommand<EntitySnapshot, Unit> EntitySelectedCommand { get; }
 
         public event Action<Type>? SceneSelected;
         public event Action? ScenesReloading;

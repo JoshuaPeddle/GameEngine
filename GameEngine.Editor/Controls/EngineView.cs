@@ -34,16 +34,34 @@ namespace GameEngine.Editor.Controls
 
         private void SelectEntityAt(Point screenPosition)
         {
-            if (_gameEngine == null || _vm == null)
+            var engine = _gameEngine;
+            var viewModel = _vm;
+            if (engine == null || viewModel == null)
                 return;
 
-            var viewport = _gameEngine.Systems.Get<RenderSystem>()
-                .ViewportFor(_gameEngine.InputManager.RealResolution);
+            var screenPoint = new Vec2(screenPosition.X, screenPosition.Y);
 
-            if (!viewport.TryToVirtual(new Vec2(screenPosition.X, screenPosition.Y), out var pick))
-                return;
+            // Entities are owned by the engine thread. Pick there and hand back an immutable
+            // snapshot rather than reading live components from the UI thread.
+            engine.Post(e =>
+            {
+                var snapshot = PickEntity(e, screenPoint);
+                if (snapshot == null)
+                    return;
 
-            foreach (var entity in _gameEngine.EntityManager.GetEntities())
+                Dispatcher.UIThread.Post(() => viewModel.EntitySelectedCommand.Execute(snapshot).Subscribe());
+            });
+        }
+
+        private static EntitySnapshot? PickEntity(Engine engine, Vec2 screenPoint)
+        {
+            var viewport = engine.Systems.Get<RenderSystem>()
+                .ViewportFor(engine.InputManager.RealResolution);
+
+            if (!viewport.TryToVirtual(screenPoint, out var pick))
+                return null;
+
+            foreach (var entity in engine.EntityManager.GetEntities())
             {
                 if (!entity.TryGetComponent<Core.Components.CTransform>(out var transform))
                     continue;
@@ -54,10 +72,11 @@ namespace GameEngine.Editor.Controls
                 if (pick.X >= transform.Position.X && pick.X <= transform.Position.X + size.X &&
                     pick.Y >= transform.Position.Y && pick.Y <= transform.Position.Y + size.Y)
                 {
-                    _vm.EntitySelectedCommand.Execute(entity).Subscribe();
-                    return;
+                    return entity.Capture();
                 }
             }
+
+            return null;
         }
 
         private static bool TryGetPickSize(Core.Entity entity, out Vec2 size)

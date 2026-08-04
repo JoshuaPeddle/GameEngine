@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using GameEngine.Core;
 using ReactiveUI;
 
@@ -7,8 +6,8 @@ namespace GameEngine.Editor.ViewModels
 {
     public class EntityInspectorViewModel : ViewModelBase
     {
-        private Entity? _selectedEntity;
-        public Entity? SelectedEntity
+        private EntitySnapshot? _selectedEntity;
+        public EntitySnapshot? SelectedEntity
         {
             get => _selectedEntity;
             private set => this.RaiseAndSetIfChanged(ref _selectedEntity, value);
@@ -19,15 +18,9 @@ namespace GameEngine.Editor.ViewModels
         public string? SelectedEntityTag => SelectedEntity?.Tag;
         public bool? SelectedEntityActive => SelectedEntity?.Active;
 
-        public IReadOnlyList<string>? SelectedEntityComponents =>
-            SelectedEntity == null
-                ? null
-                : SelectedEntity.Components.Keys
-                    .Select(t => t.Name)
-                    .OrderBy(n => n)
-                    .ToList();
+        public IReadOnlyList<string>? SelectedEntityComponents => SelectedEntity?.ComponentTypes;
 
-        public void Select(Entity? entity)
+        public void Select(EntitySnapshot? entity)
         {
             SelectedEntity = entity;
             this.RaisePropertyChanged(nameof(HasEntitySelection));
