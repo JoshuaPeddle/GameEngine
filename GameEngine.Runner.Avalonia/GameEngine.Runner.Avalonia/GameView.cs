@@ -48,7 +48,11 @@ namespace GameEngine.Runner.Avalonia
             if (startupScene != null)
                 _gameEngine.ChangeScene(startupScene);
 
-            if (!OperatingSystem.IsBrowser())
+            // SharpHook uses native desktop window-system libraries (X11, Win32,
+            // or AppKit). Loading it on Android crashes before the first frame.
+            if (OperatingSystem.IsWindows() ||
+                OperatingSystem.IsLinux() ||
+                OperatingSystem.IsMacOS())
             {
                 _keyboardHook = KeyboardHookHelper.Create(_gameEngine);
             }
