@@ -16,7 +16,6 @@ Targets .NET 10.
 | `GameEngine.Demo` | Sample games — Pong, Brick Breaker, Snake, side-scrollers |
 | `GameEngine.Runner.Avalonia` | Shared Avalonia host, with Desktop / Android / Browser / iOS heads |
 | `GameEngine.Runner.Winforms` | WinForms host |
-| `GameEngine.Runner.Maui` | MAUI host |
 | `GameEngine.Editor` | Scene and level editor (Avalonia) |
 | `GameEngine.Editor.Desktop` | Editor entry point |
 | `GameEngine.Editor.ImageGen` | ComfyUI client for generating sprite art |
@@ -141,7 +140,7 @@ var engine = new Engine(invalidate, assetSource: new FileAssetSource());
 
 `FileAssetSource` is the default: it opens rooted or already-existing paths as
 given, and resolves everything else under `assets/`. Platforms whose content is
-packaged rather than on disk — Android, browser, MAUI — pass a
+packaged rather than on disk — Android and browser — pass a
 `DelegateAssetSource` wrapping their own loader. A scene reads the engine's
 source through the inherited `AssetSource` property, so nothing needs a global.
 
@@ -209,4 +208,3 @@ so the harness exercises the same path the runners do.
 - `Font` entries in `assets.txt` are parsed but ignored.
 - Animations support a single horizontal strip only — no grids, no per-frame
   timing, no non-looping playback.
-- The MAUI runner installs a system-wide keyboard hook.
