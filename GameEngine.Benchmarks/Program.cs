@@ -258,3 +258,70 @@ public class ComponentStorageBenchmarks
         return seen;
     }
 }
+
+// GE-23 end to end: the microbenchmarks favour a plain Dictionary on creation and key
+// enumeration and ConcurrentDictionary on lookups, so the answer depends on how much a
+// scene spawns and despawns. This drives the real EntityManager on both paths.
+[MemoryDiagnoser]
+public class EntityChurnBenchmarks
+{
+    private const int Count = 1_000;
+
+    private EntityManager _steadyState = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _steadyState = new EntityManager();
+        Populate(_steadyState, Count);
+        _steadyState.Update();
+    }
+
+    private static void Populate(EntityManager entities, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            var entity = entities.CreateEntity($"churn-{i}");
+            entity.AddComponent(new CTransform(new Vec2(i % 100, i / 100)));
+            entity.AddComponent(new CBoundingBox(new Vec2(16, 16), blockVision: false, blockMove: false));
+            entity.AddComponent<CInput>();
+        }
+    }
+
+    [Benchmark(Description = "Spawn 1000 entities and flush")]
+    public int Spawn()
+    {
+        var entities = new EntityManager();
+        Populate(entities, Count);
+        entities.Update();
+        return entities.GetEntities().Count;
+    }
+
+    [Benchmark(Description = "Spawn then despawn 1000 entities")]
+    public int SpawnAndDespawn()
+    {
+        var entities = new EntityManager();
+        Populate(entities, Count);
+        entities.Update();
+
+        foreach (var entity in entities.GetEntities())
+            entity.Active = false;
+
+        entities.Update();
+        return entities.GetEntities().Count;
+    }
+
+    [Benchmark(Description = "Steady-state component lookups")]
+    public int SteadyStateLookups()
+    {
+        int hits = 0;
+        foreach (var entity in _steadyState.GetEntities())
+        {
+            if (entity.TryGetComponent<CTransform>(out _)) hits++;
+            if (entity.TryGetComponent<CBoundingBox>(out _)) hits++;
+            if (entity.TryGetComponent<CInput>(out _)) hits++;
+            if (entity.TryGetComponent<CGravity>(out _)) hits++;
+        }
+        return hits;
+    }
+}

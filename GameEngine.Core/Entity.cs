@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace GameEngine.Core
 {
@@ -8,7 +7,7 @@ namespace GameEngine.Core
         public int Id = 0;
         public bool Active = true;
         public string Tag = "default";
-        public ConcurrentDictionary<Type, Component> Components = [];
+        public Dictionary<Type, Component> Components = [];
 
         private readonly EntityManager entityManager;
 
