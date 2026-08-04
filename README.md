@@ -21,6 +21,7 @@ Targets .NET 10.
 | `GameEngine.Editor.ImageGen` | ComfyUI client for generating sprite art |
 | `GameEngine.Core.Tests` | Unit and integration tests for the engine |
 | `GameEngine.Demo.Tests` | Headless smoke tests that drive every demo scene |
+| `GameEngine.Editor.Tests` | Headless view-model tests for the editor |
 
 ## Running
 
