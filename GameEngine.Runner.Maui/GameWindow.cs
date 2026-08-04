@@ -4,7 +4,7 @@ using SkiaSharp;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
 using System.Reactive.Linq;
-using SharpHook.Native;
+using SharpHook.Data;
 using GameEngine.Core;
 using GameEngine.Demo;
 using GameEngine.Core.Systems;
@@ -17,7 +17,7 @@ namespace GameEngine.Runner.Maui
     public partial class HelloBitmapPage : ContentPage
     {
         private Engine _gameEngine;
-        SimpleReactiveGlobalHook _keyboardHook;
+        ReactiveGlobalHook _keyboardHook = null!;
 
         private int _invalidationsPending = 0;
 
@@ -49,7 +49,7 @@ namespace GameEngine.Runner.Maui
 
         public void ConfigureKeyEvents()
         {
-            _keyboardHook = new SimpleReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
+            _keyboardHook = new ReactiveGlobalHook(GlobalHookType.Keyboard, runAsyncOnBackgroundThread: true);
             
             _keyboardHook.KeyPressed
                 .Subscribe(KeyPressed);

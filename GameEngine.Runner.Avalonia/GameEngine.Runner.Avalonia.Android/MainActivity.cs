@@ -16,26 +16,6 @@ namespace GameEngine.Runner.Avalonia.Android
         ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
     public class MainActivity : AvaloniaMainActivity
     {
-        protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
-        {
-            App._fileFetcher = LoadFile;
-            App.StartupScene = () => new GameEngine.Demo.SceneMenu();
-            builder.With (new AndroidPlatformOptions
-            {
-                RenderingMode = [AndroidRenderingMode.Egl]
-            });
-            return base.CustomizeAppBuilder(builder);
-        }
-
-        public Stream LoadFile(string path)
-        {
-            if (path.Contains("assets.txt"))
-            {
-                return Assets.Open("assets.txt");
-            }
-
-            return Assets.Open("game/" + path);
-        }
     }
 
     [Application]
@@ -44,6 +24,27 @@ namespace GameEngine.Runner.Avalonia.Android
         protected AndroidApp(IntPtr javaReference, JniHandleOwnership transfer)
             : base(javaReference, transfer)
         {
+        }
+
+        protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
+        {
+            App._fileFetcher = LoadFile;
+            App.StartupScene = () => new GameEngine.Demo.SceneMenu();
+
+            return base.CustomizeAppBuilder(builder).With(new AndroidPlatformOptions
+            {
+                RenderingMode = [AndroidRenderingMode.Egl]
+            });
+        }
+
+        private Stream LoadFile(string path)
+        {
+            if (path.Contains("assets.txt"))
+            {
+                return Assets.Open("assets.txt");
+            }
+
+            return Assets.Open("game/" + path);
         }
     }
 }
