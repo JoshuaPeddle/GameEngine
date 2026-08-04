@@ -18,7 +18,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
-            assets ??= new("assets.txt");
+            assets ??= new("assets.txt", AssetSource);
 
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
@@ -60,7 +60,7 @@ namespace GameEngine.Demo
 
         private void LoadLevel(string levelFilePath, EntityManager entityManager)
         {
-            var filestream = Assets.OpenAsset(levelFilePath);
+            var filestream = Assets.Open(levelFilePath);
 
             var lines = 
                 new StreamReader(filestream).ReadToEnd()

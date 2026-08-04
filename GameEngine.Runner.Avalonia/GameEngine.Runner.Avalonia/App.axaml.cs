@@ -12,7 +12,7 @@ namespace GameEngine.Runner.Avalonia
 {
     public partial class App : Application
     {
-        public static Func<string, Stream>? _fileFetcher;
+        public static Core.IAssetSource? AssetSource;
         public static Func<Core.Scene>? StartupScene;
         public static Action? FirstFramePresented;
 
@@ -23,9 +23,6 @@ namespace GameEngine.Runner.Avalonia
 
         public override void OnFrameworkInitializationCompleted()
         {
-            if (_fileFetcher != null)
-                Core.Assets._fileFetcher = _fileFetcher;
-
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.MainWindow = new MainWindow

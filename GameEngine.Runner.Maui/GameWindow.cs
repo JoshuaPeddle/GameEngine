@@ -36,7 +36,7 @@ namespace GameEngine.Runner.Maui
                         canvasView.InvalidateSurface();
                     });
                 }
-            }, audioEnabled: false);
+            }, audioEnabled: false, MauiProgram.AssetSource);
 
             _gameEngine.ChangeScene(new ScenePong());
             _gameEngine.TargetFrameRate = 240;

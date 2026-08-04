@@ -7,22 +7,22 @@ namespace GameEngine.Runner.Maui
 {
     public static class MauiProgram
     {
+        public static IAssetSource AssetSource { get; } = new DelegateAssetSource(OpenPackagedAsset);
+
+        private static Stream OpenPackagedAsset(string path)
+        {
+            if (path.Contains("assets.txt") || path.Contains("levels"))
+            {
+                return FileSystem.OpenAppPackageFileAsync("Assets/" + path).GetAwaiter().GetResult();
+            }
+
+            return FileSystem.OpenAppPackageFileAsync("Assets/game/" + path).GetAwaiter().GetResult();
+        }
+
         public static MauiApp CreateMauiApp()
         {
             var appDirectory = AppContext.BaseDirectory;
             Directory.SetCurrentDirectory(appDirectory);
-
-            var filesInDir = Directory.GetFiles(appDirectory);
-
-            Assets._fileFetcher = (string path) =>
-            {
-                if (path.Contains("assets.txt") || path.Contains("levels"))
-                {
-                    return FileSystem.OpenAppPackageFileAsync("Assets/" + path).GetAwaiter().GetResult();
-                }
-
-                return FileSystem.OpenAppPackageFileAsync("Assets/game/" + path).GetAwaiter().GetResult(); 
-            };
 
             var builder = MauiApp.CreateBuilder();
             builder

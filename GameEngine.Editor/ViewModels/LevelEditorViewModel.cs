@@ -87,16 +87,23 @@ namespace GameEngine.Editor.ViewModels
             }
             SelectedLevelEntity = LevelEntities.FirstOrDefault();
 
-            Assets._fileFetcher =
+            var designAssetSource = new DelegateAssetSource(
                 path => path.Contains("assets.txt")
                     ? File.Open(Path.Combine("GameEngine.Demo", path), FileMode.Open)
-                    : File.Open(Path.Combine("GameEngine.Demo", "assets", path), FileMode.Open);
+                    : File.Open(Path.Combine("GameEngine.Demo", "assets", path), FileMode.Open));
 
-            var designEntities = new EntityManager();
-            new LevelLoader(new Core.Components.ComponentFactory(new Assets("assets.txt")))
-                .LoadLevel(level, designEntities);
-            designEntities.Update();
-            SelectedEntity = designEntities.GetEntities().FirstOrDefault();
+            try
+            {
+                var designEntities = new EntityManager();
+                new LevelLoader(new Core.Components.ComponentFactory(new Assets("assets.txt", designAssetSource)))
+                    .LoadLevel(level, designEntities);
+                designEntities.Update();
+                SelectedEntity = designEntities.GetEntities().FirstOrDefault();
+            }
+            catch (IOException)
+            {
+                SelectedEntity = null;
+            }
         }
 
         private readonly ObservableCollection<string> _scenes = new();
@@ -362,7 +369,7 @@ namespace GameEngine.Editor.ViewModels
                     return;
                 }
 
-                var lf = LevelFile.LoadFromFile(levelFile);
+                var lf = LevelFile.LoadFromFile(levelFile, new FileAssetSource());
                 _levelFile = lf;
                 LevelFilePath = levelFile;
 

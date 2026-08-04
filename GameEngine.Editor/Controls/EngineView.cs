@@ -127,13 +127,15 @@ namespace GameEngine.Editor.Controls
             {
                 if (_gameEngine == null)
                 {
+                    var assetSource = CreateProjectAssetSource(
+                        _vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
+
                     if (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser())
-                        _gameEngine = new Engine(QueueInvalidate, audioEnabled: false);
+                        _gameEngine = new Engine(QueueInvalidate, audioEnabled: false, assetSource);
                     else
-                        _gameEngine = new Engine(QueueInvalidate);
+                        _gameEngine = new Engine(QueueInvalidate, assetSource: assetSource);
                     _gameEngine.RenderOptions.DrawBoundingBoxes = true;
                     _gameEngine.TargetFrameRate = 120;
-                    InitializeAssetFileFetcher(_vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
                     _gameEngine.SetRunning(_vm.IsEngineRunning);
                     _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
                 }
@@ -163,19 +165,21 @@ namespace GameEngine.Editor.Controls
             }
         }
 
-        private static void InitializeAssetFileFetcher(string projectCsprojPath)
+        internal static IAssetSource CreateProjectAssetSource(string projectCsprojPath)
         {
-            Assets._fileFetcher = (string path) =>
+            var projectDir = Path.GetDirectoryName(projectCsprojPath)!;
+
+            return new DelegateAssetSource(path =>
             {
-                var projectDir = Path.GetDirectoryName(projectCsprojPath)!;
                 if (path.Contains("assets.txt") || path.Contains("levels"))
                 {
                     var assetFilesPath = Path.GetFullPath(Path.Combine(projectDir, path));
                     return File.Open(assetFilesPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 }
+
                 var fullPath = Path.GetFullPath(Path.Combine(projectDir, "assets/" + path));
                 return File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            };
+            });
         }
 
         private void OnSizeChanged(object? sender, EventArgs args)

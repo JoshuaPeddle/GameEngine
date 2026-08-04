@@ -112,7 +112,5 @@ public class AssetEnvironment
     public void PointWorkingDirectoryAtStagedAssets()
     {
         Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!);
-
-        Assets._fileFetcher = null;
     }
 }

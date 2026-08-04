@@ -37,10 +37,12 @@ namespace GameEngine.Runner.Avalonia
         {
             IsHitTestVisible = true;
 
+            var assetSource = App.AssetSource ?? new FileAssetSource();
+
             if (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser())
-                _gameEngine = new Engine(QueueInvalidate, audioEnabled: false);
+                _gameEngine = new Engine(QueueInvalidate, audioEnabled: false, assetSource);
             else
-                _gameEngine = new Engine(QueueInvalidate);
+                _gameEngine = new Engine(QueueInvalidate, assetSource: assetSource);
 
             _current = _gameEngine;
 

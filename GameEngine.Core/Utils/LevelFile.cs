@@ -33,9 +33,11 @@ namespace GameEngine.Core.Utils
         public List<EntityData> Entities { get; set; } = new();
 
         // Static factory methods for loading
-        public static LevelFile LoadFromFile(string filePath)
+        public static LevelFile LoadFromFile(string filePath, IAssetSource source)
         {
-            using (Stream fileStream = Assets.OpenAsset(filePath))
+            ArgumentNullException.ThrowIfNull(source);
+
+            using (Stream fileStream = source.Open(filePath))
             {
                 using var reader = new StreamReader(fileStream);
                 var json = reader.ReadToEnd();
@@ -241,7 +243,7 @@ namespace GameEngine.Core.Utils
 
         public static void LoadLevelIntoScene(string levelPath, EntityManager entityManager, InputManager inputManager, AudioSystem? audioSystem, Assets assets)
         {
-            var levelFile = LevelFile.LoadFromFile(levelPath);
+            var levelFile = LevelFile.LoadFromFile(levelPath, assets.Source);
             var loader = CreateLoader(assets);
             loader.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
         }
