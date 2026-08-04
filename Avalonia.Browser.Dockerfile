@@ -2,7 +2,9 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-RUN apt update && apt install python3 -y
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y python3 \
+    && rm -rf /var/lib/apt/lists/*
 # which qemu-user-static -y 
 
 RUN dotnet workload install wasm-tools
@@ -13,7 +15,6 @@ COPY GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia GameEngine.Runner.Ava
 COPY GameEngine.Core GameEngine.Core
 COPY GameEngine.Demo GameEngine.Demo
 
-RUN dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser/GameEngine.Runner.Avalonia.Browser.csproj -c Release
 RUN dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser/GameEngine.Runner.Avalonia.Browser.csproj -c Release -o /app/publish
 
 FROM nginx:alpine AS runtime
