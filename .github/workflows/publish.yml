@@ -25,7 +25,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
         
     - name: Set up JDK 17
       uses: actions/setup-java@v3
@@ -52,7 +52,7 @@ jobs:
       run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r win-x64 -c Release
 
     - name: Build Runner Android
-      run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj -c Release -f net9.0-android
+      run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj -c Release -f net10.0-android
 
     # --- NEW: GameEngine.Editor (Windows) ---
     - name: Restore Editor Desktop dependencies
@@ -65,16 +65,16 @@ jobs:
       run: dotnet publish GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -r win-x64 -c Release #-p:PublishSingleFile=true -p:SelfContained=true
 
     - name: Zip Runner Linux Release
-      run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net9.0/linux-x64/publish
+      run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net10.0/linux-x64/publish
 
     - name: Zip Runner Windows Release
-      run: zip -r windows_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net9.0/win-x64/publish
+      run: zip -r windows_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net10.0/win-x64/publish
 
     - name: Zip Editor Windows Release
-      run: zip -r editor_windows_artifact.zip GameEngine.Editor.Desktop/bin/Release/net9.0/win-x64/publish
+      run: zip -r editor_windows_artifact.zip GameEngine.Editor.Desktop/bin/Release/net10.0/win-x64/publish
 
     - name: Zip Android Release
-      run: zip android_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release/net9.0-android/*-Signed.apk
+      run: zip android_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release/net10.0-android/*-Signed.apk
 
     - name: Determine Release Version
       id: version
