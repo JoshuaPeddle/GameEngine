@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using GameEngine.Core;
@@ -129,5 +130,131 @@ internal static class SceneFactory
         using var canvas = new SKCanvas(texture);
         canvas.Clear(SKColors.CornflowerBlue);
         return texture;
+    }
+}
+
+// GE-23: does Entity.Components need to be a ConcurrentDictionary? The editor no longer
+// reads components off the engine thread, so the question is purely what the concurrent
+// type costs. Both variants are exercised with the access pattern Entity actually uses.
+[MemoryDiagnoser]
+public class ComponentStorageBenchmarks
+{
+    private const int Entities = 1_000;
+
+    private static readonly Type[] ComponentTypes =
+    [
+        typeof(CTransform), typeof(CBoundingBox), typeof(CAnimation), typeof(CInput)
+    ];
+
+    private ConcurrentDictionary<Type, Component>[] _concurrent = null!;
+    private Dictionary<Type, Component>[] _plain = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _concurrent = new ConcurrentDictionary<Type, Component>[Entities];
+        _plain = new Dictionary<Type, Component>[Entities];
+
+        for (int i = 0; i < Entities; i++)
+        {
+            _concurrent[i] = new ConcurrentDictionary<Type, Component>();
+            _plain[i] = new Dictionary<Type, Component>();
+            FillConcurrent(_concurrent[i]);
+            FillPlain(_plain[i]);
+        }
+    }
+
+    private static void FillConcurrent(ConcurrentDictionary<Type, Component> store)
+    {
+        store[typeof(CTransform)] = new CTransform(Vec2.Zero);
+        store[typeof(CBoundingBox)] = new CBoundingBox(new Vec2(32, 32), false, false);
+        store[typeof(CInput)] = new CInput();
+    }
+
+    private static void FillPlain(Dictionary<Type, Component> store)
+    {
+        store[typeof(CTransform)] = new CTransform(Vec2.Zero);
+        store[typeof(CBoundingBox)] = new CBoundingBox(new Vec2(32, 32), false, false);
+        store[typeof(CInput)] = new CInput();
+    }
+
+    [Benchmark(Description = "Create 1000 entity stores (ConcurrentDictionary)")]
+    public int CreateConcurrent()
+    {
+        int count = 0;
+        for (int i = 0; i < Entities; i++)
+        {
+            var store = new ConcurrentDictionary<Type, Component>();
+            FillConcurrent(store);
+            count += store.Count;
+        }
+        return count;
+    }
+
+    [Benchmark(Description = "Create 1000 entity stores (Dictionary)")]
+    public int CreatePlain()
+    {
+        int count = 0;
+        for (int i = 0; i < Entities; i++)
+        {
+            var store = new Dictionary<Type, Component>();
+            FillPlain(store);
+            count += store.Count;
+        }
+        return count;
+    }
+
+    [Benchmark(Description = "Per-frame lookups (ConcurrentDictionary)")]
+    public int LookupConcurrent()
+    {
+        int hits = 0;
+        foreach (var store in _concurrent)
+        {
+            foreach (var type in ComponentTypes)
+            {
+                if (store.TryGetValue(type, out _))
+                    hits++;
+            }
+        }
+        return hits;
+    }
+
+    [Benchmark(Description = "Per-frame lookups (Dictionary)")]
+    public int LookupPlain()
+    {
+        int hits = 0;
+        foreach (var store in _plain)
+        {
+            foreach (var type in ComponentTypes)
+            {
+                if (store.TryGetValue(type, out _))
+                    hits++;
+            }
+        }
+        return hits;
+    }
+
+    [Benchmark(Description = "Enumerate keys on removal (ConcurrentDictionary)")]
+    public int EnumerateConcurrent()
+    {
+        int seen = 0;
+        foreach (var store in _concurrent)
+        {
+            foreach (var _ in store.Keys)
+                seen++;
+        }
+        return seen;
+    }
+
+    [Benchmark(Description = "Enumerate keys on removal (Dictionary)")]
+    public int EnumeratePlain()
+    {
+        int seen = 0;
+        foreach (var store in _plain)
+        {
+            foreach (var _ in store.Keys)
+                seen++;
+        }
+        return seen;
     }
 }
