@@ -44,44 +44,61 @@ public class AssetSourceTests
     public void FileAssetSource_ResolvesManifestRelativePathsUnderTheContentRoot()
     {
         var directory = NewTempDirectory();
-        var previous = Directory.GetCurrentDirectory();
         try
         {
             Directory.CreateDirectory(Path.Combine(directory, "assets", "images"));
             File.WriteAllText(Path.Combine(directory, "assets", "images", "sprite.png"), "pixels");
-            Directory.SetCurrentDirectory(directory);
 
-            using var stream = new FileAssetSource().Open("images/sprite.png");
+            using var stream = new FileAssetSource(directory).Open("images/sprite.png");
 
             Assert.That(new StreamReader(stream).ReadToEnd(), Is.EqualTo("pixels"));
         }
         finally
         {
-            Directory.SetCurrentDirectory(previous);
             Directory.Delete(directory, recursive: true);
         }
     }
 
     [Test]
-    public void FileAssetSource_PrefersAnExistingFileOverTheContentRoot()
+    public void FileAssetSource_PrefersAFileBesideTheBaseDirectoryOverTheContentRoot()
     {
         var directory = NewTempDirectory();
-        var previous = Directory.GetCurrentDirectory();
         try
         {
             File.WriteAllText(Path.Combine(directory, "assets.txt"), "manifest at the root");
             Directory.CreateDirectory(Path.Combine(directory, "assets"));
             File.WriteAllText(Path.Combine(directory, "assets", "assets.txt"), "manifest under assets");
-            Directory.SetCurrentDirectory(directory);
 
-            using var stream = new FileAssetSource().Open("assets.txt");
+            using var stream = new FileAssetSource(directory).Open("assets.txt");
 
             Assert.That(new StreamReader(stream).ReadToEnd(), Is.EqualTo("manifest at the root"));
         }
         finally
         {
-            Directory.SetCurrentDirectory(previous);
             Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Test]
+    public void FileAssetSource_ResolvesFromTheAppBaseDirectoryNotTheWorkingDirectory()
+    {
+        var elsewhere = NewTempDirectory();
+        var manifest = Path.Combine(AppContext.BaseDirectory, $"ge63_{Guid.NewGuid():N}.txt");
+        var previous = Directory.GetCurrentDirectory();
+        try
+        {
+            File.WriteAllText(manifest, "found from the base directory");
+            Directory.SetCurrentDirectory(elsewhere);
+
+            using var stream = new FileAssetSource().Open(Path.GetFileName(manifest));
+
+            Assert.That(new StreamReader(stream).ReadToEnd(), Is.EqualTo("found from the base directory"));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(previous);
+            File.Delete(manifest);
+            Directory.Delete(elsewhere, recursive: true);
         }
     }
 
@@ -113,7 +130,7 @@ public class AssetSourceTests
             Directory.CreateDirectory(Path.Combine(directory, "content"));
             File.WriteAllText(Path.Combine(directory, "content", "sound.wav"), "riff");
 
-            using var stream = new FileAssetSource(Path.Combine(directory, "content")).Open("sound.wav");
+            using var stream = new FileAssetSource(directory, contentRoot: "content").Open("sound.wav");
 
             Assert.That(new StreamReader(stream).ReadToEnd(), Is.EqualTo("riff"));
         }
