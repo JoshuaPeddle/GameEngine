@@ -160,9 +160,9 @@ public class DemoSceneTests
     }
 
     [Test]
-    public void Basic_PlayerRespondsToInput()
+    public void Scene2_PlayerRespondsToInput()
     {
-        var harness = SceneHarness.Load(new SceneBasic());
+        var harness = SceneHarness.Load(new Scene2());
         harness.Run(5);
 
         var player = harness.Require("player").GetComponent<CTransform>();
