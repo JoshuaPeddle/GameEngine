@@ -40,6 +40,6 @@
     <PackageVersion Include="TextMateSharp.Grammars" Version="2.0.4" />
     <!-- Avalonia 12.1 requires 0.94.1; 0.94.2 is the current security-patched release. -->
     <PackageVersion Include="Tmds.DBus.Protocol" Version="0.94.2" />
-    <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.2.0.3" />
+    <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.1" />
   </ItemGroup>
 </Project>
