@@ -12,6 +12,16 @@
   <ItemGroup>
     <!--<TrimmerRootAssembly Include="Avalonia.Themes.Default" />-->
   </ItemGroup>
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>GameEngine.Runner.Avalonia</PackageId>
+    <Description>Avalonia host for GameEngine.Core: a GameView control that drives an Engine, maps keyboard and pointer input, and renders snapshots through the Skia lease. Shared by the desktop, Android, iOS and browser heads.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>

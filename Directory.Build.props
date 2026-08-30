@@ -1,6 +1,23 @@
 <Project>
   <PropertyGroup>
     <Nullable>enable</Nullable>
-    <AvaloniaVersion>11.1.0</AvaloniaVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package identity">
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <Authors>Joshua Peddle</Authors>
+    <Product>GameEngine</Product>
+    <Copyright>Copyright (c) 2026 Joshua Peddle</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/JoshuaPeddle/GameEngine</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JoshuaPeddle/GameEngine.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>gamedev;game-engine;2d;ecs;skiasharp;avalonia</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>
