@@ -14,7 +14,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
-            assets ??= new("assets.txt", AssetSource);
+            assets ??= new("assets.json", AssetSource);
             audioSystem = audioPlayer;
 
             // Create the level loader
@@ -103,7 +103,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
-            assets ??= new("assets.txt", AssetSource);
+            assets ??= new("assets.json", AssetSource);
             audioSystem = audioPlayer;
             levelLoader = LevelManager.CreateLoader(assets);
             levelLoader.RegisterEntityHandler("player", SceneJson.WirePlayerInput);

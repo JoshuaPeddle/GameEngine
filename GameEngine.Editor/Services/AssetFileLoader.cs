@@ -1,5 +1,8 @@
-﻿using Avalonia.Media.Imaging;
+using Avalonia.Media.Imaging;
+using GameEngine.Core;
 using GameEngine.Editor.Models;
+using Animation = GameEngine.Editor.Models.Animation;
+using Sound = GameEngine.Editor.Models.Sound;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -9,44 +12,51 @@ namespace GameEngine.Editor.Services
     {
         public async static Task<AssetCollection> LoadAssetCollectionAsync(string projectFileFolder)
         {
-            string assetFilePath = Path.Combine(projectFileFolder, "assets.txt");
-            if (!File.Exists(assetFilePath))
+            var manifestPath = ManifestPath(projectFileFolder);
+            if (manifestPath == null)
                 return new AssetCollection([], [], []);
-            string[] lines = await File.ReadAllLinesAsync(assetFilePath);
-            AssetCollection assetCollection = new([], [], []);
-            foreach (string line in lines)
+
+            var text = await File.ReadAllTextAsync(manifestPath);
+            var manifest = manifestPath.EndsWith(".json", System.StringComparison.OrdinalIgnoreCase)
+                ? AssetManifest.ParseJson(text)
+                : AssetManifest.ParseLines(text);
+
+            var assetCollection = new AssetCollection([], [], []);
+
+            foreach (var texture in manifest.Textures)
             {
-                string[] parts = line.Split(' ');
-                if (parts.Length < 2)
-                    continue;
-                string assetType = parts[0];
-                string assetName = parts[1];
-                if (assetType == "Texture")
-                {
-                    string texturePath = Path.Combine(projectFileFolder, "assets", parts[2]);
-                    var bitmap = new Bitmap(texturePath);
-
-                    assetCollection.Textures.Add(new Texture(assetName, texturePath, Task.FromResult(bitmap)));
-                }
-                else if (assetType == "Animation")
-                {
-                    // Animation [Name] [TextureName] [FrameCount] [Delay]
-                    string textureName = parts[2];
-                    Texture? texture = assetCollection.Textures.Find(t => t.Name == textureName);
-                    if (texture == null)
-                        continue;
-                    int frameCount = int.Parse(parts[3]);
-                    int delay = int.Parse(parts[4]);
-                    assetCollection.Animations.Add(new Animation(assetName, texture, frameCount, delay));
-                }
-                else if (assetType == "Sound") // Sound [Name] [Path[
-                {
-                    string soundPath = Path.Combine(projectFileFolder, "assets", parts[2]);
-                    assetCollection.Sounds.Add(new Sound(assetName, soundPath));
-
-                }
+                var texturePath = Path.Combine(projectFileFolder, "assets", texture.Path);
+                assetCollection.Textures.Add(
+                    new Texture(texture.Name, texturePath, Task.FromResult(new Bitmap(texturePath))));
             }
+
+            foreach (var animation in manifest.Animations)
+            {
+                var texture = assetCollection.Textures.Find(t => t.Name == animation.Texture);
+                if (texture == null)
+                    continue;
+
+                assetCollection.Animations.Add(
+                    new Animation(animation.Name, texture, animation.Frames, (int)animation.FrameDelayMs));
+            }
+
+            foreach (var sound in manifest.Sounds)
+            {
+                assetCollection.Sounds.Add(
+                    new Sound(sound.Name, Path.Combine(projectFileFolder, "assets", sound.Path)));
+            }
+
             return assetCollection;
+        }
+
+        internal static string? ManifestPath(string projectFileFolder)
+        {
+            var current = Path.Combine(projectFileFolder, AssetManifest.DefaultFileName);
+            if (File.Exists(current))
+                return current;
+
+            var legacy = Path.Combine(projectFileFolder, AssetManifest.LegacyFileName);
+            return File.Exists(legacy) ? legacy : null;
         }
     }
 }

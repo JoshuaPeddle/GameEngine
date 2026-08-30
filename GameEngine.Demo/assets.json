@@ -1,0 +1,129 @@
+{
+  "$schema": "../GameEngine.Core/assets.schema.json",
+  "textures": {
+    "TexJeep": "images/jeep.png",
+    "TexGrenade": "images/grenade.png",
+    "TexStoneBlock": "images/stoneBlock.png",
+    "TexSnakeHead": "images/snakeHead.png",
+    "TexSnakeBody": "images/snakeBody.png",
+    "TexSnakeFood": "images/snakeFood.png",
+    "TexQuadBlock": "images/quadBlock.png",
+    "TexBrickBlock": "images/brickBlock.png",
+    "TexBall": "images/ball.png",
+    "TexPaddle": "images/paddle.png",
+    "TexWallHorizontal": "images/wallHorizontal.png",
+    "TexWallVertical": "images/wallVertical.png",
+    "TexAimer": "images/aimer.png",
+    "TextPillar": "images/Pillar.png",
+    "TexAstralArena": "images/astral-relay/arena-final.png",
+    "TexAstralPlayer": "images/astral-relay/player.png",
+    "TexAstralHunter": "images/astral-relay/hunter.png",
+    "TexAstralCore": "images/astral-relay/core.png"
+  },
+  "animations": {
+    "Grenade": {
+      "texture": "TexGrenade",
+      "frames": 4,
+      "frameDelayMs": 250
+    },
+    "JeepBack": {
+      "texture": "TexJeep",
+      "frames": 1,
+      "frameDelayMs": 1
+    },
+    "StoneBlock": {
+      "texture": "TexStoneBlock",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "SnakeHead": {
+      "texture": "TexSnakeHead",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "SnakeBody": {
+      "texture": "TexSnakeBody",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "SnakeFood": {
+      "texture": "TexSnakeFood",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Wall": {
+      "texture": "TexSnakeBody",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "QuadBlock": {
+      "texture": "TexQuadBlock",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BrickBlock": {
+      "texture": "TexBrickBlock",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Mario": {
+      "texture": "TexBrickBlock",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Ball": {
+      "texture": "TexBall",
+      "frames": 1,
+      "frameDelayMs": 1
+    },
+    "Paddle": {
+      "texture": "TexPaddle",
+      "frames": 1,
+      "frameDelayMs": 1
+    },
+    "WallHorizontal": {
+      "texture": "TexWallHorizontal",
+      "frames": 1,
+      "frameDelayMs": 1
+    },
+    "WallVertical": {
+      "texture": "TexWallVertical",
+      "frames": 1,
+      "frameDelayMs": 1
+    },
+    "Aimer": {
+      "texture": "TexAimer",
+      "frames": 1,
+      "frameDelayMs": 1
+    },
+    "Pillar": {
+      "texture": "TextPillar",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "AstralArena": {
+      "texture": "TexAstralArena",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "AstralPlayer": {
+      "texture": "TexAstralPlayer",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "AstralHunter": {
+      "texture": "TexAstralHunter",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "AstralCore": {
+      "texture": "TexAstralCore",
+      "frames": 1,
+      "frameDelayMs": 0
+    }
+  },
+  "sounds": {
+    "Hit": "sounds/hit.wav",
+    "Level1": "sounds/level1.wav"
+  }
+}

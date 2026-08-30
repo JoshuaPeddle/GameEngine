@@ -22,6 +22,6 @@
   <ItemGroup>
     <AvaloniaResource Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets/game/%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
 	<AvaloniaResource Include="../../GameEngine.Demo/levels/**/*.*" Link="Assets/game/levels/%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
-    <AvaloniaResource Include="../../GameEngine.Demo/assets.txt" Link="Assets/assets.txt" />
+    <AvaloniaResource Include="../../GameEngine.Demo/assets.json" Link="Assets/assets.json" />
   </ItemGroup>
 </Project>

@@ -27,7 +27,7 @@
     plays audio.
   -->
   <ItemGroup>
-    <Content Include="..\GameEngine.Demo\assets.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\GameEngine.Demo\assets.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\GameEngine.Demo\assets\images\**" Link="assets\images\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\GameEngine.Demo\levels\**" Link="levels\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -190,7 +190,7 @@ namespace GameEngine.Editor.Controls
 
             return new DelegateAssetSource(path =>
             {
-                if (path.Contains("assets.txt") || path.Contains("levels"))
+                if (AssetManifest.IsManifestPath(path) || path.Contains("levels"))
                 {
                     var assetFilesPath = Path.GetFullPath(Path.Combine(projectDir, path));
                     return File.Open(assetFilesPath, FileMode.Open, FileAccess.Read, FileShare.Read);

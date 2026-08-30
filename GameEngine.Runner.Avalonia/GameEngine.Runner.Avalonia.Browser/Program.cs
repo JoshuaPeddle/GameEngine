@@ -60,10 +60,9 @@ internal sealed partial class Program
 
     public static Stream LoadFile(string path)
     {
-        if (path.Contains("assets.txt"))
-        {
-            return AssetLoader.Open(new Uri("avares://GameEngine.Runner.Avalonia.Browser/Assets/assets.txt"));
-        }
+        if (AssetManifest.IsManifestPath(path))
+            return AssetLoader.Open(new Uri(
+                "avares://GameEngine.Runner.Avalonia.Browser/Assets/" + Path.GetFileName(path)));
 
         return AssetLoader.Open(new Uri("avares://GameEngine.Runner.Avalonia.Browser/Assets/game/" + path));
     }
