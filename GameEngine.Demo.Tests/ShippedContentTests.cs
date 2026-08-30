@@ -32,6 +32,58 @@ public class ShippedContentTests
             $"{Path.GetFileName(path)} should carry a \"$schema\" pointer so editors and agents can check it");
     }
 
+    [Test]
+    public void MultiLevelScene_ReachesEveryLevelItLists()
+    {
+        var scene = new MultiLevelScene();
+        var harness = SceneHarness.Load(scene);
+        harness.Run(2);
+
+        for (var level = 1; level <= MultiLevelScene.LevelCount; level++)
+        {
+            Assert.That(scene.CurrentLevel, Is.EqualTo(level));
+            Assert.That(harness.Entities.GetEntityWithTag("player"), Is.Not.Null,
+                $"level {level} should declare a player");
+
+            harness.PressAndRelease(GeKeys.N);
+            harness.Run(2);
+        }
+
+        Assert.That(scene.CurrentLevel, Is.EqualTo(MultiLevelScene.LevelCount),
+            "N past the last level should stay put");
+    }
+
+    [Test]
+    public void MultiLevelScene_GoesBackWithP()
+    {
+        var scene = new MultiLevelScene();
+        var harness = SceneHarness.Load(scene);
+        harness.Run(2);
+
+        harness.PressAndRelease(GeKeys.N);
+        harness.Run(2);
+        Assert.That(scene.CurrentLevel, Is.EqualTo(2));
+
+        harness.PressAndRelease(GeKeys.P);
+        harness.Run(2);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(scene.CurrentLevel, Is.EqualTo(1));
+            Assert.That(harness.Entities.GetEntityWithTag("player"), Is.Not.Null);
+        });
+    }
+
+    [Test]
+    public void EveryShippedLevelHasSomethingInIt()
+    {
+        foreach (var path in ShippedLevels())
+        {
+            Assert.That(LevelFile.LoadFromFile(path, new FileAssetSource()).Entities, Is.Not.Empty,
+                $"{Path.GetFileName(path)} declares no entities");
+        }
+    }
+
     private static IEnumerable<string> ShippedLevels() =>
         Directory.EnumerateFiles(Path.Combine(AppContext.BaseDirectory, "levels"), "*.json")
             .OrderBy(path => path);

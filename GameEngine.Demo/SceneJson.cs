@@ -92,21 +92,33 @@ namespace GameEngine.Demo
         }
     }
 
-    // Example of a more advanced scene that might have multiple levels
+    // A second JSON scene, showing level navigation: N advances, P goes back.
     public class MultiLevelScene : Scene
     {
+        private static readonly string[] LevelPaths =
+        [
+            "levels/level1.json",
+            "levels/level2.json",
+            "levels/level3.json"
+        ];
+
         private Assets? assets;
         private AudioSystem? audioSystem;
+        private InputManager? inputManager;
         private LevelLoader? levelLoader;
-        private int currentLevelIndex = 0;
-        private readonly string[] levelPaths = { "levels/level1.json", "levels/level2.json", "levels/level3.json" };
+        private int currentLevelIndex;
+        private int pendingLevelStep;
+
+        // 1-based, so it reads like the level number the player sees.
+        public int CurrentLevel => currentLevelIndex + 1;
+
+        public static int LevelCount => LevelPaths.Length;
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
             assets ??= new("assets.json", AssetSource);
             audioSystem = audioPlayer;
-            levelLoader = LevelManager.CreateLoader(assets);
-            levelLoader.RegisterEntityHandler("player", SceneJson.WirePlayerInput);
+            this.inputManager = inputManager;
 
             SetupInputActions(inputManager);
             LoadCurrentLevel(entityManager, inputManager);
@@ -114,46 +126,66 @@ namespace GameEngine.Demo
 
         private void SetupInputActions(InputManager inputManager)
         {
+            levelLoader = LevelManager.CreateLoader(assets!);
+            levelLoader.RegisterEntityHandler("player", SceneJson.WirePlayerInput);
+
             inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.AddAction(GeKeys.Up, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.AddAction(GeKeys.Down, "Down");
             inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.AddAction(GeKeys.Left, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.AddAction(GeKeys.Right, "Right");
             inputManager.AddAction(GeKeys.Space, "PlaySound");
             inputManager.AddAction(GeKeys.N, "NextLevel");
             inputManager.AddAction(GeKeys.P, "PrevLevel");
+
+            inputManager.BindAction("NextLevel", OnPress(() => pendingLevelStep = 1));
+            inputManager.BindAction("PrevLevel", OnPress(() => pendingLevelStep = -1));
+        }
+
+        private static Action<bool> OnPress(Action onPressed)
+        {
+            var wasActive = false;
+
+            return isActive =>
+            {
+                if (isActive && !wasActive)
+                    onPressed();
+
+                wasActive = isActive;
+            };
+        }
+
+        // Deferred to Update because loading a level clears the EntityManager, and input
+        // dispatch runs while the systems are still walking it.
+        public override void Update(EntityManager entityManager, SystemContainer systems, double deltaSeconds)
+        {
+            if (pendingLevelStep == 0 || inputManager == null)
+                return;
+
+            var step = pendingLevelStep;
+            pendingLevelStep = 0;
+
+            var target = currentLevelIndex + step;
+            if (target < 0 || target >= LevelPaths.Length)
+                return;
+
+            currentLevelIndex = target;
+
+            // Rebinding from scratch keeps the old level's entity bindings from piling up.
+            inputManager.Reset();
+            SetupInputActions(inputManager);
+            LoadCurrentLevel(entityManager, inputManager);
         }
 
         private void LoadCurrentLevel(EntityManager entityManager, InputManager inputManager)
         {
-            if (currentLevelIndex >= 0 && currentLevelIndex < levelPaths.Length)
-            {
-                // Clear existing entities
-                entityManager.Clear();
+            entityManager.Clear();
 
-                // Load new level
-                var levelFile = LevelFile.LoadFromFile(levelPaths[currentLevelIndex], AssetSource);
-                levelLoader!.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
-
-                Console.WriteLine($"Loaded level {currentLevelIndex + 1}: {levelFile.Metadata.Name}");
-            }
-        }
-
-        public void NextLevel(EntityManager entityManager, InputManager inputManager)
-        {
-            if (currentLevelIndex < levelPaths.Length - 1)
-            {
-                currentLevelIndex++;
-                LoadCurrentLevel(entityManager, inputManager);
-            }
-        }
-
-        public void PreviousLevel(EntityManager entityManager, InputManager inputManager)
-        {
-            if (currentLevelIndex > 0)
-            {
-                currentLevelIndex--;
-                LoadCurrentLevel(entityManager, inputManager);
-            }
+            var levelFile = LevelFile.LoadFromFile(LevelPaths[currentLevelIndex], AssetSource);
+            levelLoader!.LoadLevel(levelFile, entityManager, inputManager, audioSystem);
         }
     }
 }
