@@ -117,14 +117,20 @@ namespace GameEngine
         }
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public Dictionary<Keys, GeKeys> KeyMap { get; private set; } = new Dictionary<Keys, GeKeys>()
+        public Dictionary<Keys, GeKeys> KeyMap { get; private set; } = BuildKeyMap();
+
+        private static Dictionary<Keys, GeKeys> BuildKeyMap()
         {
-            { Keys.W, GeKeys.W },
-            { Keys.A, GeKeys.A },
-            { Keys.S, GeKeys.S },
-            { Keys.D, GeKeys.D },
-            { Keys.Space, GeKeys.Space }
-        };
+            var map = new Dictionary<Keys, GeKeys>();
+
+            foreach (var engineKey in Enum.GetValues<GeKeys>())
+            {
+                if (Enum.TryParse<Keys>(engineKey.ToString(), out var winFormsKey))
+                    map[winFormsKey] = engineKey;
+            }
+
+            return map;
+        }
 
         private void OnPaintSurface(object? sender, SKPaintGLSurfaceEventArgs e)
         {

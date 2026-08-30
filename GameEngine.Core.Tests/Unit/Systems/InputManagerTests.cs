@@ -86,5 +86,52 @@
                 Assert.That(inputManager.IsActionActive("MoveBackward"), Is.False, "Removed action should not be in actionStates");
             });
         }
+
+        [Test]
+        public void TwoKeysOnOneAction_StayActiveWhileEitherIsHeld()
+        {
+            var inputManager = new InputManager();
+            inputManager.AddAction(GeKeys.D, "MoveRight");
+            inputManager.AddAction(GeKeys.Right, "MoveRight");
+
+            inputManager.HandleKeyPress(GeKeys.Right);
+            inputManager.HandleKeyPress(GeKeys.D);
+            inputManager.HandleKeyRelease(GeKeys.D);
+
+            Assert.That(inputManager.IsActionActive("MoveRight"), Is.True,
+                "the arrow key is still held, so the action should still be active");
+
+            inputManager.HandleKeyRelease(GeKeys.Right);
+
+            Assert.That(inputManager.IsActionActive("MoveRight"), Is.False,
+                "releasing the last key holding an action should end it");
+        }
+
+        [Test]
+        public void ReleasingAKeyThatWasNeverPressed_DoesNotEndTheAction()
+        {
+            var inputManager = new InputManager();
+            inputManager.AddAction(GeKeys.W, "MoveUp");
+            inputManager.AddAction(GeKeys.Up, "MoveUp");
+
+            inputManager.HandleKeyPress(GeKeys.W);
+            inputManager.HandleKeyRelease(GeKeys.Up);
+
+            Assert.That(inputManager.IsActionActive("MoveUp"), Is.True);
+        }
+
+        [Test]
+        public void ResetForgetsHeldKeys()
+        {
+            var inputManager = new InputManager();
+            inputManager.AddAction(GeKeys.N, "NextLevel");
+            inputManager.HandleKeyPress(GeKeys.N);
+
+            inputManager.Reset();
+            inputManager.AddAction(GeKeys.N, "NextLevel");
+
+            Assert.That(inputManager.IsActionActive("NextLevel"), Is.False,
+                "a key held across a reset should not leave the rebuilt action active");
+        }
     }
 }
