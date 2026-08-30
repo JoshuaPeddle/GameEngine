@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Joshua Peddle",
+  "classifications": [ "Game", "2D", "Avalonia", "Cross-platform" ],
+  "identity": "GameEngine.Game.CSharp",
+  "groupIdentity": "GameEngine.Game",
+  "name": "GameEngine game",
+  "description": "A 2D GameEngine game: one scene, one level, desktop/Android/iOS/browser heads, headless tests, an AGENTS.md, and a publish workflow that builds every target in CI.",
+  "shortName": "gameengine-game",
+  "defaultName": "MyGame",
+  "sourceName": "GameTemplate",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "symbols": {
+    "EngineVersion": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "0.1.0",
+      "replaces": "ENGINE_VERSION",
+      "description": "Version of the GameEngine NuGet packages to reference."
+    },
+    "skipRestore": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Skip the automatic restore after the project is created."
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [ "**/bin/**", "**/obj/**", "**/.vs/**", "**/*.user" ]
+        }
+      ]
+    }
+  ],
+  "postActions": [
+    {
+      "id": "restore",
+      "condition": "(!skipRestore)",
+      "description": "Restore NuGet packages required by this project.",
+      "manualInstructions": [ { "text": "Run 'dotnet restore'" } ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
+}

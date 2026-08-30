@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GameTemplate.Android/GameTemplate.Android.csproj" />
+    <Project Path="src/GameTemplate.Browser/GameTemplate.Browser.csproj" />
+    <Project Path="src/GameTemplate.Desktop/GameTemplate.Desktop.csproj" />
+    <Project Path="src/GameTemplate.iOS/GameTemplate.iOS.csproj" />
+    <Project Path="src/GameTemplate/GameTemplate.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GameTemplate.Tests/GameTemplate.Tests.csproj" />
+  </Folder>
+</Solution>

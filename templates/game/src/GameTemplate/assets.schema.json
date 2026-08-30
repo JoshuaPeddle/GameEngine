@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/JoshuaPeddle/GameEngine/master/GameEngine.Core/assets.schema.json",
+  "title": "GameEngine asset manifest",
+  "description": "Names every texture, animation and sound a game can ask for by name. Paths are resolved by the game's IAssetSource, which by default looks under assets/.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Points editors and agents at this schema."
+    },
+    "textures": {
+      "type": "object",
+      "description": "Texture name to image path.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "animations": {
+      "type": "object",
+      "description": "Animation name to the strip it plays. Frames are read left to right across a single horizontal strip.",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "texture",
+          "frames"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "texture": {
+            "type": "string",
+            "description": "Name of a texture declared above."
+          },
+          "frames": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of frames in the strip."
+          },
+          "frameDelayMs": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Milliseconds per frame. 0 means a static image."
+          }
+        }
+      }
+    },
+    "sounds": {
+      "type": "object",
+      "description": "Sound name to audio file path.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

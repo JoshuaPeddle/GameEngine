@@ -1,0 +1,83 @@
+name: NuGet
+
+# Pushes GameEngine.Core, GameEngine.Runner.Avalonia and the dotnet new template pack.
+# Tag with the version you want published: `git tag v0.1.0 && git push --tags`.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version to build (no leading v).'
+        required: true
+      push:
+        description: 'Push to nuget.org as well as uploading the packages here.'
+        type: boolean
+        default: false
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pick version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install native dependencies for SkiaSharp
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1
+
+      - name: Test
+        run: dotnet test GameEngine.Core.Tests/GameEngine.Core.Tests.csproj -c Release
+
+      # The template writes the engine version into the project it generates, so its default
+      # must match the packages published in the same run.
+      - name: Point the template at this version
+        run: |
+          manifest=templates/game/.template.config/template.json
+          tmp=$(mktemp)
+          jq --arg v "${{ steps.version.outputs.version }}" \
+            '.symbols.EngineVersion.defaultValue = $v' "$manifest" > "$tmp"
+          mv "$tmp" "$manifest"
+
+      - name: Pack
+        run: |
+          for project in \
+            GameEngine.Core/GameEngine.Core.csproj \
+            GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj \
+            templates/GameEngine.Templates.csproj
+          do
+            dotnet pack "$project" -c Release -p:Version=${{ steps.version.outputs.version }} -o packages
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: packages/*
+
+      # The template pins the engine version it references, so it is only worth pushing
+      # alongside the packages it points at.
+      - name: Push to nuget.org
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.push == 'true'
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "NUGET_API_KEY is not set; skipping the push." >&2
+            exit 1
+          fi
+          dotnet nuget push "packages/*.nupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate

@@ -105,3 +105,51 @@ jobs:
         name: android-smoke-diagnostics
         path: artifacts/android-smoke
         if-no-files-found: warn
+
+  template:
+    name: Template produces a working game
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Install native dependencies for SkiaSharp
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1
+
+    # The template references the engine by package, so the local build has to be packed
+    # into a feed before a generated game can restore against it.
+    - name: Pack the engine and the template
+      run: |
+        for project in \
+          GameEngine.Core/GameEngine.Core.csproj \
+          GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj \
+          templates/GameEngine.Templates.csproj
+        do
+          dotnet pack "$project" -c Release -o "$RUNNER_TEMP/feed"
+        done
+
+    - name: Create a game from the template
+      run: |
+        dotnet new install "$RUNNER_TEMP/feed"/GameEngine.Templates.*.nupkg
+        mkdir -p "$RUNNER_TEMP/scratch"
+        cd "$RUNNER_TEMP/scratch"
+        dotnet new gameengine-game -n SmokeGame --no-restore
+        cat > SmokeGame/nuget.config <<EOF
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <add key="local" value="$RUNNER_TEMP/feed" />
+          </packageSources>
+        </configuration>
+        EOF
+
+    - name: Build and test the generated game
+      run: |
+        cd "$RUNNER_TEMP/scratch/SmokeGame"
+        dotnet build src/SmokeGame.Desktop -c Release
+        dotnet test tests/SmokeGame.Tests -c Release

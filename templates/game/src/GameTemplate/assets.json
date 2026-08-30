@@ -1,0 +1,14 @@
+{
+  "$schema": "./assets.schema.json",
+  "textures": {
+    "TexPlayer": "images/player.png",
+    "TexBlock": "images/block.png",
+    "TexPickup": "images/pickup.png"
+  },
+  "animations": {
+    "Player": { "texture": "TexPlayer", "frames": 1, "frameDelayMs": 0 },
+    "Block": { "texture": "TexBlock", "frames": 1, "frameDelayMs": 0 },
+    "Pickup": { "texture": "TexPickup", "frames": 1, "frameDelayMs": 0 }
+  },
+  "sounds": {}
+}
