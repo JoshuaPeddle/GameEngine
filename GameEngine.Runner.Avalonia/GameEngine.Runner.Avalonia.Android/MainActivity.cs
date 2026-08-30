@@ -42,10 +42,8 @@ namespace GameEngine.Runner.Avalonia.Android
 
         private Stream LoadFile(string path)
         {
-            if (path.Contains("assets.txt"))
-            {
-                return Assets.Open("assets.txt");
-            }
+            if (Core.AssetManifest.IsManifestPath(path))
+                return Assets.Open(Path.GetFileName(path));
 
             return Assets.Open("game/" + path);
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -75,10 +75,18 @@ namespace GameEngine.Editor.Magic
         private MSBuildWorkspace? _workspace;
         private Project? _project;
         private Compilation? _lastCompilation;
+        private readonly List<string> _workspaceFailures = [];
         private UnloadableSceneLoadContext? _alc;
         private SceneCompilationResult? _lastResult;
         private bool _initialized;
         private readonly SemaphoreSlim _lock = new(1, 1);
+
+        // Errors and warnings from the last emit, whether or not it succeeded.
+        public IReadOnlyList<CompileDiagnostic> LastDiagnostics { get; private set; } = [];
+
+        // Anything MSBuild could not make sense of while opening the project. These do not stop
+        // a compilation, but they explain an otherwise empty or stale scene list.
+        public IReadOnlyList<string> WorkspaceFailures => _workspaceFailures;
 
         // Assemblies we never want duplicated
         private static readonly string[] SharedAssemblies =
@@ -109,11 +117,9 @@ namespace GameEngine.Editor.Magic
                     MSBuildLocator.RegisterDefaults();
 
                 _workspace = MSBuildWorkspace.Create();
-                _workspace.WorkspaceFailed += (_, e) =>
-                {
-                    // Optionally log e.Diagnostic
-                };
+                _workspace.WorkspaceFailed += (_, e) => _workspaceFailures.Add(e.Diagnostic.Message);
 
+                _workspaceFailures.Clear();
                 _project = await _workspace.OpenProjectAsync(_projectPath, cancellationToken: ct);
                 _lastCompilation = await _project.GetCompilationAsync(ct)
                                    ?? throw new InvalidOperationException("Failed to create compilation.");
@@ -203,12 +209,13 @@ namespace GameEngine.Editor.Magic
                 using var pe = new MemoryStream();
                 using var pdb = new MemoryStream();
                 var emit = compilation.Emit(pe, pdb, cancellationToken: ct);
+                LastDiagnostics = emit.Diagnostics
+                    .Where(d => d.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
+                    .Select(CompileDiagnostic.From)
+                    .ToList();
+
                 if (!emit.Success)
-                {
-                    var errors = string.Join(Environment.NewLine,
-                        emit.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
-                    throw new InvalidOperationException("Compilation failed:" + Environment.NewLine + errors);
-                }
+                    throw new SceneCompilationException(LastDiagnostics);
 
                 pe.Position = 0;
                 pdb.Position = 0;

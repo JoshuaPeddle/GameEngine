@@ -11,15 +11,28 @@ using GameEngine.Core.Systems;
 using System.Collections.Generic;
 using GameEngine.Core;
 
+// The browser delivers keyboard events through JS rather than through the Avalonia control,
+// so the map is built here from the engine's own key names: letters are the lowercase name,
+// Space is " ", and the arrows are DOM's "ArrowUp" and friends.
 public static partial class KeyboardInterop
 {
-    public static Dictionary<string, GeKeys> KeyMap { get; private set; } = new Dictionary<string, GeKeys>()
+    public static Dictionary<string, GeKeys> KeyMap { get; } = BuildKeyMap();
+
+    private static Dictionary<string, GeKeys> BuildKeyMap()
     {
-        { "w", GeKeys.W },
-        { "a", GeKeys.A },
-        { "s", GeKeys.S },
-        { "d", GeKeys.D },
-        { " ", GeKeys.Space }
+        var map = new Dictionary<string, GeKeys>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var engineKey in Enum.GetValues<GeKeys>())
+            map[DomNameOf(engineKey)] = engineKey;
+
+        return map;
+    }
+
+    private static string DomNameOf(GeKeys key) => key switch
+    {
+        GeKeys.Space => " ",
+        GeKeys.Up or GeKeys.Down or GeKeys.Left or GeKeys.Right => "Arrow" + key,
+        _ => key.ToString().ToLowerInvariant()
     };
 
     [SupportedOSPlatform("browser")]
@@ -60,10 +73,9 @@ internal sealed partial class Program
 
     public static Stream LoadFile(string path)
     {
-        if (path.Contains("assets.txt"))
-        {
-            return AssetLoader.Open(new Uri("avares://GameEngine.Runner.Avalonia.Browser/Assets/assets.txt"));
-        }
+        if (AssetManifest.IsManifestPath(path))
+            return AssetLoader.Open(new Uri(
+                "avares://GameEngine.Runner.Avalonia.Browser/Assets/" + Path.GetFileName(path)));
 
         return AssetLoader.Open(new Uri("avares://GameEngine.Runner.Avalonia.Browser/Assets/game/" + path));
     }

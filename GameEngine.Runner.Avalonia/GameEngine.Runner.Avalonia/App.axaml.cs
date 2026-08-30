@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using GameEngine.Runner.Avalonia.ViewModels;
@@ -12,6 +12,9 @@ namespace GameEngine.Runner.Avalonia
 {
     public partial class App : Application
     {
+        // Convenience layer for the one-game-per-process app template: a head sets these before
+        // the first GameView is constructed. Embedders hand the same things to GameView directly
+        // and never touch these.
         public static Core.IAssetSource? AssetSource;
         public static Func<Core.Scene>? StartupScene;
         public static Action? FirstFramePresented;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
@@ -52,6 +53,16 @@ namespace GameEngine.Editor.ViewModels
         private readonly ObservableCollection<string> _scenes = new();
         public ObservableCollection<string> Scenes => _scenes;
 
+        private readonly ObservableCollection<CompileDiagnostic> _diagnostics = new();
+        public ObservableCollection<CompileDiagnostic> Diagnostics => _diagnostics;
+
+        private bool _hasDiagnostics;
+        public bool HasDiagnostics
+        {
+            get => _hasDiagnostics;
+            private set => this.RaiseAndSetIfChanged(ref _hasDiagnostics, value);
+        }
+
         private string? _selectedScene;
         public string? SelectedScene
         {
@@ -83,6 +94,29 @@ namespace GameEngine.Editor.ViewModels
 
         public event Action<Type>? SceneSelected;
         public event Action? ScenesReloading;
+
+        private void ShowDiagnostics(IReadOnlyList<CompileDiagnostic> diagnostics)
+        {
+            _diagnostics.Clear();
+            foreach (var diagnostic in diagnostics.OrderByDescending(d => d.IsError))
+                _diagnostics.Add(diagnostic);
+
+            HasDiagnostics = _diagnostics.Count > 0;
+        }
+
+        private string NoScenesMessage()
+        {
+            var failures = _sceneService?.WorkspaceFailures ?? [];
+            return failures.Count == 0
+                ? "No scenes found."
+                : $"No scenes found. The project did not load cleanly: {failures[0]}";
+        }
+
+        private string WarningSuffix()
+        {
+            var warnings = _diagnostics.Count(d => !d.IsError);
+            return warnings == 0 ? string.Empty : $", {warnings} warning{(warnings == 1 ? "" : "s")}";
+        }
 
         public async Task EnsureScenesLoadedAsync()
         {
@@ -123,19 +157,32 @@ namespace GameEngine.Editor.ViewModels
                 var compile = await _sceneService.CompileAllAsync();
                 _lastCompileResult = compile;
 
+                ShowDiagnostics(_sceneService.LastDiagnostics);
+
                 _scenes.Clear();
                 foreach (var t in compile.SceneTypes.OrderBy(t => t.Name))
                     _scenes.Add(t.Name);
 
                 _scenesLoaded = true;
-                _status.Message = _scenes.Count == 0 ? "No scenes found." : $"Loaded {_scenes.Count} scenes.";
+                _status.Message = _scenes.Count == 0
+                    ? NoScenesMessage()
+                    : $"Loaded {_scenes.Count} scenes{WarningSuffix()}.";
 
                 if (SelectedScene == null && _scenes.Count > 0)
                     SelectedScene = _scenes[0];
             }
-            catch (Exception)
+            catch (SceneCompilationException compileFailure)
             {
-                _status.Message = "Error loading scenes";
+                ShowDiagnostics(compileFailure.Diagnostics);
+                _scenes.Clear();
+
+                var errors = _diagnostics.Count(d => d.IsError);
+                _status.Message = errors == 1 ? "1 compile error." : $"{errors} compile errors.";
+            }
+            catch (Exception ex)
+            {
+                ShowDiagnostics([]);
+                _status.Message = $"Could not load scenes: {ex.Message}";
             }
             finally
             {

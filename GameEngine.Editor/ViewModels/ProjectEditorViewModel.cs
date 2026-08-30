@@ -12,6 +12,7 @@ namespace GameEngine.Editor.ViewModels
         public ReactiveCommand<Unit, Unit> OpenProjectCommand { get; }
         public ReactiveCommand<Unit, Unit> SaveProjectCommand { get; }
         public ReactiveCommand<Unit, Unit> OpenSelectedRecentProjectCommand { get; }
+        public ReactiveCommand<Unit, Unit> NewProjectCommand { get; }
 
         private readonly IFilePickerService _filePickerService;
         private readonly AssetEditorViewModel _parentViewModel;
@@ -33,6 +34,10 @@ namespace GameEngine.Editor.ViewModels
             var canOpenRecent = this.WhenAnyValue(vm => vm.SelectedRecentProject,
                                                   p => !string.IsNullOrWhiteSpace(p));
             OpenSelectedRecentProjectCommand = ReactiveCommand.CreateFromTask(OpenSelectedRecentProject, canOpenRecent);
+
+            var canCreate = this.WhenAnyValue(vm => vm.NewProjectName,
+                                              name => GameProjectCreator.Validate(name) == null);
+            NewProjectCommand = ReactiveCommand.CreateFromTask(NewProject, canCreate);
 
             LoadRecentProjects();
         }
@@ -74,6 +79,39 @@ namespace GameEngine.Editor.ViewModels
         {
             get => _selectedRecentProject;
             set => this.RaiseAndSetIfChanged(ref _selectedRecentProject, value);
+        }
+
+        private string _newProjectName = "MyGame";
+        public string NewProjectName
+        {
+            get => _newProjectName;
+            set => this.RaiseAndSetIfChanged(ref _newProjectName, value);
+        }
+
+        private string _newProjectStatus = string.Empty;
+        public string NewProjectStatus
+        {
+            get => _newProjectStatus;
+            private set => this.RaiseAndSetIfChanged(ref _newProjectStatus, value);
+        }
+
+        // Creates a game from the dotnet new template and opens it, so the editor's starting
+        // point is a project the user owns rather than one they had to find.
+        public async Task NewProject()
+        {
+            if (_filePickerService == null) return;
+
+            var folder = await _filePickerService.PromptForFolderPath();
+            if (folder == null) return;
+
+            NewProjectStatus = $"Creating {NewProjectName}...";
+            var result = await GameProjectCreator.CreateAsync(folder, NewProjectName);
+            NewProjectStatus = result.Message;
+
+            if (!result.Success || result.ProjectPath == null) return;
+
+            await LoadProjectInternal(result.ProjectPath);
+            AddRecent(result.ProjectPath);
         }
 
         public async Task OpenProject()

@@ -1,0 +1,332 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/JoshuaPeddle/GameEngine/master/GameEngine.Core/levels/level.schema.json",
+  "title": "GameEngine level",
+  "description": "A list of entities and the components they are built from. The loader rejects any key not described here.",
+  "type": "object",
+  "required": [
+    "entities"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Points editors and agents at this schema."
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata",
+      "description": "Optional descriptive information about the level."
+    },
+    "entities": {
+      "type": "array",
+      "description": "Every entity the level creates, in spawn order.",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    }
+  },
+  "$defs": {
+    "vector": {
+      "type": "object",
+      "description": "A two-dimensional value in virtual pixels.",
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name of the level."
+        },
+        "version": {
+          "type": "string",
+          "description": "Author-chosen version string; the engine does not interpret it."
+        },
+        "description": {
+          "type": "string",
+          "description": "What the level is for."
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form values for the game to read. The engine passes them through untouched."
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "required": [
+        "tag",
+        "components"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string",
+          "description": "Groups entities. Scenes look entities up by tag; it need not be unique."
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component"
+          }
+        }
+      }
+    },
+    "component": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CTransform"
+        },
+        {
+          "$ref": "#/$defs/CBoundingBox"
+        },
+        {
+          "$ref": "#/$defs/CAnimation"
+        },
+        {
+          "$ref": "#/$defs/CInput"
+        },
+        {
+          "$ref": "#/$defs/CMovement"
+        },
+        {
+          "$ref": "#/$defs/CText"
+        },
+        {
+          "$ref": "#/$defs/CCamera"
+        },
+        {
+          "$ref": "#/$defs/CGravity"
+        }
+      ]
+    },
+    "CTransform": {
+      "title": "CTransform",
+      "description": "Where the entity is, how fast it is moving, and how it is drawn.",
+      "type": "object",
+      "required": [
+        "type",
+        "position"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CTransform"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        },
+        "position": {
+          "$ref": "#/$defs/vector",
+          "description": "Position in virtual pixels."
+        },
+        "velocity": {
+          "$ref": "#/$defs/vector",
+          "description": "Velocity in virtual pixels per second."
+        },
+        "scale": {
+          "$ref": "#/$defs/vector",
+          "description": "Draw scale; defaults to 1 on both axes."
+        },
+        "rotation": {
+          "type": "number",
+          "description": "Rotation in degrees; defaults to 0."
+        },
+        "layer": {
+          "type": "integer",
+          "description": "Draw order within the scene; defaults to 0."
+        }
+      }
+    },
+    "CBoundingBox": {
+      "title": "CBoundingBox",
+      "description": "An axis-aligned collision box. blockMovement means solid.",
+      "type": "object",
+      "required": [
+        "type",
+        "size",
+        "blockVision",
+        "blockMovement"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CBoundingBox"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        },
+        "size": {
+          "$ref": "#/$defs/vector",
+          "description": "Box size in virtual pixels."
+        },
+        "blockVision": {
+          "type": "boolean",
+          "description": "Whether the box blocks line of sight."
+        },
+        "blockMovement": {
+          "type": "boolean",
+          "description": "Whether the box is solid and pushes others out."
+        }
+      }
+    },
+    "CAnimation": {
+      "title": "CAnimation",
+      "description": "Plays an animation declared in the asset manifest.",
+      "type": "object",
+      "required": [
+        "type",
+        "animationName"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CAnimation"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        },
+        "animationName": {
+          "type": "string",
+          "description": "Name of an Animation entry in the asset manifest."
+        }
+      }
+    },
+    "CInput": {
+      "title": "CInput",
+      "description": "Directional input flags a scene maps keys onto.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CInput"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        }
+      }
+    },
+    "CMovement": {
+      "title": "CMovement",
+      "description": "Acceleration and speed cap, in virtual pixels per second.",
+      "type": "object",
+      "required": [
+        "type",
+        "speed",
+        "maxSpeed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CMovement"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        },
+        "speed": {
+          "type": "number",
+          "description": "Acceleration applied while an input direction is held."
+        },
+        "maxSpeed": {
+          "type": "number",
+          "description": "Maximum speed along either axis."
+        }
+      }
+    },
+    "CText": {
+      "title": "CText",
+      "description": "Text drawn at the entity\u0027s position.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CText"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        },
+        "text": {
+          "type": "string",
+          "description": "The string to draw; defaults to empty."
+        },
+        "size": {
+          "type": "integer",
+          "description": "Font size in virtual pixels; defaults to 24."
+        }
+      }
+    },
+    "CCamera": {
+      "title": "CCamera",
+      "description": "View position and zoom. Tag the entity \u0027camera\u0027 to make it the active one.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CCamera"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        },
+        "position": {
+          "$ref": "#/$defs/vector",
+          "description": "Camera centre in virtual pixels; defaults to the origin."
+        },
+        "zoom": {
+          "type": "number",
+          "description": "Zoom factor; defaults to 1."
+        }
+      }
+    },
+    "CGravity": {
+      "title": "CGravity",
+      "description": "Downward acceleration, in virtual pixels per second squared.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "CGravity"
+        },
+        "$comment": {
+          "type": "string",
+          "description": "Ignored by the loader."
+        },
+        "acceleration": {
+          "type": "number",
+          "description": "Downward acceleration; defaults to 200."
+        }
+      }
+    }
+  }
+}

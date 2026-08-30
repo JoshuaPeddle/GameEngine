@@ -13,7 +13,7 @@
     <ProjectReference Include="..\..\GameEngine.Demo\GameEngine.Demo.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <BundleResource Include="../../GameEngine.Demo/assets.txt" Link="assets.txt" />
+    <BundleResource Include="../../GameEngine.Demo/assets.json" Link="assets.json" />
     <BundleResource Include="../../GameEngine.Demo/assets/**/*.*" Link="assets/%(RecursiveDir)%(FileName)%(Extension)" />
     <BundleResource Include="../../GameEngine.Demo/levels/**/*.*" Link="levels/%(RecursiveDir)%(FileName)%(Extension)" />
   </ItemGroup>

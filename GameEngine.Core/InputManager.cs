@@ -14,6 +14,7 @@ namespace GameEngine.Core
         private const int MaxQueuedPointerEvents = 256;
 
         private readonly ConcurrentDictionary<GeKeys, string> actionMap = [];
+        private readonly ConcurrentDictionary<GeKeys, byte> heldKeys = [];
         private readonly ConcurrentDictionary<string, bool> actionStates = [];
         private readonly ConcurrentDictionary<string, IReadOnlyList<Action<bool>>> actionBindings = [];
         private readonly ConcurrentDictionary<PointerEventType, IReadOnlyList<Action<PointerEvent>>> pointerActionBindings = [];
@@ -29,6 +30,7 @@ namespace GameEngine.Core
         public void Reset()
         {
             actionMap.Clear();
+            heldKeys.Clear();
             actionStates.Clear();
             actionBindings.Clear();
             pointerActionBindings.Clear();
@@ -50,6 +52,7 @@ namespace GameEngine.Core
             if (actionMap.TryGetValue(key, out string? actionName))
             {
                 actionMap.Remove(key, out _);
+                heldKeys.TryRemove(key, out _);
                 actionStates.TryRemove(actionName, out _);
                 actionBindings.TryRemove(actionName, out _);
             }
@@ -82,6 +85,7 @@ namespace GameEngine.Core
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
+                heldKeys[key] = 0;
                 actionStates[actionName] = true;
             }
         }
@@ -90,8 +94,22 @@ namespace GameEngine.Core
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
-                actionStates[actionName] = false;
+                heldKeys.TryRemove(key, out _);
+                actionStates[actionName] = IsAnyKeyHeldFor(actionName);
             }
+        }
+
+        // Several keys can share one action — WASD and the arrows, say — so releasing one of
+        // them only ends the action if none of its other keys are still down.
+        private bool IsAnyKeyHeldFor(string actionName)
+        {
+            foreach (var mapping in actionMap)
+            {
+                if (mapping.Value == actionName && heldKeys.ContainsKey(mapping.Key))
+                    return true;
+            }
+
+            return false;
         }
 
         public void HandlePointerEvent(PointerEventType eventType, PointerEvent pointerEvent)

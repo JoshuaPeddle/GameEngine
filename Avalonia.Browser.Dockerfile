@@ -9,6 +9,7 @@ RUN apt-get update \
 
 RUN dotnet workload install wasm-tools
 
+COPY Directory.Build.props Directory.Build.props
 COPY Directory.Packages.props Directory.Packages.props
 COPY GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser
 COPY GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia

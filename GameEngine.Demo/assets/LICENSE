@@ -1,0 +1,20 @@
+Creative Commons Zero v1.0 Universal (CC0 1.0)
+
+To the extent possible under law, Joshua Peddle has waived all copyright and
+related or neighboring rights to the sprite, texture and audio files in this
+directory. They may be used for any purpose, commercial or otherwise, without
+permission or attribution.
+
+Full text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Provenance
+----------
+
+These files were authored for this repository and contain no third-party
+material.
+
+Record any machine-generated art here as it is added -- the tool, the model and
+the date -- so downstream users can judge its status for themselves.
+GameEngine.Editor.ImageGen produces such art via a local ComfyUI workflow; the
+waiver above is intended to apply to its output regardless of whether that
+output attracts copyright in a given jurisdiction.

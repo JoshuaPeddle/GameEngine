@@ -1,165 +1,165 @@
-name: .NET publish
+name: Publish
 
-on: 
+# Releases are cut from tags, not from every push to master.
+on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Release version (optional). Leave blank for auto-generated version.'
+        description: 'Version to build (no leading v). Leave blank to use 0.0.<run number>.'
         required: false
-        default: ''  
-# Only enabled when debugging pipeline in a PR
-#  pull_request: # TODO: Remove
-#    branches: [ "master" ]
+        default: ''
+
+permissions:
+  contents: write
 
 jobs:
-  publish:
-    permissions: write-all
+  version:
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.pick.outputs.version }}
+      is_tag: ${{ startsWith(github.ref, 'refs/tags/') }}
     steps:
-    - uses: actions/checkout@v4
+      - id: pick
+        run: |
+          if [ -n "${{ github.event.inputs.release_version }}" ]; then
+            VERSION="${{ github.event.inputs.release_version }}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.0.${{ github.run_number }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building $VERSION"
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
-        
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+  desktop:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-latest
+            rid: osx-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      - name: Publish runner
+        run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -c Release -r ${{ matrix.rid }} -p:Version=${{ needs.version.outputs.version }} -o artifacts/runner-${{ matrix.rid }}
 
-    - name: Install workloads
-      run: dotnet workload restore 
+      - name: Publish editor
+        if: matrix.rid != 'osx-arm64'
+        run: dotnet publish GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -c Release -r ${{ matrix.rid }} -p:Version=${{ needs.version.outputs.version }} -o artifacts/editor-${{ matrix.rid }}
 
-    - name: Restore Runner Desktop dependencies
-      run: dotnet restore GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj
+      - name: Package
+        shell: bash
+        run: |
+          cd artifacts
+          for dir in */; do
+            tar -czf "../${dir%/}.tar.gz" "${dir%/}"
+          done
 
-    - name: Build Runner Desktop
-      run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -c Release --no-restore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.rid }}
+          path: '*.tar.gz'
 
-    - name: Publish Runner Linux
-      run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r linux-x64 -c Release
+  android:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+      - uses: android-actions/setup-android@v3
 
-    - name: Publish Runner Windows
-      run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/GameEngine.Runner.Avalonia.Desktop.csproj -r win-x64 -c Release
+      - name: Install Android workload
+        run: dotnet workload restore GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj
 
-    - name: Build Runner Android
-      run: dotnet build GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj -c Release -f net10.0-android
+      - name: Publish APK
+        run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/GameEngine.Runner.Avalonia.Android.csproj -c Release -f net10.0-android -p:Version=${{ needs.version.outputs.version }}
 
-    # --- NEW: GameEngine.Editor (Windows) ---
-    - name: Restore Editor Desktop dependencies
-      run: dotnet restore GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj
+      - name: Stage APK
+        run: |
+          mkdir -p out
+          find GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release -name '*-Signed.apk' -exec cp {} out/ \;
 
-    - name: Build Editor Desktop (Windows target)
-      run: dotnet build GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -c Release --no-restore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/*.apk
 
-    - name: Publish Editor Windows
-      run: dotnet publish GameEngine.Editor.Desktop/GameEngine.Editor.Desktop.csproj -r win-x64 -c Release #-p:PublishSingleFile=true -p:SelfContained=true
+  browser:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Zip Runner Linux Release
-      run: zip -r linux_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net10.0/linux-x64/publish
+      - name: Install wasm workload
+        run: dotnet workload install wasm-tools
 
-    - name: Zip Runner Windows Release
-      run: zip -r windows_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Desktop/bin/Release/net10.0/win-x64/publish
+      # A plain static bundle: unzip it onto GitHub Pages, itch.io or any web host.
+      - name: Publish browser bundle
+        run: dotnet publish GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser/GameEngine.Runner.Avalonia.Browser.csproj -c Release -p:Version=${{ needs.version.outputs.version }} -o artifacts/browser
 
-    - name: Zip Editor Windows Release
-      run: zip -r editor_windows_artifact.zip GameEngine.Editor.Desktop/bin/Release/net10.0/win-x64/publish
+      - name: Package
+        run: |
+          cd artifacts/browser/wwwroot
+          zip -r ../../../browser-wwwroot.zip .
 
-    - name: Zip Android Release
-      run: zip android_artifact.zip GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release/net10.0-android/*-Signed.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: browser
+          path: browser-wwwroot.zip
 
-    - name: Determine Release Version
-      id: version
-      run: |
-        if [ -z "${{ github.event.inputs.release_version }}" ]; then
-          VERSION="1.0.${{ github.run_number }}"
-        else
-          VERSION="${{ github.event.inputs.release_version }}"
-        fi
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "Release version: $VERSION"
-      
-    - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ env.VERSION }}
-        release_name: "Release ${{ env.VERSION }}"
-        body: 'Release of the build.'
-        draft: false
-        prerelease: false
+  docker:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Avalonia.Browser.Dockerfile
+          platforms: linux/arm64,linux/amd64
+          push: true
+          tags: |
+            joshuapeddle/gameengine-web:latest
+            joshuapeddle/gameengine-web:${{ needs.version.outputs.version }}
 
-    - name: Upload Runner Linux Artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./linux_artifact.zip
-        asset_name: linux_artifact.zip
-        asset_content_type: application/zip
-
-    - name: Upload Runner Windows Artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./windows_artifact.zip
-        asset_name: windows_artifact.zip
-        asset_content_type: application/zip
-
-    - name: Upload Editor Windows Artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./editor_windows_artifact.zip
-        asset_name: editor_windows_artifact.zip
-        asset_content_type: application/zip
-
-    - name: Upload Android Artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./android_artifact.zip
-        asset_name: android_artifact.zip
-        asset_content_type: application/zip
-
-    - name: Reclaim build space for browser image
-      run: |
-        find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
-        dotnet nuget locals all --clear
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }} 
-
-    - name: Build and push multi-platform image
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        file: Avalonia.Browser.Dockerfile
-        platforms: linux/arm64,linux/amd64
-        push: true
-        tags: |
-          joshuapeddle/gameengine-web:latest
-          joshuapeddle/gameengine-web:${{ env.VERSION }}
+  release:
+    needs: [version, desktop, android, browser]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ needs.version.outputs.version }}
+          files: artifacts/**/*
+          generate_release_notes: true

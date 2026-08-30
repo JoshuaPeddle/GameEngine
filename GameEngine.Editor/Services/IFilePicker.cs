@@ -6,5 +6,6 @@ namespace GameEngine.Editor.Services
     {
         Task<string?> PromptForImagePath();
         Task<string?> PromptForProjectPath();
+        Task<string?> PromptForFolderPath();
     }
 }

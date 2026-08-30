@@ -26,7 +26,11 @@ public sealed class StubFilePicker : IFilePickerService
 
     public string? ProjectPath { get; set; }
 
+    public string? FolderPath { get; set; }
+
     public Task<string?> PromptForImagePath() => Task.FromResult(ImagePath);
 
     public Task<string?> PromptForProjectPath() => Task.FromResult(ProjectPath);
+
+    public Task<string?> PromptForFolderPath() => Task.FromResult(FolderPath);
 }

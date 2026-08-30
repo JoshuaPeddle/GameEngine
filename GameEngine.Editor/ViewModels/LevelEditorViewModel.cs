@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -66,14 +66,14 @@ namespace GameEngine.Editor.ViewModels
             Level.SelectedLevelEntity = Level.LevelEntities.FirstOrDefault();
 
             var designAssetSource = new DelegateAssetSource(
-                path => path.Contains("assets.txt")
+                path => AssetManifest.IsManifestPath(path)
                     ? File.Open(Path.Combine("GameEngine.Demo", path), FileMode.Open)
                     : File.Open(Path.Combine("GameEngine.Demo", "assets", path), FileMode.Open));
 
             try
             {
                 var designEntities = new EntityManager();
-                new LevelLoader(new ComponentFactory(new Assets("assets.txt", designAssetSource)))
+                new LevelLoader(new ComponentFactory(new Assets("assets.json", designAssetSource)))
                     .LoadLevel(level, designEntities);
                 designEntities.Update();
                 Inspector.Select(designEntities.GetEntities().FirstOrDefault()?.Capture());

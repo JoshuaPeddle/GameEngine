@@ -25,6 +25,9 @@
     <ProjectReference Include="..\GameEngine.Core\GameEngine.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\GameEngine.Core\levels\level.schema.json" Link="levels\level.schema.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 </Project>

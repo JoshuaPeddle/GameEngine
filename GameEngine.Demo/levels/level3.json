@@ -1,0 +1,247 @@
+{
+  "$schema": "../../GameEngine.Core/levels/level.schema.json",
+  "metadata": {
+    "name": "Pillar Hall",
+    "version": "1.0",
+    "description": "Pillars and blocks to navigate around. Press P to go back to the corridor.",
+    "properties": {
+      "difficulty": "medium",
+      "environment": "indoor"
+    }
+  },
+  "entities": [
+    {
+      "tag": "player",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 200,
+            "y": 200
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "JeepBack"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 50,
+            "y": 80
+          },
+          "blockVision": false,
+          "blockMovement": false
+        },
+        {
+          "type": "CInput"
+        },
+        {
+          "type": "CMovement",
+          "speed": 150,
+          "maxSpeed": 300
+        }
+      ]
+    },
+    {
+      "tag": "pillar",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 400,
+            "y": 200
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "Pillar"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 70,
+            "y": 140
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "pillar",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 400,
+            "y": 500
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "Pillar"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 70,
+            "y": 140
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "pillar",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 700,
+            "y": 200
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "Pillar"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 70,
+            "y": 140
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "pillar",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 700,
+            "y": 500
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "Pillar"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 70,
+            "y": 140
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "pillar",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 1000,
+            "y": 200
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "Pillar"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 70,
+            "y": 140
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "pillar",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 1000,
+            "y": 500
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "Pillar"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 70,
+            "y": 140
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "tile",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 550,
+            "y": 350
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "QuadBlock"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 60,
+            "y": 60
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    },
+    {
+      "tag": "tile",
+      "components": [
+        {
+          "type": "CTransform",
+          "position": {
+            "x": 850,
+            "y": 350
+          }
+        },
+        {
+          "type": "CAnimation",
+          "animationName": "QuadBlock"
+        },
+        {
+          "type": "CBoundingBox",
+          "size": {
+            "x": 60,
+            "y": 60
+          },
+          "blockVision": true,
+          "blockMovement": true
+        }
+      ]
+    }
+  ]
+}

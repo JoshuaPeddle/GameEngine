@@ -83,7 +83,7 @@ namespace GameEngine.Core.Systems
             if (_chunkCache.TryGetValue(assetName, out IntPtr cached))
                 return cached;
 
-            _assets ??= new Assets("assets.txt", _assetSource);
+            _assets ??= new Assets("assets.json", _assetSource);
             var sound = _assets.GetSound(assetName);
 
             IntPtr chunk = Mix_LoadWAV(Path.Combine("assets", sound.Path));

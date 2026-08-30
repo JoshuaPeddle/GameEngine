@@ -32,6 +32,29 @@ namespace GameEngine.Core.Utils
         public LevelMetadata Metadata { get; set; } = new();
         public List<EntityData> Entities { get; set; } = new();
 
+        // Preserved verbatim so an editor round-trip does not strip the schema an author
+        // (or their tooling) pointed the file at.
+        public string? Schema { get; set; }
+
+        private static readonly string[] RootKeys = ["$schema", "metadata", "entities"];
+        private static readonly string[] EntityKeys = ["tag", "components"];
+        private static readonly string[] MetadataKeys = ["name", "version", "description", "properties"];
+
+        private static void RejectUnknownKeys(JsonElement element, string[] known, string what)
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+                return;
+
+            foreach (var property in element.EnumerateObject())
+            {
+                if (known.Contains(property.Name, StringComparer.OrdinalIgnoreCase))
+                    continue;
+
+                throw new InvalidDataException(
+                    $"Unknown {what} key '{property.Name}'. Known keys: {string.Join(", ", known)}.");
+            }
+        }
+
         // Static factory methods for loading
         public static LevelFile LoadFromFile(string filePath, IAssetSource source)
         {
@@ -58,8 +81,17 @@ namespace GameEngine.Core.Utils
 
             var levelFile = new LevelFile();
 
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                RejectUnknownKeys(root, RootKeys, "level file");
+
+                if (root.TryGetProperty("$schema", out var schemaElement))
+                    levelFile.Schema = schemaElement.GetString();
+            }
+
             if (root.TryGetProperty("metadata", out var metadataElement))
             {
+                RejectUnknownKeys(metadataElement, MetadataKeys, "level metadata");
                 levelFile.Metadata = JsonSerializer.Deserialize<LevelMetadata>(metadataElement, options) ?? new LevelMetadata();
             }
 
@@ -79,6 +111,8 @@ namespace GameEngine.Core.Utils
 
             foreach (var entityElement in entitiesElement.EnumerateArray())
             {
+                RejectUnknownKeys(entityElement, EntityKeys, "entity");
+
                 var entityData = new EntityData
                 {
                     Tag = entityElement.GetProperty("tag").GetString() ?? throw new InvalidDataException("Entity tag is required")
@@ -119,6 +153,9 @@ namespace GameEngine.Core.Utils
             using (var writer = new Utf8JsonWriter(ms, writerOptions))
             {
                 writer.WriteStartObject();
+
+                if (Schema != null)
+                    writer.WriteString("$schema", Schema);
 
                 // metadata
                 writer.WritePropertyName("metadata");

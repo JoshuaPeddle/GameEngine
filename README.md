@@ -6,6 +6,24 @@ previews scenes live.
 
 Targets .NET 10.
 
+## Start a game
+
+```bash
+dotnet new install GameEngine.Templates
+dotnet new gameengine-game -n MyGame
+cd MyGame
+dotnet run --project src/MyGame.Desktop
+```
+
+That gives you a playable game with desktop, Android, iOS and browser heads, a headless
+test project, an `AGENTS.md`, and a GitHub Actions workflow that publishes every target on
+a tag push. Or add the engine to a project you already have:
+
+```bash
+dotnet add package GameEngine.Core            # the engine, UI-agnostic
+dotnet add package GameEngine.Runner.Avalonia # the Avalonia GameView, if you want a host
+```
+
 ---
 
 ## Layout
@@ -22,6 +40,7 @@ Targets .NET 10.
 | `GameEngine.Core.Tests` | Unit and integration tests for the engine |
 | `GameEngine.Demo.Tests` | Headless smoke tests that drive every demo scene |
 | `GameEngine.Editor.Tests` | Headless view-model tests for the editor |
+| `templates` | The `dotnet new gameengine-game` template pack |
 
 ## Running
 
@@ -58,10 +77,12 @@ public class MyScene : Scene
     public override void Initialize(EntityManager entities, InputManager input,
         AudioSystem? audio, Action<Scene?> resetScene)
     {
-        assets ??= new Assets("assets.txt", AssetSource);
+        assets ??= new Assets("assets.json", AssetSource);
 
         input.AddAction(GeKeys.W, "Up");
+        input.AddAction(GeKeys.Up, "Up");
         input.AddAction(GeKeys.S, "Down");
+        input.AddAction(GeKeys.Down, "Down");
 
         var player = entities.CreateEntity("player");
         player.AddComponent(new CTransform(new Vec2(100, 100)));
@@ -87,6 +108,45 @@ public class MyScene : Scene
 
 Point a runner at it by setting the startup scene in that host's entry point —
 for Avalonia, `App.StartupScene = () => new MyScene();`.
+
+## Input
+
+`GeKeys` is the engine's key vocabulary: `A`–`Z`, `Space`, and `Up`/`Down`/`Left`/`Right`.
+Each runner builds its own map from those names — Avalonia and WinForms parse them against
+their own key enums, the browser head maps them to DOM key names — so a value added to
+`GeKeys` reaches every platform without touching a runner.
+
+Keys are bound to named actions, and **several keys can share one action**: an action stays
+active until the last key holding it is released, so binding both `D` and `Right` to
+`"Right"` behaves the way a player expects.
+
+A touch swipe is classified as `W`/`A`/`S`/`D` (`SwipeGesture.Classify`), so a game that
+wants touch input should bind those letters, with or without the arrows alongside.
+
+## Embedding
+
+`GameEngine.Core` has no UI dependency: `Engine.Tick(deltaSeconds)` advances one frame on
+whatever thread you call it from, rendering hands out immutable snapshots, and input is a
+queue. The headless test harness embeds it that way, so embedding is a tested path rather
+than a claim.
+
+For Avalonia, `GameView` is a plain control you can hand everything to, so several games
+can run side by side in one process:
+
+```xml
+<local:GameView x:Name="Preview" AudioEnabled="False" />
+```
+
+```csharp
+Preview.Engine = myEngine;       // or leave it and set Scene / AssetSource instead
+Preview.Scene = new MyScene();
+Preview.AssetSource = new FileAssetSource(contentRoot);
+```
+
+An engine you supply is driven by the view but not owned by it: the view attaches its
+invalidation callback and leaves the run loop to you. Set nothing and the view builds its
+own engine, falling back to `App.AssetSource` / `App.StartupScene` — the convenience layer
+the single-game app template uses.
 
 ### Things worth knowing
 
@@ -118,17 +178,24 @@ for Avalonia, `App.StartupScene = () => new MyScene();`.
 
 ## Assets
 
-`assets.txt` sits beside the executable and is read line by line.
+`assets.json` sits beside the executable and names everything a game can ask for.
 
-```
-Texture  TexPlayer   images/player.png
-Animation PlayerIdle TexPlayer 4 250
-Sound    Hit         sounds/hit.wav
+```json
+{
+  "$schema": "./assets.schema.json",
+  "textures": { "TexPlayer": "images/player.png" },
+  "animations": { "PlayerIdle": { "texture": "TexPlayer", "frames": 4, "frameDelayMs": 250 } },
+  "sounds": { "Hit": "sounds/hit.wav" }
+}
 ```
 
-`Animation` takes a texture name, a frame count, and a per-frame delay in
-milliseconds. Frames are read left to right across a single horizontal strip. A
-delay of `0` means a static image. `Font` is parsed but not yet implemented.
+Frames are read left to right across a single horizontal strip; `frameDelayMs` of `0`
+means a static image. Unknown sections and unknown keys are rejected with a message
+listing what was allowed. `GameEngine.Core/assets.schema.json` is the published schema —
+point a manifest at it with `$schema` and an editor will complete and check it.
+
+The old positional format (`Texture TexPlayer images/player.png` in `assets.txt`) is still
+read so existing projects keep working, including its `Font` lines, which remain ignored.
 
 ### Where assets are read from
 
@@ -152,6 +219,7 @@ code with `LevelBuilder`.
 
 ```json
 {
+  "$schema": "level.schema.json",
   "metadata": { "name": "Training Grounds", "version": "1.0" },
   "entities": [
     {
@@ -171,7 +239,7 @@ Every component object needs a `type`. Required and optional fields:
 
 | Type | Required | Optional |
 |---|---|---|
-| `CTransform` | `position` | `rotation`, `layer`, `scale` |
+| `CTransform` | `position` | `velocity`, `scale`, `rotation`, `layer` |
 | `CBoundingBox` | `size`, `blockVision`, `blockMovement` | |
 | `CMovement` | `speed`, `maxSpeed` | |
 | `CAnimation` | `animationName` | |
@@ -179,6 +247,19 @@ Every component object needs a `type`. Required and optional fields:
 | `CCamera` | | `position`, `zoom` |
 | `CGravity` | | `acceleration` |
 | `CInput` | | |
+
+`position`, `velocity`, `scale` and `size` are `{ "x": <number>, "y": <number> }`.
+Property names are case-insensitive, and `//` comments are allowed.
+
+The loader is strict: an unknown component type, an unknown property or a value of the
+wrong kind is rejected with a message naming what was allowed, and suggesting the nearest
+known name when it looks like a typo. Nothing is silently ignored — a level that loads is
+a level the engine understood in full.
+
+`GameEngine.Core/levels/level.schema.json` is the published JSON Schema. It is generated
+from `ComponentSchemas`, the same table the loader validates against, and a test fails if
+the two ever disagree. Point a level at it with `$schema` and an editor will complete and
+check it as you type.
 
 The loader applies no game-specific behaviour. To react to a particular tag —
 wiring an entity called `player` to movement keys, say — register a handler:
@@ -206,6 +287,13 @@ so the harness exercises the same path the runners do.
   platform but no `SDL2_mixer`, and the only mixer binary in the tree is a
   Windows x64 DLL. Elsewhere `AudioSystem.TryCreate()` returns null and the game
   runs silently.
-- `Font` entries in `assets.txt` are parsed but ignored.
+- `Font` entries in the old `assets.txt` format are parsed but ignored; `assets.json` has
+  no fonts section at all.
 - Animations support a single horizontal strip only — no grids, no per-frame
   timing, no non-looping playback.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). Dependency and redistributed-binary notices are in
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md). Demo art and audio are CC0
+(`GameEngine.Demo/assets/LICENSE`).

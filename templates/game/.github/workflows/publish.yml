@@ -1,0 +1,107 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-latest
+            rid: osx-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Test
+        run: dotnet test tests/GameTemplate.Tests -c Release
+      - name: Publish
+        run: dotnet publish src/GameTemplate.Desktop -c Release -r ${{ matrix.rid }} --self-contained -o artifacts/${{ matrix.rid }}
+      - name: Package
+        shell: bash
+        run: |
+          cd artifacts
+          tar -czf ../GameTemplate-${{ matrix.rid }}.tar.gz ${{ matrix.rid }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameTemplate-${{ matrix.rid }}
+          path: GameTemplate-${{ matrix.rid }}.tar.gz
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet workload install wasm-tools
+      - name: Publish
+        run: dotnet publish src/GameTemplate.Browser -c Release -o artifacts/browser
+      - name: Package
+        run: |
+          cd artifacts/browser/wwwroot
+          zip -r ../../../GameTemplate-browser.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameTemplate-browser
+          path: GameTemplate-browser.zip
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+      - uses: android-actions/setup-android@v3
+      - run: dotnet workload install android
+      - name: Publish
+        run: dotnet publish src/GameTemplate.Android -c Release -f net10.0-android -o artifacts/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GameTemplate-android
+          path: artifacts/android/*Signed.apk
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet workload install ios
+      # An unsigned simulator build; signing an .ipa needs your own Apple certificates.
+      - name: Build
+        run: dotnet build src/GameTemplate.iOS -c Release -f net10.0-ios
+
+  release:
+    needs: [desktop, browser, android]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

@@ -45,6 +45,22 @@ namespace GameEngine.Editor.Services
             return null;
         }
 
+        public async Task<string?> PromptForFolderPath()
+        {
+            var topLevel = _userControl is null ? _window : TopLevel.GetTopLevel(_userControl);
+            if (topLevel == null)
+                return null;
+
+            var result = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Where should the new game go?",
+                AllowMultiple = false,
+                SuggestedStartLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(Directory.GetCurrentDirectory())
+            });
+
+            return result.Count > 0 ? result[0].Path.LocalPath : null;
+        }
+
         public async Task<string?> PromptForProjectPath()
         {
             var topLevel = _userControl is null ? _window : TopLevel.GetTopLevel(_userControl);

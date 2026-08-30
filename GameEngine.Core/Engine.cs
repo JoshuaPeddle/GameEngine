@@ -8,7 +8,15 @@ namespace GameEngine.Core
 {
     public class Engine : IDisposable
     {
-        public Action? InvalidateAction { get; }
+        private Action? _invalidateAction;
+
+        // Settable so a host can attach itself to an engine it did not construct, which is what
+        // embedding an already-running engine into a view requires.
+        public Action? InvalidateAction
+        {
+            get => Volatile.Read(ref _invalidateAction);
+            set => Volatile.Write(ref _invalidateAction, value);
+        }
 
         public SystemContainer Systems;
 

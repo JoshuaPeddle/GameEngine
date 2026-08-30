@@ -1,0 +1,10 @@
+<Project>
+  <!-- SDL2_mixer ships only as a Windows x64 binary; see the audio note in the README. -->
+  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
+    <None Include="$(MSBuildThisFileDirectory)native\SDL2_mixer.dll">
+      <Link>SDL2_mixer.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
+</Project>

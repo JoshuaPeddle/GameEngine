@@ -18,7 +18,7 @@
   <ItemGroup>
     <AndroidAsset Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets\game\%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
 	<AndroidAsset Include="../../GameEngine.Demo/levels/**/*.*" Link="Assets\game\levels\%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
-	<AndroidAsset Include="../../GameEngine.Demo/assets.txt" Link="Assets\assets.txt" />
+	<AndroidAsset Include="../../GameEngine.Demo/assets.json" Link="Assets\assets.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Android" />

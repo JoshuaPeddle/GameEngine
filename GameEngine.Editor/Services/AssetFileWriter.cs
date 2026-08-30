@@ -1,4 +1,7 @@
-﻿using GameEngine.Editor.Models;
+﻿using GameEngine.Core;
+using GameEngine.Editor.Models;
+using Animation = GameEngine.Editor.Models.Animation;
+using Sound = GameEngine.Editor.Models.Sound;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -10,33 +13,42 @@ namespace GameEngine.Editor.Services
     {
         public static async Task WriteAssetFilesAsync(string projectFolder, AssetCollection assetCollection)
         {
-            StringBuilder sb = new();
+            var manifest = new AssetManifest { Schema = ExistingSchema(projectFolder) };
 
             foreach (Texture texture in assetCollection.Textures)
-            {
-                string textureRelativePath = GetTextureAssetFilePath(texture);
-                string textureLine = $"Texture {texture.Name} {textureRelativePath}";
-                sb.AppendLine(textureLine);
-            }
+                manifest.Textures.Add(new TextureEntry(texture.Name, GetTextureAssetFilePath(texture)));
 
             foreach (Animation animation in assetCollection.Animations)
-            {
-                string textureName = animation.Texture.Name;
-                string animationLine = $"Animation {animation.Name} {textureName} {animation.FrameCount} {animation.Delay}";
-                sb.AppendLine(animationLine);
-            }
+                manifest.Animations.Add(new AnimationEntry(
+                    animation.Name, animation.Texture.Name, animation.FrameCount, animation.Delay));
 
             foreach (Sound sound in assetCollection.Sounds)
             {
                 string soundRelativePath = Path.Combine("sounds", Path.GetFileName(sound.Path)).Replace("\\", "/");
-                string soundLine = $"Sound {sound.Name} {soundRelativePath}";
-                sb.AppendLine(soundLine);
+                manifest.Sounds.Add(new SoundEntry(sound.Name, soundRelativePath));
             }
 
-            string assetFilePath = Path.Combine(projectFolder, "assets.txt");
-            await File.WriteAllTextAsync(assetFilePath, sb.ToString());
+            string assetFilePath = Path.Combine(projectFolder, AssetManifest.DefaultFileName);
+            await File.WriteAllTextAsync(assetFilePath, manifest.ToJson());
 
             await CopyTexturesToAssetsFolderAsync(projectFolder, assetCollection.Textures);
+        }
+
+        // Rewriting the manifest must not drop the "$schema" pointer the project was set up with.
+        private static string? ExistingSchema(string projectFolder)
+        {
+            var path = Path.Combine(projectFolder, AssetManifest.DefaultFileName);
+            if (!File.Exists(path))
+                return null;
+
+            try
+            {
+                return AssetManifest.ParseJson(File.ReadAllText(path)).Schema;
+            }
+            catch (System.Exception)
+            {
+                return null;
+            }
         }
 
         private static string GetTextureAssetFilePath(Texture texture)
