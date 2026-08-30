@@ -25,6 +25,10 @@ namespace GameEngine.Editor.Magic
 
         public IReadOnlyList<SceneInfo> GetScenes() => _scenes;
 
+        public IReadOnlyList<CompileDiagnostic> LastDiagnostics => _compiler.LastDiagnostics;
+
+        public IReadOnlyList<string> WorkspaceFailures => _compiler.WorkspaceFailures;
+
         public async Task RefreshAsync(CancellationToken ct = default)
         {
             _scenes = await _compiler.DiscoverScenesAsync(ct);

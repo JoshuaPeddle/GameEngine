@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:GameEngine.Editor.ViewModels"
              xmlns:local="clr-namespace:GameEngine.Editor.Controls"
              xmlns:conv="clr-namespace:GameEngine.Editor.Converters"
+             xmlns:magic="clr-namespace:GameEngine.Editor.Magic"
              mc:Ignorable="d"
              x:Class="GameEngine.Editor.Controls.LevelEditor"
              x:DataType="vm:LevelEditorViewModel"
@@ -15,7 +16,7 @@
 
   <TabControl>
     <TabItem Header="Runtime">
-      <Grid RowDefinitions="Auto,*" Margin="8">
+      <Grid RowDefinitions="Auto,Auto,*" Margin="8">
         <Border Grid.Row="0" Background="#1E1E1E" Padding="4">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Scene:" VerticalAlignment="Center"/>
@@ -36,8 +37,32 @@
           </StackPanel>
         </Border>
 
+        <Border Grid.Row="1"
+                Background="#2A1F1F"
+                Padding="6"
+                Margin="0,4,0,0"
+                IsVisible="{Binding SceneCatalog.HasDiagnostics}">
+          <ScrollViewer MaxHeight="160" HorizontalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding SceneCatalog.Diagnostics}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="magic:CompileDiagnostic">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding Severity}"
+                               Width="60"
+                               FontFamily="monospace"
+                               Foreground="{Binding IsError, Converter={x:Static conv:SeverityBrushConverter.Instance}}"/>
+                    <TextBlock Text="{Binding Location}" Width="200" FontFamily="monospace" Foreground="#C8C8C8"/>
+                    <TextBlock Text="{Binding Id}" Width="70" FontFamily="monospace" Foreground="#C8C8C8"/>
+                    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Foreground="#E6E6E6"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Border>
+
         <Grid x:Name="WorkspaceGrid"
-              Grid.Row="1"
+              Grid.Row="2"
               ColumnDefinitions="*,Auto,300"
               RowDefinitions="*">
           <Border Grid.Column="0"
