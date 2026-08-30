@@ -1,9 +1,8 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Avalonia.Platform;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 using GameEngine.Core;
@@ -17,12 +16,28 @@ using System.Threading;
 
 namespace GameEngine.Runner.Avalonia
 {
+    // Hosts one engine. Everything it needs can be handed to it — an engine, a scene, an asset
+    // source — so several views can run side by side in one process. When nothing is supplied it
+    // falls back to App's statics, which is what the single-game app template wants.
     public class GameView : Control
     {
-        private static Engine? _current;
-        public static Engine? Current => _current;
+        public static readonly StyledProperty<Engine?> EngineProperty =
+            AvaloniaProperty.Register<GameView, Engine?>(nameof(Engine));
 
-        private Engine _gameEngine;
+        public static readonly StyledProperty<Scene?> SceneProperty =
+            AvaloniaProperty.Register<GameView, Scene?>(nameof(Scene));
+
+        public static readonly StyledProperty<IAssetSource?> AssetSourceProperty =
+            AvaloniaProperty.Register<GameView, IAssetSource?>(nameof(AssetSource));
+
+        public static readonly StyledProperty<bool> AudioEnabledProperty =
+            AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: PlatformSupportsAudio());
+
+        // The engine of the most recently attached view. A convenience for hosts that have no
+        // reference to the control — the browser head's JSExport interop, for one.
+        public static Engine? Current { get; private set; }
+
+        private Engine? _gameEngine;
 
         private static readonly Dictionary<Key, GeKeys> KeyMap = BuildKeyMap();
         private readonly HashSet<GeKeys> _heldKeys = new();
@@ -34,24 +49,12 @@ namespace GameEngine.Runner.Avalonia
         private int _invalidationsPending = 0;
         private int _firstPresentReported;
         private bool _started;
+        private bool _ownsEngine;
 
         public GameView()
         {
             IsHitTestVisible = true;
             Focusable = true;
-
-            var assetSource = App.AssetSource ?? new FileAssetSource();
-
-            if (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser())
-                _gameEngine = new Engine(QueueInvalidate, audioEnabled: false, assetSource);
-            else
-                _gameEngine = new Engine(QueueInvalidate, assetSource: assetSource);
-
-            _current = _gameEngine;
-
-            var startupScene = App.StartupScene?.Invoke();
-            if (startupScene != null)
-                _gameEngine.ChangeScene(startupScene);
 
             LostFocus += OnLostFocus;
 
@@ -61,18 +64,81 @@ namespace GameEngine.Runner.Avalonia
 
             Loaded += OnSizeChanged;
             SizeChanged += OnSizeChanged;
-
-            AttachedToVisualTree += (_, __) =>
-            {
-                Focus();
-
-                if (_started) return;
-                _started = true;
-
-                _gameEngine.TargetFrameRate = OperatingSystem.IsBrowser() ? 60 : 240;
-                _gameEngine.Start();
-            };
         }
+
+        public Engine? Engine
+        {
+            get => GetValue(EngineProperty);
+            set => SetValue(EngineProperty, value);
+        }
+
+        public Scene? Scene
+        {
+            get => GetValue(SceneProperty);
+            set => SetValue(SceneProperty, value);
+        }
+
+        public IAssetSource? AssetSource
+        {
+            get => GetValue(AssetSourceProperty);
+            set => SetValue(AssetSourceProperty, value);
+        }
+
+        public bool AudioEnabled
+        {
+            get => GetValue(AudioEnabledProperty);
+            set => SetValue(AudioEnabledProperty, value);
+        }
+
+        // Called instead of Scene when the host wants a fresh scene per view.
+        public Func<Scene>? SceneFactory { get; set; }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+
+            var engine = EnsureEngine();
+            Focus();
+
+            if (_started) return;
+            _started = true;
+
+            if (_ownsEngine)
+            {
+                engine.TargetFrameRate = OperatingSystem.IsBrowser() ? 60 : 240;
+                engine.Start();
+            }
+        }
+
+        private Engine EnsureEngine()
+        {
+            if (_gameEngine != null)
+                return _gameEngine;
+
+            var supplied = Engine;
+            if (supplied != null)
+            {
+                supplied.InvalidateAction = QueueInvalidate;
+                _gameEngine = supplied;
+                _ownsEngine = false;
+            }
+            else
+            {
+                var assetSource = AssetSource ?? App.AssetSource ?? new FileAssetSource();
+                _gameEngine = new Engine(QueueInvalidate, AudioEnabled, assetSource);
+                _ownsEngine = true;
+
+                var scene = Scene ?? SceneFactory?.Invoke() ?? App.StartupScene?.Invoke();
+                if (scene != null)
+                    _gameEngine.ChangeScene(scene);
+            }
+
+            Current = _gameEngine;
+            return _gameEngine;
+        }
+
+        private static bool PlatformSupportsAudio() =>
+            !OperatingSystem.IsAndroid() && !OperatingSystem.IsBrowser();
 
         private void QueueInvalidate()
         {
@@ -89,12 +155,14 @@ namespace GameEngine.Runner.Avalonia
         private async Task ReleaseKeyAfterTapAsync(GeKeys key)
         {
             await Task.Delay(SyntheticKeyHoldMs);
-            _gameEngine.Systems.Get<InputSystem>().KeyUp(key);
+            Input?.KeyUp(key);
         }
+
+        private InputSystem? Input => _gameEngine?.Systems.Get<InputSystem>();
 
         private void OnSizeChanged(object? sender, EventArgs args)
         {
-            _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
+            _gameEngine?.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
         }
 
         private static Dictionary<Key, GeKeys> BuildKeyMap()
@@ -115,7 +183,7 @@ namespace GameEngine.Runner.Avalonia
             if (KeyMap.TryGetValue(e.Key, out var key))
             {
                 _heldKeys.Add(key);
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(key);
+                Input?.KeyDown(key);
                 e.Handled = true;
             }
 
@@ -127,7 +195,7 @@ namespace GameEngine.Runner.Avalonia
             if (KeyMap.TryGetValue(e.Key, out var key))
             {
                 _heldKeys.Remove(key);
-                _gameEngine.Systems.Get<InputSystem>().KeyUp(key);
+                Input?.KeyUp(key);
                 e.Handled = true;
             }
 
@@ -136,10 +204,10 @@ namespace GameEngine.Runner.Avalonia
 
         private void OnLostFocus(object? sender, RoutedEventArgs e)
         {
-            var input = _gameEngine.Systems.Get<InputSystem>();
+            var input = Input;
 
             foreach (var key in _heldKeys)
-                input.KeyUp(key);
+                input?.KeyUp(key);
 
             _heldKeys.Clear();
         }
@@ -150,7 +218,7 @@ namespace GameEngine.Runner.Avalonia
 
             var point = e.GetPosition(this);
             _pointerStartPosition = point;
-            _gameEngine.Systems.Get<InputSystem>().PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
+            Input?.PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
         }
 
         private void OnPointerMoved(object? sender, PointerEventArgs e)
@@ -158,7 +226,7 @@ namespace GameEngine.Runner.Avalonia
             if (_pointerStartPosition.HasValue)
             {
                 var point = e.GetPosition(this);
-                _gameEngine.Systems.Get<InputSystem>().PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
+                Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
             }
         }
 
@@ -167,7 +235,7 @@ namespace GameEngine.Runner.Avalonia
             if (_pointerStartPosition.HasValue)
             {
                 var endPosition = e.GetPosition(this);
-                _gameEngine.Systems.Get<InputSystem>().PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
+                Input?.PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
 
                 var startPosition = _pointerStartPosition.Value;
 
@@ -176,7 +244,7 @@ namespace GameEngine.Runner.Avalonia
                     new Vec2(endPosition.X, endPosition.Y),
                     SwipeThreshold);
 
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(key);
+                Input?.KeyDown(key);
                 _ = ReleaseKeyAfterTapAsync(key);
 
                 _pointerStartPosition = null;
@@ -185,6 +253,9 @@ namespace GameEngine.Runner.Avalonia
 
         public override void Render(DrawingContext context)
         {
+            if (_gameEngine == null)
+                return;
+
             context.Custom(new CustomDrawOp(
                 new Rect(0, 0, Bounds.Width, Bounds.Height),
                 _gameEngine,
@@ -193,7 +264,7 @@ namespace GameEngine.Runner.Avalonia
 
         private void ReportFirstPresent()
         {
-            _gameEngine.NotifyFirstPresent();
+            _gameEngine?.NotifyFirstPresent();
 
             if (Interlocked.Exchange(ref _firstPresentReported, 1) == 0)
                 App.FirstFramePresented?.Invoke();
