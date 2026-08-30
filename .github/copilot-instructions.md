@@ -19,7 +19,7 @@ Architecture (essentials)
 - Engine: Initializes systems in order: Input, Movement, Physics, Animation, Render, Audio (optional). Update loop supplies delta in seconds. `Stop()` ends and joins the desktop loop; dispose engines that own a loop.
 - Scene: abstract; Initialize(em, input, optional audio, ResetScene). One `Update` overload receives the system container and delta seconds. VirtualWidth/VirtualHeight control scaling.
 - Rendering: RenderSystem.DrawEntitiesToCanvas(SKCanvas). Honors RenderOptions (VirtualWidth/Height, ScalingStrategy, FPS, debug flags) and optional CCamera.
-- Assets: Assets reads assets.txt; supports Texture, Animation, Sound. Reads go through an IAssetSource injected into Engine (FileAssetSource by default, DelegateAssetSource for packaged platforms); scenes reach it via Scene.AssetSource.
+- Assets: Assets reads assets.json (assets.txt, the old line format, is still read); declares textures, animations and sounds. Reads go through an IAssetSource injected into Engine (FileAssetSource by default, DelegateAssetSource for packaged platforms); scenes reach it via Scene.AssetSource.
 - Physics: PhysicsSystem handles gravity and AABB collisions (CBoundingBox, CTransform, CGravity). Emits CollisionEvents.
 
 Key usage patterns
