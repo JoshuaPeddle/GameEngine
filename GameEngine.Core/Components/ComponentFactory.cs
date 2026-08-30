@@ -1,16 +1,16 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace GameEngine.Core.Components
 {
     public class ComponentFactory
     {
-        private readonly Assets assets;
-        private readonly Dictionary<string, Func<JsonElement, Component>> componentCreators;
+        private readonly Assets? assets;
+        private readonly Dictionary<string, Func<ComponentReader, Component>> componentCreators;
 
         public ComponentFactory(Assets assets)
         {
             this.assets = assets;
-            componentCreators = new Dictionary<string, Func<JsonElement, Component>>
+            componentCreators = new Dictionary<string, Func<ComponentReader, Component>>(StringComparer.Ordinal)
                 {
                     { "CTransform", CreateCTransform },
                     { "CAnimation", CreateCAnimation },
@@ -25,96 +25,69 @@ namespace GameEngine.Core.Components
 
         public Component CreateComponent(string typeName, JsonElement data)
         {
-            if (componentCreators.TryGetValue(typeName, out var creator))
-            {
-                return creator(data);
-            }
-            throw new Exception($"Unknown component type: {typeName}");
+            var schema = ComponentSchemas.Find(typeName);
+            if (schema == null || !componentCreators.TryGetValue(typeName, out var creator))
+                throw new LevelSchemaException(UnknownTypeMessage(typeName));
+
+            var reader = new ComponentReader(schema, data);
+            reader.Validate();
+            return creator(reader);
         }
 
-        private Component CreateCTransform(JsonElement data)
+        private static string UnknownTypeMessage(string typeName)
         {
-            var position = data.GetProperty("position");
-            double x = position.GetProperty("x").GetDouble();
-            double y = position.GetProperty("y").GetDouble();
+            var message = $"Unknown component type '{typeName}'. "
+                + $"Known types: {string.Join(", ", ComponentSchemas.KnownTypes)}.";
 
-            var transform = new CTransform(new Vec2(x, y));
+            var suggestion = Suggest.Closest(typeName, ComponentSchemas.KnownTypes);
+            return suggestion == null ? message : $"{message} Did you mean '{suggestion}'?";
+        }
 
-            if (data.TryGetProperty("rotation", out var rotation))
-                transform.Rotation = rotation.GetDouble();
-
-            if (data.TryGetProperty("layer", out var layer))
-                transform.Layer = layer.GetInt32();
-
-            if (data.TryGetProperty("scale", out var scale))
-                transform.Scale = new Vec2(
-                    scale.GetProperty("x").GetDouble(),
-                    scale.GetProperty("y").GetDouble());
+        private static Component CreateCTransform(ComponentReader data)
+        {
+            var transform = new CTransform(data.Vector("position"))
+            {
+                Velocity = data.Vector("velocity", new Vec2(0, 0)),
+                Scale = data.Vector("scale", new Vec2(1, 1)),
+                Rotation = data.Number("rotation"),
+                Layer = data.Integer("layer")
+            };
 
             return transform;
         }
 
-        private Component CreateCText(JsonElement data)
-        {
-            string text = data.TryGetProperty("text", out var value) ? value.GetString() ?? string.Empty : string.Empty;
-            int size = data.TryGetProperty("size", out var sizeValue) ? sizeValue.GetInt32() : 24;
+        private static Component CreateCText(ComponentReader data) =>
+            new CText(data.Text("text"), data.Integer("size", 24));
 
-            return new CText(text, size);
+        private static Component CreateCCamera(ComponentReader data) =>
+            new CCamera
+            {
+                Position = data.Vector("position", new Vec2(0, 0)),
+                Zoom = (float)data.Number("zoom", 1.0)
+            };
+
+        private static Component CreateCGravity(ComponentReader data) =>
+            new CGravity { Acceleration = data.Number("acceleration", 200) };
+
+        private Component CreateCAnimation(ComponentReader data)
+        {
+            var animationName = data.Text("animationName");
+            if (assets == null)
+                throw new LevelSchemaException(
+                    $"Component 'CAnimation' needs animation '{animationName}', but this loader was built without assets.");
+
+            return new CAnimation(assets.GetAnimation(animationName));
         }
 
-        private Component CreateCCamera(JsonElement data)
-        {
-            var camera = new CCamera();
+        private static Component CreateCBoundingBox(ComponentReader data) =>
+            new CBoundingBox(
+                data.Vector("size"),
+                data.Boolean("blockVision"),
+                data.Boolean("blockMovement"));
 
-            if (data.TryGetProperty("position", out var position))
-                camera.Position = new Vec2(
-                    position.GetProperty("x").GetDouble(),
-                    position.GetProperty("y").GetDouble());
+        private static Component CreateCInput(ComponentReader data) => new CInput();
 
-            if (data.TryGetProperty("zoom", out var zoom))
-                camera.Zoom = (float)zoom.GetDouble();
-
-            return camera;
-        }
-
-        private Component CreateCGravity(JsonElement data)
-        {
-            var gravity = new CGravity();
-
-            if (data.TryGetProperty("acceleration", out var acceleration))
-                gravity.Acceleration = acceleration.GetDouble();
-
-            return gravity;
-        }
-
-        private Component CreateCAnimation(JsonElement data)
-        {
-            string animationName = data.GetProperty("animationName").GetString()!;
-            var animation = assets.GetAnimation(animationName);
-            return new CAnimation(animation);
-        }
-
-        private Component CreateCBoundingBox(JsonElement data)
-        {
-            var size = data.GetProperty("size");
-            double width = size.GetProperty("x").GetDouble();
-            double height = size.GetProperty("y").GetDouble();
-            bool blockVision = data.GetProperty("blockVision").GetBoolean();
-            bool blockMovement = data.GetProperty("blockMovement").GetBoolean();
-            return new CBoundingBox(new Vec2(width, height), blockVision, blockMovement);
-        }
-
-        private Component CreateCInput(JsonElement data)
-        {
-            return new CInput();
-        }
-
-        private Component CreateCMovement(JsonElement element)
-        {
-            var speed = element.GetProperty("speed").GetDouble();
-            var maxSpeed = element.GetProperty("maxSpeed").GetDouble();
-            return new CMovement(speed, maxSpeed);
-
-        }
+        private static Component CreateCMovement(ComponentReader data) =>
+            new CMovement(data.Number("speed"), data.Number("maxSpeed"));
     }
 }

@@ -147,13 +147,15 @@
                       <!-- CTransform editor -->
                       <StackPanel Spacing="4" IsVisible="{Binding IsTransform}">
                         <TextBlock Text="Transform" FontWeight="Bold"/>
-                        <UniformGrid Columns="2" Rows="3" Margin="0,2,0,0">
+                        <UniformGrid Columns="2" Rows="4" Margin="0,2,0,0">
                           <TextBlock Text="Pos X"/>
                           <TextBox Text="{Binding PosX, Mode=TwoWay}"/>
                           <TextBlock Text="Pos Y"/>
                           <TextBox Text="{Binding PosY, Mode=TwoWay}"/>
                           <TextBlock Text="Rotation"/>
                           <TextBox Text="{Binding Rotation, Mode=TwoWay}"/>
+                          <TextBlock Text="Layer"/>
+                          <TextBox Text="{Binding Layer, Mode=TwoWay}"/>
                         </UniformGrid>
                         <UniformGrid Columns="2" Rows="2" Margin="0,2,0,0">
                           <TextBlock Text="Vel X"/>

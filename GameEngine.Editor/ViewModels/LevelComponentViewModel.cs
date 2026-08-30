@@ -75,6 +75,9 @@ namespace GameEngine.Editor.ViewModels
         private double _rotation;
         public double Rotation { get => _rotation; set { this.RaiseAndSetIfChanged(ref _rotation, value); UpdateRawJson(); } }
 
+        private int _layer;
+        public int Layer { get => _layer; set { this.RaiseAndSetIfChanged(ref _layer, value); UpdateRawJson(); } }
+
         private string _animationName = string.Empty;
         public string AnimationName { get => _animationName; set { this.RaiseAndSetIfChanged(ref _animationName, value); UpdateRawJson(); } }
 
@@ -111,7 +114,7 @@ namespace GameEngine.Editor.ViewModels
                 switch (type)
                 {
                     case "CTransform":
-                        _posX = 0; _posY = 0; _velX = 0; _velY = 0; _scaleX = 1; _scaleY = 1; _rotation = 0;
+                        _posX = 0; _posY = 0; _velX = 0; _velY = 0; _scaleX = 1; _scaleY = 1; _rotation = 0; _layer = 0;
                         break;
                     case "CAnimation":
                         _animationName = "Ball";
@@ -133,6 +136,7 @@ namespace GameEngine.Editor.ViewModels
                 this.RaisePropertyChanged(nameof(ScaleX));
                 this.RaisePropertyChanged(nameof(ScaleY));
                 this.RaisePropertyChanged(nameof(Rotation));
+                this.RaisePropertyChanged(nameof(Layer));
                 this.RaisePropertyChanged(nameof(AnimationName));
                 this.RaisePropertyChanged(nameof(Width));
                 this.RaisePropertyChanged(nameof(Height));
@@ -181,6 +185,7 @@ namespace GameEngine.Editor.ViewModels
                             writer.WriteEndObject();
 
                             writer.WriteNumber("rotation", Rotation);
+                            writer.WriteNumber("layer", Layer);
                             break;
                         case "CAnimation":
                             writer.WriteString("animationName", AnimationName);
@@ -248,6 +253,7 @@ namespace GameEngine.Editor.ViewModels
                             ScaleY = scale.TryGetProperty("y", out var sy) ? sy.GetDouble() : 1;
                         }
                         Rotation = root.TryGetProperty("rotation", out var rot) ? rot.GetDouble() : 0;
+                        Layer = root.TryGetProperty("layer", out var lay) ? lay.GetInt32() : 0;
                         break;
                     case "CAnimation":
                         AnimationName = root.TryGetProperty("animationName", out var anim) ? anim.GetString() ?? string.Empty : string.Empty;

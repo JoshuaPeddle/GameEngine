@@ -144,6 +144,9 @@ public class LevelComponentViewModelTests
         component.PosY = 200;
         component.Rotation = 30;
         component.ScaleX = 2;
+        component.VelX = -15;
+        component.VelY = 7;
+        component.Layer = 3;
 
         using var document = JsonDocument.Parse(component.RawJson);
         var transform = (CTransform)new ComponentFactory(assets: null!)
@@ -155,6 +158,36 @@ public class LevelComponentViewModelTests
             Assert.That(transform.Position.Y, Is.EqualTo(200));
             Assert.That(transform.Rotation, Is.EqualTo(30));
             Assert.That(transform.Scale.X, Is.EqualTo(2));
+            Assert.That(transform.Velocity.X, Is.EqualTo(-15));
+            Assert.That(transform.Velocity.Y, Is.EqualTo(7));
+            Assert.That(transform.Layer, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void EditingOneFieldKeepsTheOthers()
+    {
+        var component = ComponentOfType("CTransform");
+        component.RawJson = """
+        {
+          "type": "CTransform",
+          "position": { "x": 1, "y": 2 },
+          "velocity": { "x": 3, "y": 4 },
+          "layer": 5
+        }
+        """;
+
+        component.PosX = 9;
+
+        using var document = JsonDocument.Parse(component.RawJson);
+        var transform = (CTransform)new ComponentFactory(assets: null!)
+            .CreateComponent("CTransform", document.RootElement.Clone());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(transform.Position.X, Is.EqualTo(9));
+            Assert.That(transform.Velocity.X, Is.EqualTo(3));
+            Assert.That(transform.Layer, Is.EqualTo(5), "editing the position must not drop the layer");
         });
     }
 }
