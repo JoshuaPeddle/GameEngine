@@ -171,48 +171,96 @@ namespace GameEngine.Editor.ViewModels
             await Task.CompletedTask;
         }
 
+        // The document on disk and the document in memory are both replaced only once a
+        // complete, validated candidate has been written, so a rejected save costs the author
+        // neither their file nor their unsaved edits.
         private void SaveLevelFile()
         {
             if (_levelFile == null || LevelFilePath == null) return;
+
+            LevelFile candidate;
             try
             {
-                _levelFile.Entities.Clear();
-                foreach (var evm in LevelEntities)
-                {
-                    var entityData = new EntityData { Tag = evm.Tag };
-                    foreach (var cvm in evm.Components)
-                    {
-                        try
-                        {
-                            using var doc = JsonDocument.Parse(cvm.RawJson);
-                            var root = doc.RootElement;
-                            string? type = cvm.Type;
-                            if (root.TryGetProperty("type", out var typeProp))
-                            {
-                                type = typeProp.GetString();
-                            }
-                            if (string.IsNullOrWhiteSpace(type))
-                                continue;
+                candidate = BuildCandidateDocument(_levelFile);
+                candidate.Validate();
+            }
+            catch (Exception ex)
+            {
+                _status.Message = $"Level not saved: {ex.Message}";
+                return;
+            }
 
-                            entityData.Components.Add(new ComponentData
-                            {
-                                Type = type!,
-                                Data = root.Clone()
-                            });
-                        }
-                        catch
-                        {
-                            // ignore malformed component json
-                        }
-                    }
-                    _levelFile.Entities.Add(entityData);
-                }
-                _levelFile.SaveToFile(LevelFilePath);
-                _status.Message = "Level saved.";
+            try
+            {
+                candidate.SaveToFile(LevelFilePath);
             }
             catch (Exception ex)
             {
                 _status.Message = $"Failed to save level: {ex.Message}";
+                return;
+            }
+
+            _levelFile = candidate;
+            _status.Message = "Level saved.";
+        }
+
+        private LevelFile BuildCandidateDocument(LevelFile current)
+        {
+            var candidate = new LevelFile
+            {
+                Schema = current.Schema,
+                Metadata = current.Metadata
+            };
+
+            for (var entityIndex = 0; entityIndex < LevelEntities.Count; entityIndex++)
+            {
+                var evm = LevelEntities[entityIndex];
+                var entityData = new EntityData { Tag = evm.Tag };
+
+                for (var componentIndex = 0; componentIndex < evm.Components.Count; componentIndex++)
+                {
+                    entityData.Components.Add(
+                        ReadComponent(evm.Components[componentIndex], evm.Tag, entityIndex, componentIndex));
+                }
+
+                candidate.Entities.Add(entityData);
+            }
+
+            return candidate;
+        }
+
+        private static ComponentData ReadComponent(
+            LevelComponentViewModel component, string entityTag, int entityIndex, int componentIndex)
+        {
+            var location = LevelFile.Where(entityTag, entityIndex, componentIndex);
+
+            JsonDocument document;
+            try
+            {
+                document = JsonDocument.Parse(component.RawJson);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidDataException($"{location} is not valid JSON: {ex.Message}", ex);
+            }
+
+            using (document)
+            {
+                var root = document.RootElement;
+                var type = component.Type;
+
+                if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("type", out var typeProperty))
+                {
+                    if (typeProperty.ValueKind != JsonValueKind.String)
+                        throw new InvalidDataException($"{location} has a non-string \"type\".");
+
+                    type = typeProperty.GetString();
+                }
+
+                if (string.IsNullOrWhiteSpace(type))
+                    throw new InvalidDataException($"{location} has no component type.");
+
+                return new ComponentData { Type = type, Data = root.Clone() };
             }
         }
 

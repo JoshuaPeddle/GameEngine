@@ -14,5 +14,5 @@ namespace GameEngine.Core
 
     public class FailedToLoadSoundException(string message) : Exception(message) { }
 
-    public class LevelSchemaException(string message) : Exception(message) { }
+    public class LevelSchemaException(string message, Exception? inner = null) : Exception(message, inner) { }
 }

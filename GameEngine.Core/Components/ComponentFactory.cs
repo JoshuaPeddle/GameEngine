@@ -27,20 +27,11 @@ namespace GameEngine.Core.Components
         {
             var schema = ComponentSchemas.Find(typeName);
             if (schema == null || !componentCreators.TryGetValue(typeName, out var creator))
-                throw new LevelSchemaException(UnknownTypeMessage(typeName));
+                throw new LevelSchemaException(ComponentValidator.UnknownTypeMessage(typeName));
 
             var reader = new ComponentReader(schema, data);
             reader.Validate();
             return creator(reader);
-        }
-
-        private static string UnknownTypeMessage(string typeName)
-        {
-            var message = $"Unknown component type '{typeName}'. "
-                + $"Known types: {string.Join(", ", ComponentSchemas.KnownTypes)}.";
-
-            var suggestion = Suggest.Closest(typeName, ComponentSchemas.KnownTypes);
-            return suggestion == null ? message : $"{message} Did you mean '{suggestion}'?";
         }
 
         private static Component CreateCTransform(ComponentReader data)

@@ -139,10 +139,33 @@ namespace GameEngine.Core.Utils
             return levelFile;
         }
 
+        // Serialising and validating before the destination is touched, then swapping a fully
+        // written sibling into place, is what keeps a rejected document from costing an author
+        // the file they already had.
         public void SaveToFile(string filePath)
         {
+            Validate();
             var json = ToJson();
-            File.WriteAllText(filePath, json);
+
+            var fullPath = Path.GetFullPath(filePath);
+            var directory = Path.GetDirectoryName(fullPath)
+                ?? throw new InvalidDataException($"'{filePath}' has no containing directory.");
+            Directory.CreateDirectory(directory);
+
+            var temporaryPath = Path.Combine(
+                directory,
+                $"{Path.GetFileName(fullPath)}.{Guid.NewGuid():n}.tmp");
+
+            try
+            {
+                File.WriteAllText(temporaryPath, json);
+                File.Move(temporaryPath, fullPath, overwrite: true);
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath))
+                    File.Delete(temporaryPath);
+            }
         }
 
         public string ToJson()
@@ -199,21 +222,38 @@ namespace GameEngine.Core.Utils
             return Encoding.UTF8.GetString(ms.ToArray());
         }
 
-        // Validation methods
+        // The same vocabulary the loader enforces, applied to every component in the document.
+        // Nothing is skipped: a component this rejects would have failed to load.
         public void Validate()
         {
-            foreach (var entity in Entities)
+            for (var entityIndex = 0; entityIndex < Entities.Count; entityIndex++)
             {
+                var entity = Entities[entityIndex];
                 if (string.IsNullOrEmpty(entity.Tag))
-                    throw new InvalidDataException("All entities must have a tag");
+                    throw new InvalidDataException($"Entity #{entityIndex + 1} has no tag. All entities must have a tag.");
 
-                foreach (var component in entity.Components)
+                for (var componentIndex = 0; componentIndex < entity.Components.Count; componentIndex++)
                 {
+                    var component = entity.Components[componentIndex];
+                    var location = Where(entity.Tag, entityIndex, componentIndex);
+
                     if (string.IsNullOrEmpty(component.Type))
-                        throw new InvalidDataException($"All components in entity '{entity.Tag}' must have a type");
+                        throw new InvalidDataException($"{location} has no type.");
+
+                    try
+                    {
+                        ComponentValidator.Validate(component.Type, component.Data);
+                    }
+                    catch (LevelSchemaException ex)
+                    {
+                        throw new LevelSchemaException($"{location}: {ex.Message}", ex);
+                    }
                 }
             }
         }
+
+        public static string Where(string entityTag, int entityIndex, int componentIndex) =>
+            $"Entity '{entityTag}' (#{entityIndex + 1}), component #{componentIndex + 1}";
     }
 
     // Handles the instantiation of entities from level data
