@@ -63,27 +63,48 @@
         }
 
         [Test]
-        public void RemovingAction_UnbindsStatesAndCallbacks()
+        public void RemovingAKeyMapping_StopsThatKeyDrivingItsAction()
         {
             // Arrange
             var inputManager = new InputManager();
             inputManager.AddAction(GeKeys.S, "MoveBackward");
 
-            bool callbackInvoked = false;
-            inputManager.BindAction("MoveBackward", _ => callbackInvoked = true);
+            bool callbackValue = true;
+            inputManager.BindAction("MoveBackward", isActive => callbackValue = isActive);
 
             // Act
             inputManager.RemoveAction(GeKeys.S);
 
-            // Try pressing the key for the removed action
+            // Try pressing the key for the removed mapping
             inputManager.HandleKeyPress(GeKeys.S);
             inputManager.DoActions();
 
             Assert.Multiple(() =>
             {
                 // Assert
-                Assert.That(callbackInvoked, Is.False, "Callback should not be invoked after action is removed");
-                Assert.That(inputManager.IsActionActive("MoveBackward"), Is.False, "Removed action should not be in actionStates");
+                Assert.That(callbackValue, Is.False, "A key with no mapping must not activate the action");
+                Assert.That(inputManager.IsActionActive("MoveBackward"), Is.False);
+            });
+        }
+
+        [Test]
+        public void RemovingAnAction_UnbindsStatesAndCallbacks()
+        {
+            var inputManager = new InputManager();
+            inputManager.AddAction(GeKeys.S, "MoveBackward");
+
+            bool callbackInvoked = false;
+            inputManager.BindAction("MoveBackward", _ => callbackInvoked = true);
+
+            inputManager.RemoveAction("MoveBackward");
+
+            inputManager.HandleKeyPress(GeKeys.S);
+            inputManager.DoActions();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(callbackInvoked, Is.False, "Callback should not be invoked after the action is removed");
+                Assert.That(inputManager.IsActionActive("MoveBackward"), Is.False);
             });
         }
 

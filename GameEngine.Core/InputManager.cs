@@ -43,19 +43,36 @@ namespace GameEngine.Core
             if (!actionMap.ContainsKey(key))
             {
                 actionMap[key] = actionName;
-                actionStates[actionName] = false;
+                actionStates[actionName] = IsAnyKeyHeldFor(actionName);
             }
         }
 
+        // Removes one key's mapping and nothing else. An action several keys share — D and
+        // Right, say — keeps its remaining keys and every callback bound to it, and its state
+        // is recomputed from the keys that are still down.
         public void RemoveAction(GeKeys key)
         {
-            if (actionMap.TryGetValue(key, out string? actionName))
+            if (!actionMap.TryRemove(key, out string? actionName))
+                return;
+
+            heldKeys.TryRemove(key, out _);
+            actionStates[actionName] = IsAnyKeyHeldFor(actionName);
+        }
+
+        // Removes the action itself: every key mapped to it, its state, and its callbacks.
+        public void RemoveAction(string actionName)
+        {
+            foreach (var mapping in actionMap)
             {
-                actionMap.Remove(key, out _);
-                heldKeys.TryRemove(key, out _);
-                actionStates.TryRemove(actionName, out _);
-                actionBindings.TryRemove(actionName, out _);
+                if (mapping.Value != actionName)
+                    continue;
+
+                actionMap.TryRemove(mapping.Key, out _);
+                heldKeys.TryRemove(mapping.Key, out _);
             }
+
+            actionStates.TryRemove(actionName, out _);
+            actionBindings.TryRemove(actionName, out _);
         }
 
         public void BindAction(string actionName, Action<bool> onAction)
