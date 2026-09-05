@@ -2,55 +2,87 @@
 
 namespace GameEngine.Core
 {
+    // Where an entity sits in its manager's lifecycle. Queries only ever see Live entities:
+    // a pending one has not been flushed by EntityManager.Update yet, and a detached one has
+    // been removed and can never re-enter an index, however long a caller keeps hold of it.
+    internal enum EntityState
+    {
+        Pending,
+        Live,
+        Detached
+    }
+
     public class Entity
     {
-        public int Id = 0;
-        public bool Active = true;
-        public string Tag = "default";
-        public Dictionary<Type, Component> Components = [];
+        public int Id { get; }
 
+        public bool Active { get; set; } = true;
+
+        private string tag;
+        private readonly Dictionary<Type, Component> components = [];
         private readonly EntityManager entityManager;
+
+        internal EntityState State { get; set; } = EntityState.Pending;
 
         internal Entity(int id, string tag, EntityManager manager)
         {
-            this.Id = id;
-            Tag = tag;
-            this.entityManager = manager;
+            Id = id;
+            this.tag = tag;
+            entityManager = manager;
         }
 
+        // Tag queries are cached, so renaming has to reach the manager rather than being a
+        // plain field write that leaves the previous tag's cache answering.
+        public string Tag
+        {
+            get => tag;
+            set
+            {
+                if (tag == value)
+                    return;
+
+                tag = value;
+                entityManager.TagChanged(this);
+            }
+        }
+
+        public IReadOnlyDictionary<Type, Component> Components => components;
+
+        internal IEnumerable<Type> ComponentTypes => components.Keys;
+
         public EntitySnapshot Capture() =>
-            new(Id, Tag, Active, Components.Keys.Select(t => t.Name).OrderBy(n => n).ToArray());
+            new(Id, Tag, Active, components.Keys.Select(t => t.Name).OrderBy(n => n).ToArray());
 
         public Component AddComponent(Component component)
         {
-            Components[component.GetType()] = component;
-            entityManager.AddEntityToComponentMap(component.GetType(), this);
-            return component;
+            ArgumentNullException.ThrowIfNull(component);
+            return Set(component.GetType(), component);
         }
 
-        public T AddComponent<T>() where T : Component, new()
-        {
-            T component = new();
-            Components[typeof(T)] = component;
-            entityManager.AddEntityToComponentMap(typeof(T), this);
-            return component;
-        }
+        public T AddComponent<T>() where T : Component, new() =>
+            (T)Set(typeof(T), new T());
 
         public T AddComponent<T>(Component component) where T : Component, new()
         {
-            Components[typeof(T)] = component;
-            entityManager.AddEntityToComponentMap(typeof(T), this);
-            return (T)component;
+            ArgumentNullException.ThrowIfNull(component);
+            return (T)Set(typeof(T), component);
+        }
+
+        private Component Set(Type componentType, Component component)
+        {
+            components[componentType] = component;
+            entityManager.ComponentAdded(componentType, this);
+            return component;
         }
 
         public bool HasComponent<T>() where T : Component
         {
-            return Components.ContainsKey(typeof(T));
+            return components.ContainsKey(typeof(T));
         }
 
         public bool TryGetComponent<T>([NotNullWhen(true)] out T? component) where T : Component
         {
-            if (Components.TryGetValue(typeof(T), out var comp))
+            if (components.TryGetValue(typeof(T), out var comp))
             {
                 component = (T)comp;
                 return true;
@@ -61,7 +93,7 @@ namespace GameEngine.Core
 
         public T GetComponent<T>() where T : Component
         {
-            if (Components.TryGetValue(typeof(T), out var comp))
+            if (components.TryGetValue(typeof(T), out var comp))
             {
                 return (T)comp;
             }
@@ -70,7 +102,7 @@ namespace GameEngine.Core
 
         public T? TryGetComponent<T>() where T : Component
         {
-            if (Components.TryGetValue(typeof(T), out var comp))
+            if (components.TryGetValue(typeof(T), out var comp))
             {
                 return (T)comp;
             }
@@ -79,17 +111,19 @@ namespace GameEngine.Core
 
         public void RemoveComponent<T>() where T : Component
         {
-            if (Components.Remove(typeof(T), out _))
+            if (components.Remove(typeof(T), out _))
             {
-                entityManager.RemoveEntityFromComponentMap(typeof(T), this);
+                entityManager.ComponentRemoved(typeof(T), this);
             }
         }
 
         public void RemoveComponent(Component component)
         {
-            if (Components.Remove(component.GetType(), out _))
+            ArgumentNullException.ThrowIfNull(component);
+
+            if (components.Remove(component.GetType(), out _))
             {
-                entityManager.RemoveEntityFromComponentMap(component.GetType(), this);
+                entityManager.ComponentRemoved(component.GetType(), this);
             }
         }
     }

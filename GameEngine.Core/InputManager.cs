@@ -157,6 +157,11 @@ namespace GameEngine.Core
             actionStates.TryGetValue(actionName, out bool isActive) && isActive;
     }
 
+    // A binding names an entity and a component type, not one component instance: replacing
+    // the component leaves the mapping driving the replacement, and removing it leaves the
+    // mapping inert rather than writing to something the entity no longer holds. The entity
+    // must already have the component when the mapping is made, so a wrong type is still a
+    // mistake reported at the call site.
     public class ActionMapper
     {
         private readonly InputManager inputManager;
@@ -173,11 +178,14 @@ namespace GameEngine.Core
             bool oneShot = false
         ) where T : Component
         {
-            var component = entity.GetComponent<T>();
+            _ = entity.GetComponent<T>();
             bool previouslyActive = false;
 
             inputManager.BindAction(actionName, isActive =>
             {
+                if (!entity.TryGetComponent<T>(out var component))
+                    return;
+
                 if (!oneShot)
                 {
                     updateAction(component, isActive);
@@ -204,11 +212,12 @@ namespace GameEngine.Core
              Action<T, PointerEvent> updateAction
         ) where T : Component
         {
-            var component = entity.GetComponent<T>();
+            _ = entity.GetComponent<T>();
 
             inputManager.BindPointerAction(eventType, pointerEvent =>
             {
-                updateAction(component, pointerEvent);
+                if (entity.TryGetComponent<T>(out var component))
+                    updateAction(component, pointerEvent);
             });
         }
 

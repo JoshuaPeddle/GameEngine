@@ -14,10 +14,10 @@ namespace GameEngine.Core.Tests.Unit.Systems
             var entity = entityManager.CreateEntity("_");
             entity.AddComponent(new CTransform(new Vec2(0, 0), new Vec2(10, 0)));
             entity.AddComponent<CMovement>();
+            entityManager.Update();
 
             // Act
             movementSystem.Update(entityManager, deltaSeconds: 0.1);
-            entityManager.Update(); // commit changes if your ECS defers them
 
             // Assert
             var transform = entity.GetComponent<CTransform>();

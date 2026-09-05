@@ -23,6 +23,7 @@ namespace GameEngine.Core.Tests.Integration.Systems
             var entity = entityManager.CreateEntity("_");
             entity.AddComponent(new CTransform(new Vec2(0, 0), new Vec2(0, 0)));
             entity.AddComponent<CMovement>();
+            entityManager.Update();
 
             // 3. Add an action to input manager & map it so that pressing W sets velocity
             //    This is purely an example approach. Your actual logic may differ.

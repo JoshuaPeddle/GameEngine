@@ -38,7 +38,8 @@ namespace GameEngine.Core
                 foreach (var entity in entitiesToAdd)
                 {
                     entities.Add(entity);
-                    foreach (var componentType in entity.Components.Keys)
+                    entity.State = EntityState.Live;
+                    foreach (var componentType in entity.ComponentTypes)
                     {
                         if (!componentEntityMap.TryGetValue(componentType, out var entitySet))
                         {
@@ -65,7 +66,8 @@ namespace GameEngine.Core
             foreach (var entity in inactiveBuffer)
             {
                 entitiesById.Remove(entity.Id);
-                foreach (var componentType in entity.Components.Keys)
+                entity.State = EntityState.Detached;
+                foreach (var componentType in entity.ComponentTypes)
                 {
                     if (componentEntityMap.TryGetValue(componentType, out var entitySet))
                     {
@@ -102,7 +104,7 @@ namespace GameEngine.Core
             return entity;
         }
 
-        public List<Entity> GetEntities()
+        public IReadOnlyList<Entity> GetEntities()
         {
             return entities;
         }
@@ -226,39 +228,58 @@ namespace GameEngine.Core
 
         public void Clear()
         {
+            foreach (var entity in entities)
+                entity.State = EntityState.Detached;
+            foreach (var entity in entitiesToAdd)
+                entity.State = EntityState.Detached;
+
             entities.Clear();
             entitiesToAdd.Clear();
             entitiesById.Clear();
             componentEntityMap.Clear();
             ClearCaches();
             structuralVersion++;
-
         }
 
-        internal void AddEntityToComponentMap(Type componentType, Entity entity)
+        // Replacing a component changes what a cached tuple holds even though the component
+        // set is unchanged, so every add invalidates — a set membership test is not enough.
+        internal void ComponentAdded(Type componentType, Entity entity)
         {
+            if (entity.State != EntityState.Live)
+                return;
+
             if (!componentEntityMap.TryGetValue(componentType, out var entitySet))
             {
                 entitySet = [];
                 componentEntityMap[componentType] = entitySet;
             }
 
-            if (entitySet.Add(entity))
-                structuralVersion++;
+            entitySet.Add(entity);
+            structuralVersion++;
         }
 
-        internal void RemoveEntityFromComponentMap(Type componentType, Entity entity)
+        internal void ComponentRemoved(Type componentType, Entity entity)
         {
+            if (entity.State != EntityState.Live)
+                return;
+
             if (componentEntityMap.TryGetValue(componentType, out var entitySet))
             {
-                if (entitySet.Remove(entity))
-                    structuralVersion++;
+                entitySet.Remove(entity);
 
                 if (entitySet.Count == 0)
                 {
                     componentEntityMap.Remove(componentType);
                 }
             }
+
+            structuralVersion++;
+        }
+
+        internal void TagChanged(Entity entity)
+        {
+            if (entity.State == EntityState.Live)
+                structuralVersion++;
         }
 
         private IReadOnlyList<Entity> GetCachedEntityList<T>() where T : Component

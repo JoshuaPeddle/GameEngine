@@ -64,6 +64,13 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
 - **`GeKeys` is the key vocabulary** (`A`–`Z`, `Space`, arrows). Every runner builds its
   map from those names, so adding a value reaches all platforms; a swipe is classified as
   `W`/`A`/`S`/`D`. Several keys may share one action.
+- **Entity mutation goes through the entity.** `Id` is immutable, `Tag` is a property and
+  `Components` is read-only from outside, because every one of those changes has to reach
+  `EntityManager` to invalidate its cached queries — replacing a component included, even
+  though the component set is unchanged. A new entity is invisible to every query until the
+  next `EntityManager.Update()`, and a removed one can never re-enter an index however long
+  a caller holds its reference. `ActionMapper` bindings resolve their component per
+  invocation, so they follow a replacement and go inert after a removal.
 - **`Engine.Tick(deltaSeconds)` is the single frame primitive.** Both run loops are built
   on it, which is what makes the headless harness exercise the real path.
 - **Zero warnings.** `TreatWarningsAsErrors` is on in Core and Demo.
