@@ -33,22 +33,22 @@ namespace GameEngine.Demo
             CreateBall(entityManager);
 
             var wallTop = entityManager.CreateEntity("wallTop");
-            wallTop.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal").AsScaledAnimation(new Vec2(VirtualWidth - _wallThickness * 2, _wallThickness))));
+            wallTop.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal", new Vec2(VirtualWidth - _wallThickness * 2, _wallThickness))));
             wallTop.AddComponent(new CTransform(new Vec2(_wallThickness, 0)));
             wallTop.AddComponent(new CBoundingBox(new Vec2(VirtualWidth - _wallThickness * 2, _wallThickness), false, false));
 
             var wallBottom = entityManager.CreateEntity("wallBottom");
-            //wallBottom.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal").AsScaledAnimation(new Vec2(VirtualWidth - _wallThickness * 2, _wallThickness))));
+            //wallBottom.AddComponent(new CAnimation(assets.GetAnimation("WallHorizontal", new Vec2(VirtualWidth - _wallThickness * 2, _wallThickness))));
             wallBottom.AddComponent(new CTransform(new Vec2(_wallThickness, VirtualHeight - _wallThickness)));
             wallBottom.AddComponent(new CBoundingBox(new Vec2(VirtualWidth - _wallThickness * 2, _wallThickness), false, false));
 
             var wallLeft = entityManager.CreateEntity("wallLeft");
-            wallLeft.AddComponent(new CAnimation(assets.GetAnimation("WallVertical").AsScaledAnimation(new Vec2(_wallThickness, VirtualHeight))));
+            wallLeft.AddComponent(new CAnimation(assets.GetAnimation("WallVertical", new Vec2(_wallThickness, VirtualHeight))));
             wallLeft.AddComponent(new CTransform(new Vec2(0, 0)));
             wallLeft.AddComponent(new CBoundingBox(new Vec2(_wallThickness, VirtualHeight), false, false));
 
             var wallRight = entityManager.CreateEntity("wallRight");
-            wallRight.AddComponent(new CAnimation(assets.GetAnimation("WallVertical").AsScaledAnimation(new Vec2(_wallThickness, VirtualHeight))));
+            wallRight.AddComponent(new CAnimation(assets.GetAnimation("WallVertical", new Vec2(_wallThickness, VirtualHeight))));
             wallRight.AddComponent(new CTransform(new Vec2(VirtualWidth - _wallThickness, 0)));
             wallRight.AddComponent(new CBoundingBox(new Vec2(_wallThickness, VirtualHeight), false, false));
 
@@ -238,7 +238,7 @@ namespace GameEngine.Demo
                 if (random.Next(0, 2) == 0)
                 {
                     var block = entityManager.CreateEntity("block");
-                    block.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock").AsScaledAnimation(new Vec2(blockWidth, blockHeight))));
+                    block.AddComponent(new CAnimation(Assets.GetAnimation("BrickBlock", new Vec2(blockWidth, blockHeight))));
                     block.AddComponent(new CTransform(new Vec2(_wallThickness + (blockWidth + blockSpacing) * i, topPadding + _wallThickness + (blockHeight + blockSpacing) * row)));
                     block.AddComponent(new CBoundingBox(new Vec2(blockWidth, blockHeight), blockVision: true, blockMove: false));
                 }

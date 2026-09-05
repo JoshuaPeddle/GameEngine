@@ -94,6 +94,16 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   paint callback put on at attach and the owner's put back at detach. `Engine.Systems` is
   published as a whole on a scene change, so look systems up with `TryGet` from UI code —
   the container is empty between disposal and the last queued event that still refers to it.
+- **A scene failure faults the engine; it does not kill the loop.** An exception from a
+  system, a scene's `Update`, or a scene's `Initialize` is recorded as an `EngineFault`
+  naming the scene, the operation and the system, handed to `Engine.FaultAction`, and stops
+  the simulation. The last snapshot stays paintable and loading another scene clears it.
+- **Assets outlive the engines that draw from them.** An `Assets` owns every texture it
+  decodes and every scaled animation it derives; a plain `Animation` borrows its texture and
+  releases nothing. Nothing is freed when an entity, an animation or a scene goes away,
+  because a render snapshot the host is still painting holds those bitmaps. Dispose an
+  `Assets` only after the engines using it. Use `GetAnimation(name, scaleSize)` rather than
+  `AsScaledAnimation` — the cached one does not decode a new bitmap per scene load.
 - **Zero warnings.** `TreatWarningsAsErrors` is on in Core and Demo.
 - Reference finding IDs from `docs/02-findings.md` in commit messages: `fix(core): read
   velocity from level files (GE-67)`.

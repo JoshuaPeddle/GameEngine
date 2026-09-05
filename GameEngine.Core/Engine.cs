@@ -55,6 +55,33 @@ namespace GameEngine.Core
         public bool IsStopped => _stopped;
         public bool IsDisposed => Volatile.Read(ref _disposeStarted) != 0;
 
+        private EngineFault? _fault;
+
+        /// <summary>What went wrong, or null while the engine is healthy.</summary>
+        public EngineFault? Fault => Volatile.Read(ref _fault);
+
+        public bool IsFaulted => Fault != null;
+
+        // Settable like InvalidateAction, and for the same reason: a host attaches to an engine
+        // it did not construct. Called on the engine thread, once, as the fault is recorded.
+        private Action<EngineFault>? _faultAction;
+
+        public Action<EngineFault>? FaultAction
+        {
+            get => Volatile.Read(ref _faultAction);
+            set => Volatile.Write(ref _faultAction, value);
+        }
+
+        // A faulted engine stops simulating rather than throwing the same exception every
+        // frame. It keeps its last snapshot so the host can still paint, and loading another
+        // scene clears the fault — which is what lets an editor replace a scene that failed.
+        private void Fail(string operation, string? systemName, Exception exception)
+        {
+            var fault = new EngineFault(operation, currentScene?.GetType().Name, systemName, exception);
+            Volatile.Write(ref _fault, fault);
+            FaultAction?.Invoke(fault);
+        }
+
         // Pooled render snapshots: filled on the engine thread, read on the UI thread.
         // Three buffers are enough for a single reader — at most one is published and one is
         // held by the reader, which always leaves one free for the engine to fill. Recycling
@@ -277,7 +304,7 @@ namespace GameEngine.Core
 
             PumpPendingWork();
 
-            if (_pauseUntilFirstPresent || !_isRunning)
+            if (_pauseUntilFirstPresent || !_isRunning || IsFaulted)
                 return false;
 
             Update(deltaSeconds);
@@ -299,7 +326,7 @@ namespace GameEngine.Core
         {
             PumpPendingWork();
 
-            if (_stopped || !_isRunning || _pauseUntilFirstPresent)
+            if (_stopped || !_isRunning || _pauseUntilFirstPresent || IsFaulted)
             {
                 lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
                 _accumulator.Reset();
@@ -423,12 +450,30 @@ namespace GameEngine.Core
 
         private void Update(double deltaSeconds)
         {
-            foreach (var system in Systems.Systems)
+            var systems = Systems.Systems;
+            for (int i = 0; i < systems.Count; i++)
             {
-                system.Update(EntityManager, deltaSeconds);
+                try
+                {
+                    systems[i].Update(EntityManager, deltaSeconds);
+                }
+                catch (Exception exception)
+                {
+                    Fail("system update", systems[i].GetType().Name, exception);
+                    return;
+                }
             }
 
-            currentScene?.Update(EntityManager, Systems, deltaSeconds);
+            try
+            {
+                currentScene?.Update(EntityManager, Systems, deltaSeconds);
+            }
+            catch (Exception exception)
+            {
+                Fail("scene update", null, exception);
+                return;
+            }
+
             EntityManager.Update();
 
             // Snapshot all renderable state. The UI thread reads only from this snapshot,
@@ -450,13 +495,29 @@ namespace GameEngine.Core
         // Called from engine thread
         private void ApplySceneChange(Scene scene)
         {
+            Volatile.Write(ref _fault, null);
             currentScene = scene;
             scene.Engine = this;
 
             // Rebuild systems and scene. The replaced container is simply dropped: the audio
             // system is the only disposable one in it and the engine owns that for its lifetime.
+            // Assets are not touched here — they belong to whoever created them, and a snapshot
+            // the host is still painting may hold textures from the scene being left.
             InitializeSystems();
-            currentScene.Initialize(EntityManager, InputManager, Systems.TryGet<AudioSystem>(), ResetScene);
+
+            try
+            {
+                currentScene.Initialize(EntityManager, InputManager, Systems.TryGet<AudioSystem>(), ResetScene);
+            }
+            catch (Exception exception)
+            {
+                Fail("scene initialization", null, exception);
+                EntityManager.Clear();
+                EntityManager.Update();
+                PublishRenderSnapshot();
+                InvalidateAction?.Invoke();
+                return;
+            }
 
             var renderSystem = Systems.Get<RenderSystem>();
             InputManager.VirtualResolution = new Vec2(currentScene.VirtualWidth, currentScene.VirtualHeight);

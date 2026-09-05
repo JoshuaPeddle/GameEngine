@@ -2,7 +2,7 @@
 
 namespace GameEngine.Core
 {
-    public class Animation
+    public class Animation : IDisposable
     {
         public SKBitmap texture;
         public int frames;
@@ -51,6 +51,18 @@ namespace GameEngine.Core
         {
             return new ScaledAnimation(texture, frames, delay, scaleSize);
         }
+
+        // An animation shares the manifest's texture and does not own it: disposing one
+        // because a single entity was removed would pull the bitmap out from under every
+        // other entity drawn from it, and from any render snapshot still being painted. Only
+        // a ScaledAnimation, which decodes a bitmap of its own, has anything to release.
+        protected virtual void Dispose(bool disposing) { }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 
     public class ScaledAnimation : Animation
@@ -75,6 +87,16 @@ namespace GameEngine.Core
             texture = scaledBitmap;
             frameWidth = texture.Width / frames;
             frameHeight = texture.Height;
+        }
+
+        // This one owns its bitmap: RescaleTexture decoded it rather than borrowing it from
+        // the manifest.
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                texture.Dispose();
+
+            base.Dispose(disposing);
         }
     }
 }

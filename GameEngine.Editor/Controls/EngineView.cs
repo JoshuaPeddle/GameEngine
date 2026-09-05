@@ -117,6 +117,7 @@ namespace GameEngine.Editor.Controls
                 return;
 
             engine.InvalidateAction = null;
+            engine.FaultAction = null;
             engine.Stop();
             engine.Dispose();
         }
@@ -147,6 +148,7 @@ namespace GameEngine.Editor.Controls
                         _gameEngine = new Engine(QueueInvalidate, audioEnabled: false, assetSource);
                     else
                         _gameEngine = new Engine(QueueInvalidate, assetSource: assetSource);
+                    _gameEngine.FaultAction = ReportFault;
                     _gameEngine.RenderOptions.DrawBoundingBoxes = true;
                     _gameEngine.TargetFrameRate = 120;
                     _gameEngine.SetRunning(_vm.IsEngineRunning);
@@ -164,6 +166,17 @@ namespace GameEngine.Editor.Controls
                     await engine.Start();
                 }
             });
+        }
+
+        // Raised on the engine thread as the fault is recorded. The preview keeps its last
+        // frame and stops simulating, so selecting another scene replaces it.
+        private void ReportFault(EngineFault fault)
+        {
+            var viewModel = _vm;
+            if (viewModel == null)
+                return;
+
+            Dispatcher.UIThread.Post(() => viewModel.Status.Message = $"Preview stopped: {fault}");
         }
 
         private void QueueInvalidate()
