@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Runner.Avalonia\GameEngine.Runner.Avalonia.csproj" />
+    <ProjectReference Include="..\..\GameEngine.Audio.Sdl\GameEngine.Audio.Sdl.csproj" />
     <ProjectReference Include="..\..\GameEngine.Demo\GameEngine.Demo.csproj" />
   </ItemGroup>
 </Project>

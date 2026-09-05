@@ -1,4 +1,6 @@
 ﻿using Avalonia;
+using GameEngine.Audio.Sdl;
+using GameEngine.Core.Systems;
 using System;
 
 namespace GameEngine.Runner.Avalonia.Desktop
@@ -11,6 +13,10 @@ namespace GameEngine.Runner.Avalonia.Desktop
         [STAThread]
         public static void Main(string[] args)
         {
+            // Core has no audio integration of its own; a desktop head supplies one. Without
+            // this the engine still runs, reporting audio as unavailable.
+            AudioBackends.Factory = SdlAudioBackend.Create;
+
             App.StartupScene = () => new Demo.SceneMenu();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }

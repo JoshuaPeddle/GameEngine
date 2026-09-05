@@ -1,6 +1,7 @@
 name: NuGet
 
-# Pushes GameEngine.Core, GameEngine.Runner.Avalonia and the dotnet new template pack.
+# Pushes GameEngine.Core, GameEngine.Audio.Sdl, GameEngine.Runner.Avalonia and the
+# dotnet new template pack.
 # Tag with the version you want published: `git tag v0.1.0 && git push --tags`.
 on:
   push:
@@ -62,6 +63,7 @@ jobs:
         run: |
           for project in \
             GameEngine.Core/GameEngine.Core.csproj \
+            GameEngine.Audio.Sdl/GameEngine.Audio.Sdl.csproj \
             GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj \
             templates/GameEngine.Templates.csproj
           do

@@ -246,12 +246,13 @@ namespace GameEngine.Core
             built.Add(new RenderSystem(RenderOptions));
 
             // The audio device belongs to the engine, not to a scene: reopening it on every
-            // scene change would leave the previous mixer open and the reopen would fail.
+            // scene change would leave the previous mixer open and the reopen would fail. The
+            // service is always created when audio is enabled — on a platform with no backend
+            // it reports why it is silent rather than being quietly absent.
             if (_audioEnabled)
             {
-                _audioSystem ??= AudioSystem.TryCreate(AssetSource);
-                if (_audioSystem != null)
-                    built.Add(_audioSystem);
+                _audioSystem ??= AudioSystem.Create(AssetSource);
+                built.Add(_audioSystem);
             }
 
             Volatile.Write(ref _systems, built);

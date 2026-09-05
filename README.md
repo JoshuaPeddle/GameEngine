@@ -283,10 +283,15 @@ so the harness exercises the same path the runners do.
 
 ## Known limitations
 
-- **Audio is Windows-only in practice.** `ppy.SDL2-CS` ships SDL2 natives per
-  platform but no `SDL2_mixer`, and the only mixer binary in the tree is a
-  Windows x64 DLL. Elsewhere `AudioSystem.TryCreate()` returns null and the game
-  runs silently.
+- **Audio is Windows-only in practice.** `GameEngine.Core` has no audio
+  integration of its own: it defines `IAudioBackend`, and a host registers one
+  with `AudioBackends.Factory` before constructing an engine. The only backend
+  that ships is `GameEngine.Audio.Sdl`, and `ppy.SDL2-CS` ships SDL2 natives per
+  platform but no `SDL2_mixer` — the only mixer binary in the tree is a Windows
+  x64 DLL. Everywhere else, and on any head that registers no backend at all, the
+  audio service reports itself unavailable through
+  `AudioSystem.UnavailableReason` and the game runs silently rather than
+  failing. Adding a platform means writing an `IAudioBackend`, not changing Core.
 - `Font` entries in the old `assets.txt` format are parsed but ignored; `assets.json` has
   no fonts section at all.
 - Animations support a single horizontal strip only — no grids, no per-frame

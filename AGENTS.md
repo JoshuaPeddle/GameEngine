@@ -31,6 +31,7 @@ CI builds all of them; a local `dotnet build GameEngine.sln` will fail on any yo
 | `GameEngine.Core` | The engine: ECS, systems, rendering, input, level and asset formats. Published as a NuGet package. No UI framework may enter it. |
 | `GameEngine.Demo` | Sample games, and the first consumer of everything Core exposes |
 | `GameEngine.Runner.Avalonia` | `GameView` plus the Desktop / Android / iOS / Browser heads. Published as a NuGet package. |
+| `GameEngine.Audio.Sdl` | The SDL2_mixer audio backend, and the only place a native audio library is referenced. Published as a NuGet package. |
 | `GameEngine.Runner.Winforms` | A second host, which exists to keep Core honest about UI independence |
 | `GameEngine.Editor` | Scene and level editor: live Roslyn compile into a collectible ALC, snapshot picking |
 | `templates/` | The `dotnet new gameengine-game` template pack. `templates/game/` is the project a user gets. |
@@ -104,6 +105,11 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   because a render snapshot the host is still painting holds those bitmaps. Dispose an
   `Assets` only after the engines using it. Use `GetAnimation(name, scaleSize)` rather than
   `AsScaledAnimation` — the cached one does not decode a new bitmap per scene load.
+- **Audio integration lives outside Core.** Core defines `IAudioBackend` and always builds
+  an `AudioSystem` when audio is enabled; a host registers a backend through
+  `AudioBackends.Factory` before the first engine. With none registered the service reports
+  why it is silent through `UnavailableReason` instead of being absent, so a game runs
+  everywhere and the gap is diagnosable. Adding a platform means writing a backend.
 - **Zero warnings.** `TreatWarningsAsErrors` is on in Core and Demo.
 - Reference finding IDs from `docs/02-findings.md` in commit messages: `fix(core): read
   velocity from level files (GE-67)`.

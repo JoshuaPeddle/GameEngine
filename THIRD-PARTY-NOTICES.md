@@ -7,8 +7,10 @@ depends on, and in one case redistributes, the following third-party software.
 
 ### SDL2_mixer
 
-`GameEngine.Core/SDL2_mixer.dll` is a prebuilt Windows x64 binary of SDL2_mixer,
-redistributed under the zlib license.
+`GameEngine.Audio.Sdl/SDL2_mixer.dll` is a prebuilt Windows x64 binary of
+SDL2_mixer, redistributed under the zlib license. It ships in the
+`GameEngine.Audio.Sdl` package only; `GameEngine.Core` redistributes no native
+audio binary and references no audio library.
 
 > Copyright (C) 1997-2024 Sam Lantinga and contributors
 >

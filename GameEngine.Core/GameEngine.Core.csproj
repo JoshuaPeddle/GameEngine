@@ -9,20 +9,11 @@
     <IsPackable>true</IsPackable>
     <PackageId>GameEngine.Core</PackageId>
     <Description>A small 2D entity-component-system game engine for .NET. UI-agnostic: deterministic Tick, snapshot-based rendering through SkiaSharp, queue-based input, and a JSON level format.</Description>
-    <!-- ppy.SDL2-CS only ships alpha builds; NU5104 would otherwise fail the pack. -->
-    <NoWarn>$(NoWarn);NU5104</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ppy.SDL2-CS" />
     <PackageReference Include="SkiaSharp" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="SDL2_mixer.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Pack>true</Pack>
-      <PackagePath>build\native\</PackagePath>
-    </None>
-    <None Include="build\GameEngine.Core.targets" Pack="true" PackagePath="build\" />
     <None Include="levels/level.schema.json" Pack="true" PackagePath="schema/" />
     <None Include="assets.schema.json" Pack="true" PackagePath="schema/" />
     <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />

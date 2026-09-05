@@ -1,98 +1,91 @@
-using static SDL2.SDL;
-using static SDL2.SDL_mixer;
-
 namespace GameEngine.Core.Systems
 {
     public enum SoundType { BGM, SoundEffect }
 
+    /// <summary>
+    /// The engine's audio service. It resolves a sound name to the manifest entry that
+    /// declares it and hands the result to whatever backend the host registered. The service
+    /// always exists: on a platform with no backend it reports itself unavailable and plays
+    /// nothing, so a game runs and the reason is diagnosable rather than the system simply
+    /// being absent.
+    /// </summary>
     public class AudioSystem : ISystem, IDisposable
     {
-        private const int BgmChannel = 0;
-        private const int LoopForever = -1;
-
-        private readonly int _numSfxChannels = 31;
-        private readonly Dictionary<string, IntPtr> _chunkCache = [];
-
         private readonly IAssetSource _assetSource;
+        private readonly IAudioBackend _backend;
+        private readonly bool _ownsBackend;
+        private readonly Dictionary<string, string> _resolvedPaths = [];
+
         private Assets? _assets;
         private bool _disposed;
 
-        public static bool IsSupportedPlatform =>
-            !OperatingSystem.IsBrowser()
-            && !OperatingSystem.IsAndroid()
-            && !OperatingSystem.IsIOS();
-
-        public static AudioSystem? TryCreate(IAssetSource assetSource)
+        public AudioSystem(IAssetSource assetSource)
+            : this(assetSource, AudioBackends.Create(), ownsBackend: true)
         {
-            if (!IsSupportedPlatform)
-                return null;
-
-            try
-            {
-                return new AudioSystem(assetSource);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
         }
 
-        public AudioSystem(IAssetSource assetSource)
+        public AudioSystem(IAssetSource assetSource, IAudioBackend backend, bool ownsBackend = false)
         {
             ArgumentNullException.ThrowIfNull(assetSource);
+            ArgumentNullException.ThrowIfNull(backend);
+
             _assetSource = assetSource;
-            InitializeSDL();
+            _backend = backend;
+            _ownsBackend = ownsBackend;
         }
 
-        private void InitializeSDL()
-        {
-            if (SDL_Init(SDL_INIT_AUDIO) != 0)
-                throw new Exception($"SDL_Init Error: {SDL_GetError()}");
-            if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024) != 0)
-                throw new Exception($"Mix_OpenAudio Error: {Mix_GetError()}");
-            if (Mix_AllocateChannels(1 + _numSfxChannels) != 1 + _numSfxChannels)
-                throw new Exception($"Mix_AllocateChannels Error: {Mix_GetError()}");
-        }
+        public string BackendName => _backend.Name;
+
+        public bool IsAvailable => !_disposed && _backend.IsAvailable;
+
+        /// <summary>Why nothing will be heard, or null when audio is working.</summary>
+        public string? UnavailableReason => _disposed
+            ? "The audio system has been disposed."
+            : _backend.UnavailableReason;
+
+        /// <summary>
+        /// Never returns null and never throws: an engine always has an audio service, and a
+        /// platform without a backend gets one that reports why it is silent.
+        /// </summary>
+        public static AudioSystem Create(IAssetSource assetSource) => new(assetSource);
 
         public void Play(string assetName, SoundType soundType)
         {
-            if (_disposed)
+            if (_disposed || !_backend.IsAvailable)
                 return;
 
-            IntPtr chunk = GetOrLoadChunk(assetName);
-
-            if (soundType == SoundType.BGM)
-            {
-                Mix_PlayChannel(BgmChannel, chunk, LoopForever);
+            if (!TryResolvePath(assetName, out var path))
                 return;
-            }
 
-            for (int channel = 1; channel <= _numSfxChannels; channel++)
-            {
-                if (Mix_Playing(channel) == 0)
-                {
-                    Mix_PlayChannel(channel, chunk, 0);
-                    return;
-                }
-            }
-
+            _backend.Play(assetName, path, soundType);
         }
 
-        private IntPtr GetOrLoadChunk(string assetName)
+        public void StopAll()
         {
-            if (_chunkCache.TryGetValue(assetName, out IntPtr cached))
-                return cached;
+            if (!_disposed)
+                _backend.StopAll();
+        }
 
-            _assets ??= new Assets("assets.json", _assetSource);
-            var sound = _assets.GetSound(assetName);
+        // The manifest lookup is cached rather than the decoded sound: reusing the decoded copy
+        // is the backend's job, because only it knows what decoded means on this platform.
+        private bool TryResolvePath(string assetName, out string path)
+        {
+            if (_resolvedPaths.TryGetValue(assetName, out path!))
+                return true;
 
-            IntPtr chunk = Mix_LoadWAV(Path.Combine("assets", sound.Path));
-            if (chunk == IntPtr.Zero)
-                throw new FailedToLoadSoundException(
-                    $"Failed to load sound '{assetName}' from '{sound.Path}': {Mix_GetError()}");
+            try
+            {
+                _assets ??= new Assets("assets.json", _assetSource);
+                path = _assets.GetSound(assetName).Path;
+            }
+            catch (Exception)
+            {
+                path = string.Empty;
+                return false;
+            }
 
-            _chunkCache[assetName] = chunk;
-            return chunk;
+            _resolvedPaths[assetName] = path;
+            return true;
         }
 
         public void Update(EntityManager entityManager, double deltaSeconds) { }
@@ -103,14 +96,11 @@ namespace GameEngine.Core.Systems
                 return;
             _disposed = true;
 
-            Mix_HaltChannel(-1);
+            _backend.StopAll();
+            if (_ownsBackend)
+                _backend.Dispose();
 
-            foreach (IntPtr chunk in _chunkCache.Values)
-                Mix_FreeChunk(chunk);
-            _chunkCache.Clear();
-
-            Mix_CloseAudio();
-            SDL_QuitSubSystem(SDL_INIT_AUDIO);
+            _resolvedPaths.Clear();
             GC.SuppressFinalize(this);
         }
     }

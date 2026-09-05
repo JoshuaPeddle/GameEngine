@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Demo\GameEngine.Demo.csproj" />
+    <ProjectReference Include="..\GameEngine.Audio.Sdl\GameEngine.Audio.Sdl.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="libegl.dll">
