@@ -18,9 +18,57 @@
     "TexAstralArena": "images/astral-relay/arena-final.png",
     "TexAstralPlayer": "images/astral-relay/player.png",
     "TexAstralHunter": "images/astral-relay/hunter.png",
-    "TexAstralCore": "images/astral-relay/core.png"
+    "TexAstralCore": "images/astral-relay/core.png",
+    "TexTetrisI": "images/tetris/i.png",
+    "TexTetrisO": "images/tetris/o.png",
+    "TexTetrisT": "images/tetris/t.png",
+    "TexTetrisS": "images/tetris/s.png",
+    "TexTetrisZ": "images/tetris/z.png",
+    "TexTetrisJ": "images/tetris/j.png",
+    "TexTetrisL": "images/tetris/l.png",
+    "TexTetrisWall": "images/tetris/wall.png"
   },
   "animations": {
+    "TetrisI": {
+      "texture": "TexTetrisI",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "TetrisO": {
+      "texture": "TexTetrisO",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "TetrisT": {
+      "texture": "TexTetrisT",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "TetrisS": {
+      "texture": "TexTetrisS",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "TetrisZ": {
+      "texture": "TexTetrisZ",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "TetrisJ": {
+      "texture": "TexTetrisJ",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "TetrisL": {
+      "texture": "TexTetrisL",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "TetrisWall": {
+      "texture": "TexTetrisWall",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
     "Grenade": {
       "texture": "TexGrenade",
       "frames": 4,

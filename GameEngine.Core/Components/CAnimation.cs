@@ -4,13 +4,31 @@ namespace GameEngine.Core.Components
 {
     public class CAnimation : Component
     {
-        private readonly Animation animation;
+        private Animation animation;
         private double elapsedSeconds;
 
         public CAnimation(Animation animation)
         {
             this.animation = animation;
             this.elapsedSeconds = 0;
+        }
+
+        // Settable so an entity can change what it is playing without its component being
+        // replaced. Replacing it would work, but every replacement invalidates the manager's
+        // query caches, and a scene that swaps sprites per frame would rebuild them per frame.
+        public Animation Animation
+        {
+            get => animation;
+            set
+            {
+                ArgumentNullException.ThrowIfNull(value);
+
+                if (ReferenceEquals(animation, value))
+                    return;
+
+                animation = value;
+                elapsedSeconds = 0;
+            }
         }
 
         public SKBitmap Texture => animation.Texture;

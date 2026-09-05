@@ -25,6 +25,7 @@ namespace GameEngine.Demo
             ("Astral Relay", new Lazy<Scene>(() => new SceneAstralRelay())),
             ("Basic", new Lazy<Scene>(() => new SceneBasic())),
             ("Snake", new Lazy<Scene>(() => new SceneSnake())),
+            ("Tetris", new Lazy<Scene>(() => new SceneTetris())),
             ("Side Scroll", new Lazy<Scene>(() => new SceneSideScroll())),
             ("Side Scroll 2", new Lazy<Scene>(() => new SceneSideScroll2())),
             ("Json", new Lazy<Scene>(() => new SceneJson())),
