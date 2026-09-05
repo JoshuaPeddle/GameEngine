@@ -61,51 +61,27 @@ namespace GameEngine.Editor.Controls
             });
         }
 
+        // Picking runs against the same snapshot geometry and the same camera transform the
+        // renderer uses, so an entity is selected where it was drawn — camera position and
+        // zoom, sprite centring, rotation, scale and layer order included.
         private static EntitySnapshot? PickEntity(Engine engine, Vec2 screenPoint)
         {
             var renderSystem = engine.Systems.TryGet<RenderSystem>();
             if (renderSystem == null)
                 return null;
 
-            var viewport = renderSystem.ViewportFor(engine.InputManager.RealResolution);
+            var snapshot = new RenderSnapshot();
+            engine.EntityManager.BuildRenderSnapshot(snapshot);
 
-            if (!viewport.TryToVirtual(screenPoint, out var pick))
+            if (!renderSystem.TryScreenToWorld(
+                    screenPoint, engine.InputManager.RealResolution, snapshot.ActiveCamera, out var world))
                 return null;
 
-            foreach (var entity in engine.EntityManager.GetEntities())
-            {
-                if (!entity.TryGetComponent<Core.Components.CTransform>(out var transform))
-                    continue;
+            var picked = RenderSystem.PickTopmost(snapshot, world);
 
-                if (!TryGetPickSize(entity, out var size))
-                    continue;
-
-                if (pick.X >= transform.Position.X && pick.X <= transform.Position.X + size.X &&
-                    pick.Y >= transform.Position.Y && pick.Y <= transform.Position.Y + size.Y)
-                {
-                    return entity.Capture();
-                }
-            }
-
-            return null;
-        }
-
-        private static bool TryGetPickSize(Core.Entity entity, out Vec2 size)
-        {
-            if (entity.TryGetComponent<Core.Components.CBoundingBox>(out var boundingBox))
-            {
-                size = boundingBox.Size;
-                return true;
-            }
-
-            if (entity.TryGetComponent<Core.Components.CAnimation>(out var animation))
-            {
-                size = new Vec2(animation.GetSourceRect().Size);
-                return true;
-            }
-
-            size = default;
-            return false;
+            return picked.HasValue && engine.EntityManager.TryGetEntity(picked.Value, out var entity)
+                ? entity.Capture()
+                : null;
         }
 
         private void OnDataContextChanged(object? sender, EventArgs e)

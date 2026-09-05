@@ -128,28 +128,11 @@ namespace GameEngine.Core.Systems
             {
                 ref readonly var entry = ref entries[i];
 
-                // Visibility culling
-                if (cull)
-                {
-                    if (entry.BoundingBox.HasValue)
-                    {
-                        var bb = entry.BoundingBox.Value;
-                        var entityRect = new SKRect(
-                            (float)entry.Transform.Position.X,
-                            (float)entry.Transform.Position.Y,
-                            (float)(entry.Transform.Position.X + bb.Width),
-                            (float)(entry.Transform.Position.Y + bb.Height));
-
-                        if (!cameraBounds.IntersectsWith(entityRect))
-                            continue;
-                    }
-                    else if (!cameraBounds.Contains(
-                                 (float)entry.Transform.Position.X,
-                                 (float)entry.Transform.Position.Y))
-                    {
-                        continue;
-                    }
-                }
+                // Visibility culling, against everything the entry draws rather than against
+                // its origin: a scaled or rotated sprite whose origin has left the view is
+                // still on screen.
+                if (cull && !cameraBounds.IntersectsWith(VisualBounds(entry)))
+                    continue;
 
                 // Draw animation
                 if (options.DrawAnimations && entry.Animation is { ShouldDraw: true } anim)
@@ -195,11 +178,16 @@ namespace GameEngine.Core.Systems
             float frameWidth = anim.SourceRect.Width;
             float frameHeight = anim.SourceRect.Height;
 
+            var scale = entry.Transform.Scale;
+            if (scale.X == 0 || scale.Y == 0)
+                return;
+
             Vec2 center = FindEntryCenter(entry);
 
             canvas.Save();
             canvas.Translate((float)center.X, (float)center.Y);
             canvas.RotateDegrees((float)entry.Transform.Rotation);
+            canvas.Scale((float)scale.X, (float)scale.Y);
 
             SKRect destRect = new SKRect(
                 -(frameWidth / 2),
@@ -211,15 +199,100 @@ namespace GameEngine.Core.Systems
             canvas.Restore();
         }
 
-        private static Vec2 FindEntryCenter(in RenderSnapshot.Entry entry)
+        private static Vec2 FindEntryCenter(in RenderSnapshot.Entry entry) =>
+            SpriteGeometry.Center(entry.Transform.Position, BoxSizeOf(entry));
+
+        private static Vec2? BoxSizeOf(in RenderSnapshot.Entry entry) =>
+            entry.BoundingBox is { } box ? new Vec2(box.Width, box.Height) : null;
+
+        // Everything the entry can put on the canvas, as one conservative world-space box.
+        public static SKRect VisualBounds(in RenderSnapshot.Entry entry)
         {
-            if (entry.BoundingBox is { } bb)
+            var position = entry.Transform.Position;
+            var boxSize = BoxSizeOf(entry);
+            SKRect? bounds = null;
+
+            if (boxSize is { } size)
+                bounds = SpriteGeometry.BoxBounds(position, size);
+
+            if (entry.Animation is { ShouldDraw: true } animation)
             {
-                return new Vec2(
-                    entry.Transform.Position.X + bb.Width / 2,
-                    entry.Transform.Position.Y + bb.Height / 2);
+                bounds = SpriteGeometry.Union(bounds, SpriteGeometry.SpriteBounds(
+                    SpriteGeometry.Center(position, boxSize),
+                    new Vec2(animation.SourceRect.Width, animation.SourceRect.Height),
+                    entry.Transform.Scale,
+                    entry.Transform.Rotation));
             }
-            return entry.Transform.Position;
+
+            if (entry.Text is { ShouldDraw: true } text)
+            {
+                // Text is drawn without measuring it, so the extent is bounded by the widest a
+                // string of that length can be rather than by its actual advance.
+                float halfWidth = text.Size * Math.Max(text.Text.Length, 1);
+                bounds = SpriteGeometry.Union(bounds, new SKRect(
+                    (float)position.X - halfWidth,
+                    (float)position.Y - text.Size,
+                    (float)position.X + halfWidth,
+                    (float)position.Y + text.Size));
+            }
+
+            return bounds ?? new SKRect(
+                (float)position.X, (float)position.Y, (float)position.X, (float)position.Y);
+        }
+
+        // The inverse of the camera transform applied in DrawEntitiesToCanvas, so a host that
+        // converts a click to world coordinates cannot drift from where the frame was drawn.
+        public bool TryScreenToWorld(
+            Vec2 screenPoint, Vec2 realResolution, RenderSnapshot.CameraData? camera, out Vec2 worldPoint)
+        {
+            worldPoint = default;
+
+            if (!ViewportFor(realResolution).TryToVirtual(screenPoint, out var virtualPoint))
+                return false;
+
+            if (camera is not { } active || active.Zoom == 0)
+            {
+                worldPoint = virtualPoint;
+                return true;
+            }
+
+            worldPoint = new Vec2(
+                (virtualPoint.X - options.VirtualWidth / 2) / active.Zoom + active.Position.X,
+                (virtualPoint.Y - options.VirtualHeight / 2) / active.Zoom + active.Position.Y);
+            return true;
+        }
+
+        // Entries are already in draw order, so the last one the point falls inside is the one
+        // on top.
+        public static int? PickTopmost(RenderSnapshot snapshot, Vec2 worldPoint)
+        {
+            ArgumentNullException.ThrowIfNull(snapshot);
+
+            var entries = snapshot.Entries;
+            for (int i = entries.Length - 1; i >= 0; i--)
+            {
+                if (Contains(entries[i], worldPoint))
+                    return entries[i].EntityId;
+            }
+
+            return null;
+        }
+
+        private static bool Contains(in RenderSnapshot.Entry entry, Vec2 worldPoint)
+        {
+            var position = entry.Transform.Position;
+            var boxSize = BoxSizeOf(entry);
+
+            if (entry.Animation is { ShouldDraw: true } animation
+                && SpriteGeometry.SpriteContains(
+                    worldPoint,
+                    SpriteGeometry.Center(position, boxSize),
+                    new Vec2(animation.SourceRect.Width, animation.SourceRect.Height),
+                    entry.Transform.Scale,
+                    entry.Transform.Rotation))
+                return true;
+
+            return boxSize is { } size && SpriteGeometry.BoxContains(worldPoint, position, size);
         }
 
         private static void DrawFpsCounter(SKCanvas canvas, double fps)

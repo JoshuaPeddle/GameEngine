@@ -61,6 +61,11 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
 - **Coordinates are virtual.** A scene declares `VirtualWidth`/`VirtualHeight`; the engine
   letterboxes and maps pointer input back through the same transform.
 - **Components are data; logic lives in systems.** Rendering stays inside `RenderSystem`.
+- **`CTransform.Position` is the top-left of the bounding box, or the sprite centre when
+  there is no box.** A sprite is drawn centred on that point; rotation and scale are applied
+  about that centre and a negative scale mirrors on its axis. `CBoundingBox.Size` is
+  collision geometry and is deliberately unaffected by `CTransform.Scale`. `SpriteGeometry`
+  is the single definition, shared by drawing, culling and the editor's picking.
 - **`GeKeys` is the key vocabulary** (`A`–`Z`, `Space`, arrows). Every runner builds its
   map from those names, so adding a value reaches all platforms; a swipe is classified as
   `W`/`A`/`S`/`D`. Several keys may share one action.
