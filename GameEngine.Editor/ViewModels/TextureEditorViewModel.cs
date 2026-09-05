@@ -19,10 +19,10 @@ public class TextureEditorViewModel : ViewModelBase
     private readonly IFilePickerService _filePickerService;
     private readonly AssetEditorViewModel _parentViewModel;
     private Task<Bitmap>? _image;
-    private Uri _imagePath;
+    private Uri? _imagePath;
     private double _imageWidth;
     private double _imageHeight;
-    private string textureName;
+    private string textureName = string.Empty;
 
     public TextureEditorViewModel(IFilePickerService filePickerService, AssetEditorViewModel parentViewModel)
     {
@@ -35,7 +35,11 @@ public class TextureEditorViewModel : ViewModelBase
 
     public TextureEditorViewModel() // Designer constructor
     {
-        _parentViewModel = new AssetEditorViewModel(new FilePickerService());
+        _filePickerService = new FilePickerService();
+        _parentViewModel = new AssetEditorViewModel(_filePickerService);
+        OpenImageCommand = ReactiveCommand.CreateFromTask(OpenImage);
+        CloseImageCommand = ReactiveCommand.CreateFromTask(CloseImage);
+        ImportTextureCommand = ReactiveCommand.CreateFromTask(ImportTexture);
         foreach (var texture in new[]
         {
             new Texture { Name = "Texture 1", Path = "path/to/texture1.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png")) },
@@ -103,7 +107,7 @@ public class TextureEditorViewModel : ViewModelBase
         var texture = new Texture
         {
             Name = TextureName,
-            Path = _imagePath.LocalPath,
+            Path = _imagePath?.LocalPath ?? string.Empty,
             Bitmap = Image
         };
         Textures.Add(texture);

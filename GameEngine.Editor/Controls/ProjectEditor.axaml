@@ -25,7 +25,7 @@
             <TextBlock Text="New Game" FontWeight="Bold"/>
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBox Width="220"
-                         Watermark="Game name"
+                         PlaceholderText="Game name"
                          Text="{Binding NewProjectName, Mode=TwoWay}"/>
                 <Button Content="New Game..." Command="{Binding NewProjectCommand}" />
                 <TextBlock Text="{Binding NewProjectStatus}" VerticalAlignment="Center" Foreground="Gray"/>

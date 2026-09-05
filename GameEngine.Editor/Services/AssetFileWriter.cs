@@ -68,14 +68,14 @@ namespace GameEngine.Editor.Services
             foreach (Texture texture in textures)
             {
 
-                var bitmap = await texture.Bitmap;
-                bitmap.Dispose();
+                if (texture.Bitmap != null)
+                    (await texture.Bitmap).Dispose();
 
                 string relativePath = GetTextureRelativePath(texture);
                 string destinationPath = Path.Combine(projectFolder, relativePath);
 
-                string destinationDirectory = Path.GetDirectoryName(destinationPath);
-                if (!Directory.Exists(destinationDirectory))
+                string? destinationDirectory = Path.GetDirectoryName(destinationPath);
+                if (destinationDirectory != null && !Directory.Exists(destinationDirectory))
                     Directory.CreateDirectory(destinationDirectory);
 
                 tasks.Add(CopyFileAsync(texture.Path, destinationPath));

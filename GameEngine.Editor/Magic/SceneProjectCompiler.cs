@@ -117,7 +117,7 @@ namespace GameEngine.Editor.Magic
                     MSBuildLocator.RegisterDefaults();
 
                 _workspace = MSBuildWorkspace.Create();
-                _workspace.WorkspaceFailed += (_, e) => _workspaceFailures.Add(e.Diagnostic.Message);
+                _workspace.RegisterWorkspaceFailedHandler(e => _workspaceFailures.Add(e.Diagnostic.Message));
 
                 _workspaceFailures.Clear();
                 _project = await _workspace.OpenProjectAsync(_projectPath, cancellationToken: ct);

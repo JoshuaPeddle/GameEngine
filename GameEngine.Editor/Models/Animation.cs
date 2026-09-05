@@ -2,8 +2,8 @@
 {
     public class Animation
     {
-        public string Name { get; set; }
-        public Texture Texture { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public Texture Texture { get; set; } = new();
         public int FrameCount { get; set; }
         public float Delay { get; set; } // Delay between frames in milliseconds
 

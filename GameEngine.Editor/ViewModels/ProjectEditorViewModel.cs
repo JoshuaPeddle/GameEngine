@@ -70,7 +70,7 @@ namespace GameEngine.Editor.ViewModels
             }
         }
 
-        private string _projectFolderPath;
+        private string _projectFolderPath = string.Empty;
 
         public string? ProjectName => Path.GetFileName(ProjectFolderPath)?.Replace(".csproj", "");
 

@@ -39,7 +39,6 @@
             skglControl1.Name = "skglControl1";
             skglControl1.Size = new Size(638, 321);
             skglControl1.TabIndex = 0;
-            skglControl1.VSync = false;
             // 
             // MainView
             // 

@@ -20,7 +20,7 @@ namespace GameEngine.Editor.ViewModels
 
         private readonly AssetEditorViewModel _parentViewModel;
         private Texture? _selectedTexture;
-        private string _animationName;
+        private string _animationName = string.Empty;
         private int _frameCount;
         private int _frameDelay;
         private bool _animate;
@@ -45,6 +45,7 @@ namespace GameEngine.Editor.ViewModels
         public AnimationEditorViewModel() // Designer constructor
         {
             _parentViewModel = new AssetEditorViewModel(new FilePickerService());
+            SaveAnimationCommand = ReactiveCommand.Create(SaveAnimation);
             foreach (var texture in new[]
             {
                 new Texture { Name = "Texture 1", Path = "path/to/texture1.png", Bitmap = Task.FromResult(new Bitmap("GameEngine.Demo/assets/images/jeep.png")) },
@@ -139,6 +140,9 @@ namespace GameEngine.Editor.ViewModels
         {
             _frames.Clear();
             if (SelectedTexture == null || FrameCount <= 0)
+                return;
+
+            if (SelectedTexture.Bitmap == null)
                 return;
 
             var bitmap = SelectedTexture.Bitmap.Result;

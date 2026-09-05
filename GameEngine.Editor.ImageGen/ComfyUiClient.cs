@@ -24,7 +24,7 @@ internal static class NodeRef
 
 public class ImageGenerationRequest
 {
-    public string PromptText { get; set; }
+    public string PromptText { get; set; } = string.Empty;
     public string NegativePrompt { get; set; } = "text, watermark";
     public long? Seed { get; set; }
     public int Width { get; set; } = 512;
@@ -200,7 +200,8 @@ public class ComfyUiClient
 
         string responseJson = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(responseJson);
-        return doc.RootElement.GetProperty("prompt_id").GetString();
+        return doc.RootElement.GetProperty("prompt_id").GetString()
+            ?? throw new InvalidOperationException("ComfyUI accepted the prompt but returned no prompt_id.");
     }
 
     private Dictionary<string, object> BuildWorkflow(ImageGenerationRequest request)
@@ -327,7 +328,8 @@ public class ComfyUiClient
                         if (output.Value.TryGetProperty("images", out var images))
                         {
                             var firstImage = images.EnumerateArray().First();
-                            return firstImage.GetProperty("filename").GetString();
+                            return firstImage.GetProperty("filename").GetString()
+                                ?? throw new InvalidOperationException("ComfyUI returned an image with no filename.");
                         }
                     }
                 }

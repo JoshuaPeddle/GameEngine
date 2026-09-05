@@ -55,9 +55,12 @@ public partial class ImageGeneratorControl : UserControl
         GenerateButton = this.FindControl<Button>("GenerateButton");
         SaveButton = this.FindControl<Button>("SaveButton");
 
-        PromptTextBox.Text =
-            "A small, hyper-realistic floating glass marble containing a lush green miniature world inside. Forests, mossy hills, tiny rivers, and glowing plants, all enclosed within the translucent sphere. Beautiful lighting, soft reflections, shallow depth of field, macro photography, photorealistic, high detail, 8k";
-        SamplerComboBox.SelectedIndex = 2;
+        if (PromptTextBox != null)
+            PromptTextBox.Text =
+                "A small, hyper-realistic floating glass marble containing a lush green miniature world inside. Forests, mossy hills, tiny rivers, and glowing plants, all enclosed within the translucent sphere. Beautiful lighting, soft reflections, shallow depth of field, macro photography, photorealistic, high detail, 8k";
+
+        if (SamplerComboBox != null)
+            SamplerComboBox.SelectedIndex = 2;
     }
     
 
@@ -158,10 +161,10 @@ public partial class ImageGeneratorControl : UserControl
         var request = new ImageGenerationRequest()
             .WithPrompt(PromptTextBox.Text ?? "")
             .WithNegativePrompt(NegativePromptTextBox.Text ?? "text, watermark")
-            .WithSize((int)WidthNumeric.Value, (int)HeightNumeric.Value)
+            .WithSize((int)(WidthNumeric.Value ?? 512), (int)(HeightNumeric.Value ?? 512))
             .WithSteps((int)StepsSlider.Value)
             .WithCfg(CfgSlider.Value)
-            .WithBatchSize((int)BatchSizeNumeric.Value)
+            .WithBatchSize((int)(BatchSizeNumeric.Value ?? 1))
             .WithCheckpoint(CheckpointTextBox.Text ?? "v1-5-pruned-emaonly-fp16.safetensors")
             .WithBackgroundRemoval(RemoveBackgroundCheckBox.IsChecked ?? true);
 
