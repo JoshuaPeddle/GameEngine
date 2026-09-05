@@ -268,13 +268,23 @@ namespace GameEngine.Core.Utils
             specialEntityHandlers = new Dictionary<string, Action<Entity, InputManager, AudioSystem?>>();
         }
 
-        public void LoadLevel(LevelFile levelFile, EntityManager entityManager, InputManager? inputManager = null, AudioSystem? audioSystem = null)
+        // onEntityCreated receives each entity with the index of the document entry it came
+        // from, which is how an editor keeps its own identities attached to what it previews.
+        public void LoadLevel(
+            LevelFile levelFile,
+            EntityManager entityManager,
+            InputManager? inputManager = null,
+            AudioSystem? audioSystem = null,
+            Action<int, Entity>? onEntityCreated = null)
         {
             levelFile.Validate();
 
-            foreach (var entityData in levelFile.Entities)
+            for (var index = 0; index < levelFile.Entities.Count; index++)
             {
+                var entityData = levelFile.Entities[index];
                 var entity = CreateEntity(entityData, entityManager);
+
+                onEntityCreated?.Invoke(index, entity);
 
                 if (specialEntityHandlers.TryGetValue(entityData.Tag, out var handler))
                 {

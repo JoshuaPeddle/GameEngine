@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
@@ -6,9 +7,19 @@ using ReactiveUI;
 
 namespace GameEngine.Editor.ViewModels
 {
+    /// <summary>A component's whole editable state, which is what undo restores.</summary>
+    public readonly record struct ComponentState(string Type, string RawJson);
+
     // Helper view models for level editing
     public class LevelEntityViewModel : ReactiveObject
     {
+        /// <summary>
+        /// Identity of this entity within the document, stable for as long as the document is
+        /// open and unrelated to the runtime id the preview gives it. The preview maps one to
+        /// the other; an entity a scene spawns at runtime has no document identity at all.
+        /// </summary>
+        public Guid DocumentId { get; } = Guid.NewGuid();
+
         private string _tag = string.Empty;
         public string Tag
         {
@@ -23,21 +34,86 @@ namespace GameEngine.Editor.ViewModels
     {
         private bool _suppressSync;
 
+        // One user gesture can walk through several setters — changing the type rewrites every
+        // typed field and then the JSON — and it should be one entry in the undo stack, not
+        // five. The outermost change is the one that reports.
+        private int _changeDepth;
+        private ComponentState? _changeStart;
+        private bool _restoring;
+
+        /// <summary>Raised once per change, carrying the state before it.</summary>
+        public event Action<LevelComponentViewModel, ComponentState>? Edited;
+
+        public ComponentState State => new(_type, _rawJson);
+
+        /// <summary>Puts the component back to a recorded state without recording the move.</summary>
+        public void Restore(ComponentState state)
+        {
+            _restoring = true;
+            _suppressSync = true;
+            try
+            {
+                _type = state.Type;
+                _rawJson = state.RawJson;
+                this.RaisePropertyChanged(nameof(Type));
+                this.RaisePropertyChanged(nameof(RawJson));
+                RaiseTypeFlags();
+            }
+            finally
+            {
+                _suppressSync = false;
+            }
+
+            TryParseFromRawJson();
+            _restoring = false;
+        }
+
+        private void BeginChange()
+        {
+            if (_changeDepth++ == 0)
+                _changeStart = new ComponentState(_type, _rawJson);
+        }
+
+        private void CompleteChange()
+        {
+            if (--_changeDepth > 0)
+                return;
+
+            var start = _changeStart;
+            _changeStart = null;
+
+            if (_restoring || start is not { } before)
+                return;
+
+            if (before.Type == _type && before.RawJson == _rawJson)
+                return;
+
+            Edited?.Invoke(this, before);
+        }
+
         private string _type = string.Empty;
         public string Type
         {
             get => _type;
             set
             {
-                var changed = _type != value;
-                this.RaiseAndSetIfChanged(ref _type, value);
-                if (changed)
+                BeginChange();
+                try
                 {
-                    RaiseTypeFlags();
-                    if (!_suppressSync)
+                    var changed = _type != value;
+                    this.RaiseAndSetIfChanged(ref _type, value);
+                    if (changed)
                     {
-                        ApplyTypeWithDefaults(_type);
+                        RaiseTypeFlags();
+                        if (!_suppressSync)
+                        {
+                            ApplyTypeWithDefaults(_type);
+                        }
                     }
+                }
+                finally
+                {
+                    CompleteChange();
                 }
             }
         }
@@ -48,52 +124,60 @@ namespace GameEngine.Editor.ViewModels
             get => _rawJson;
             set
             {
-                this.RaiseAndSetIfChanged(ref _rawJson, value);
-                if (!_suppressSync)
+                BeginChange();
+                try
                 {
-                    TryParseFromRawJson();
+                    this.RaiseAndSetIfChanged(ref _rawJson, value);
+                    if (!_suppressSync)
+                    {
+                        TryParseFromRawJson();
+                    }
+                }
+                finally
+                {
+                    CompleteChange();
                 }
             }
         }
 
         // Typed properties for known components
         private double _posX;
-        public double PosX { get => _posX; set { this.RaiseAndSetIfChanged(ref _posX, value); UpdateRawJson(); } }
+        public double PosX { get => _posX; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _posX, value); UpdateRawJson(); } finally { CompleteChange(); } } }
         private double _posY;
-        public double PosY { get => _posY; set { this.RaiseAndSetIfChanged(ref _posY, value); UpdateRawJson(); } }
+        public double PosY { get => _posY; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _posY, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         private double _velX;
-        public double VelX { get => _velX; set { this.RaiseAndSetIfChanged(ref _velX, value); UpdateRawJson(); } }
+        public double VelX { get => _velX; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _velX, value); UpdateRawJson(); } finally { CompleteChange(); } } }
         private double _velY;
-        public double VelY { get => _velY; set { this.RaiseAndSetIfChanged(ref _velY, value); UpdateRawJson(); } }
+        public double VelY { get => _velY; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _velY, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         private double _scaleX = 1;
-        public double ScaleX { get => _scaleX; set { this.RaiseAndSetIfChanged(ref _scaleX, value); UpdateRawJson(); } }
+        public double ScaleX { get => _scaleX; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _scaleX, value); UpdateRawJson(); } finally { CompleteChange(); } } }
         private double _scaleY = 1;
-        public double ScaleY { get => _scaleY; set { this.RaiseAndSetIfChanged(ref _scaleY, value); UpdateRawJson(); } }
+        public double ScaleY { get => _scaleY; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _scaleY, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         private double _rotation;
-        public double Rotation { get => _rotation; set { this.RaiseAndSetIfChanged(ref _rotation, value); UpdateRawJson(); } }
+        public double Rotation { get => _rotation; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _rotation, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         private int _layer;
-        public int Layer { get => _layer; set { this.RaiseAndSetIfChanged(ref _layer, value); UpdateRawJson(); } }
+        public int Layer { get => _layer; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _layer, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         private string _animationName = string.Empty;
-        public string AnimationName { get => _animationName; set { this.RaiseAndSetIfChanged(ref _animationName, value); UpdateRawJson(); } }
+        public string AnimationName { get => _animationName; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _animationName, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         private double _width;
-        public double Width { get => _width; set { this.RaiseAndSetIfChanged(ref _width, value); UpdateRawJson(); } }
+        public double Width { get => _width; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _width, value); UpdateRawJson(); } finally { CompleteChange(); } } }
         private double _height;
-        public double Height { get => _height; set { this.RaiseAndSetIfChanged(ref _height, value); UpdateRawJson(); } }
+        public double Height { get => _height; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _height, value); UpdateRawJson(); } finally { CompleteChange(); } } }
         private bool _blockVision = false;
-        public bool BlockVision { get => _blockVision; set { this.RaiseAndSetIfChanged(ref _blockVision, value); UpdateRawJson(); } }
+        public bool BlockVision { get => _blockVision; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _blockVision, value); UpdateRawJson(); } finally { CompleteChange(); } } }
         private bool _blockMovement = true;
-        public bool BlockMovement { get => _blockMovement; set { this.RaiseAndSetIfChanged(ref _blockMovement, value); UpdateRawJson(); } }
+        public bool BlockMovement { get => _blockMovement; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _blockMovement, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         private double _speed;
-        public double Speed { get => _speed; set { this.RaiseAndSetIfChanged(ref _speed, value); UpdateRawJson(); } }
+        public double Speed { get => _speed; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _speed, value); UpdateRawJson(); } finally { CompleteChange(); } } }
         private double _maxSpeed;
-        public double MaxSpeed { get => _maxSpeed; set { this.RaiseAndSetIfChanged(ref _maxSpeed, value); UpdateRawJson(); } }
+        public double MaxSpeed { get => _maxSpeed; set { BeginChange(); try { this.RaiseAndSetIfChanged(ref _maxSpeed, value); UpdateRawJson(); } finally { CompleteChange(); } } }
 
         // Convenience flags for XAML
         public bool IsTransform => Type == "CTransform";
@@ -102,8 +186,12 @@ namespace GameEngine.Editor.ViewModels
         public bool IsInput => Type == "CInput";
         public bool IsMovement => Type == "CMovement";
 
+        /// <summary>True for a type the typed form does not cover, which is edited as JSON.</summary>
+        public bool IsJsonOnly => !IsTransform && !IsAnimation && !IsBoundingBox && !IsInput && !IsMovement;
+
         public void ApplyTypeWithDefaults(string type)
         {
+            BeginChange();
             _suppressSync = true;
             try
             {
@@ -149,6 +237,7 @@ namespace GameEngine.Editor.ViewModels
             finally
             {
                 _suppressSync = false;
+                CompleteChange();
             }
         }
 
@@ -210,7 +299,8 @@ namespace GameEngine.Editor.ViewModels
 
                     writer.WriteEndObject();
                 }
-                RawJson = Encoding.UTF8.GetString(ms.ToArray());
+                _rawJson = Encoding.UTF8.GetString(ms.ToArray());
+                this.RaisePropertyChanged(nameof(RawJson));
             }
             finally
             {
@@ -288,6 +378,7 @@ namespace GameEngine.Editor.ViewModels
             this.RaisePropertyChanged(nameof(IsBoundingBox));
             this.RaisePropertyChanged(nameof(IsInput));
             this.RaisePropertyChanged(nameof(IsMovement));
+            this.RaisePropertyChanged(nameof(IsJsonOnly));
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using GameEngine.Core;
+using GameEngine.Core.Components;
 using GameEngine.Core.Utils;
 using ReactiveUI;
 using Unit = ReactiveUI.Primitives.RxVoid;
@@ -15,16 +17,19 @@ namespace GameEngine.Editor.ViewModels
 {
     public class LevelDocumentViewModel : ViewModelBase
     {
-        // List of supported component types for the editor
-        public static readonly string[] ComponentTypes = new[]
-        {
-            "CTransform", "CAnimation", "CBoundingBox", "CInput", "CMovement"
-        };
+        // Generated from the vocabulary the loader enforces, so the editor cannot offer a type
+        // the engine does not know or omit one it does.
+        public static readonly string[] ComponentTypes = ComponentSchemas.KnownTypes.ToArray();
 
         private readonly Func<string?> _projectPath;
         private readonly EditorStatus _status;
 
         private LevelFile? _levelFile;
+
+        public EditHistory History { get; } = new();
+
+        /// <summary>Raised whenever the authored document changes, however it changed.</summary>
+        public event Action? DocumentChanged;
 
         public LevelDocumentViewModel(Func<string?> projectPath, EditorStatus status)
         {
@@ -41,6 +46,71 @@ namespace GameEngine.Editor.ViewModels
             RemoveEntityCommand = ReactiveCommand.Create((Action)RemoveEntity, canModifyEntity);
             AddComponentCommand = ReactiveCommand.Create((Action)AddComponent, canModifyEntity);
             RemoveComponentCommand = ReactiveCommand.Create((Action)RemoveComponent, canModifyComponent);
+
+            UndoCommand = ReactiveCommand.Create((Action)Undo);
+            RedoCommand = ReactiveCommand.Create((Action)Redo);
+
+            History.Changed += OnHistoryChanged;
+            LevelEntities.CollectionChanged += (_, args) =>
+            {
+                foreach (var added in args.NewItems?.Cast<LevelEntityViewModel>() ?? [])
+                    Watch(added);
+            };
+        }
+
+        private void OnHistoryChanged()
+        {
+            this.RaisePropertyChanged(nameof(CanUndo));
+            this.RaisePropertyChanged(nameof(CanRedo));
+            this.RaisePropertyChanged(nameof(HasUnsavedChanges));
+            this.RaisePropertyChanged(nameof(UnsavedChangesSummary));
+            DocumentChanged?.Invoke();
+        }
+
+        public bool CanUndo => History.CanUndo;
+
+        public bool CanRedo => History.CanRedo;
+
+        public bool HasUnsavedChanges => !History.IsClean;
+
+        public string UnsavedChangesSummary => HasUnsavedChanges
+            ? $"Unsaved changes ({History.Depth})"
+            : "No unsaved changes";
+
+        public ReactiveCommand<Unit, Unit> UndoCommand { get; }
+
+        public ReactiveCommand<Unit, Unit> RedoCommand { get; }
+
+        private void Undo() => History.Undo();
+
+        private void Redo() => History.Redo();
+
+        // Every component in the document reports its own edits here, so a value typed into the
+        // inspector is as undoable as adding an entity.
+        private void Watch(LevelEntityViewModel entity)
+        {
+            foreach (var component in entity.Components)
+                Watch(component);
+
+            entity.Components.CollectionChanged += (_, args) =>
+            {
+                foreach (var added in args.NewItems?.Cast<LevelComponentViewModel>() ?? [])
+                    Watch(added);
+            };
+        }
+
+        private void Watch(LevelComponentViewModel component)
+        {
+            component.Edited -= OnComponentEdited;
+            component.Edited += OnComponentEdited;
+        }
+
+        private void OnComponentEdited(LevelComponentViewModel component, ComponentState before)
+        {
+            if (History.IsReplaying)
+                return;
+
+            History.Do(new EditComponentEdit(component, before, component.State));
         }
 
         private string? _levelFilePath;
@@ -162,6 +232,7 @@ namespace GameEngine.Editor.ViewModels
                     LevelEntities.Add(evm);
                 }
                 SelectedLevelEntity = LevelEntities.FirstOrDefault();
+                History.Clear();
                 _status.Message = "Level loaded.";
             }
             catch (Exception ex)
@@ -201,7 +272,34 @@ namespace GameEngine.Editor.ViewModels
             }
 
             _levelFile = candidate;
+            History.MarkClean();
             _status.Message = "Level saved.";
+        }
+
+        /// <summary>
+        /// The authored document as the engine would read it, with the document identity of
+        /// each entry alongside. Both the preview and the file are built from this, which is
+        /// what keeps what an author sees and what they save the same thing.
+        /// </summary>
+        public (LevelFile Level, IReadOnlyList<Guid> DocumentIds) Project()
+        {
+            var candidate = BuildCandidateDocument(_levelFile ?? new LevelFile());
+            var identities = LevelEntities.Select(entity => entity.DocumentId).ToList();
+            return (candidate, identities);
+        }
+
+        public LevelEntityViewModel? FindByDocumentId(Guid documentId) =>
+            LevelEntities.FirstOrDefault(entity => entity.DocumentId == documentId);
+
+        public bool SelectByDocumentId(Guid documentId)
+        {
+            var entity = FindByDocumentId(documentId);
+            if (entity == null)
+                return false;
+
+            SelectedLevelEntity = entity;
+            SelectedLevelComponent = entity.Components.FirstOrDefault();
+            return true;
         }
 
         private LevelFile BuildCandidateDocument(LevelFile current)
@@ -270,15 +368,32 @@ namespace GameEngine.Editor.ViewModels
             int i = 1;
             while (LevelEntities.Any(e => e.Tag == baseTag + i)) i++;
             var newEntity = new LevelEntityViewModel { Tag = baseTag + i };
-            LevelEntities.Add(newEntity);
+
+            History.Do(new AddEntityEdit(LevelEntities, newEntity, LevelEntities.Count));
             SelectedLevelEntity = newEntity;
+        }
+
+        /// <summary>Places a new entity at a world position, which is what a viewport click does.</summary>
+        public LevelEntityViewModel PlaceEntity(string tag, Vec2 position)
+        {
+            var entity = new LevelEntityViewModel { Tag = tag };
+            var transform = new LevelComponentViewModel();
+            transform.ApplyTypeWithDefaults("CTransform");
+            transform.PosX = position.X;
+            transform.PosY = position.Y;
+            entity.Components.Add(transform);
+
+            History.Do(new AddEntityEdit(LevelEntities, entity, LevelEntities.Count));
+            SelectedLevelEntity = entity;
+            SelectedLevelComponent = transform;
+            return entity;
         }
 
         private void RemoveEntity()
         {
             if (SelectedLevelEntity == null) return;
             var idx = LevelEntities.IndexOf(SelectedLevelEntity);
-            LevelEntities.Remove(SelectedLevelEntity);
+            History.Do(new RemoveEntityEdit(LevelEntities, SelectedLevelEntity, idx));
             SelectedLevelEntity = LevelEntities.Count > 0 ? LevelEntities[Math.Clamp(idx - 1, 0, LevelEntities.Count - 1)] : null;
         }
 
@@ -288,7 +403,7 @@ namespace GameEngine.Editor.ViewModels
             // Default to a CTransform with sensible defaults
             var comp = new LevelComponentViewModel();
             comp.ApplyTypeWithDefaults("CTransform");
-            SelectedLevelEntity.Components.Add(comp);
+            History.Do(new AddComponentEdit(SelectedLevelEntity, comp, SelectedLevelEntity.Components.Count));
             SelectedLevelComponent = comp;
         }
 
@@ -297,8 +412,14 @@ namespace GameEngine.Editor.ViewModels
             if (SelectedLevelEntity == null || SelectedLevelComponent == null) return;
             var list = SelectedLevelEntity.Components;
             var idx = list.IndexOf(SelectedLevelComponent);
-            list.Remove(SelectedLevelComponent);
+            History.Do(new RemoveComponentEdit(SelectedLevelEntity, SelectedLevelComponent, idx));
             SelectedLevelComponent = list.Count > 0 ? list[Math.Clamp(idx - 1, 0, list.Count - 1)] : null;
+        }
+
+        public void RenameSelectedEntity(string tag)
+        {
+            if (SelectedLevelEntity == null || SelectedLevelEntity.Tag == tag) return;
+            History.Do(new RenameEntityEdit(SelectedLevelEntity, SelectedLevelEntity.Tag, tag));
         }
     }
 }

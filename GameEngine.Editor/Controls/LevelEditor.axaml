@@ -30,6 +30,8 @@
             <CheckBox Content="Run"
                       IsChecked="{Binding IsEngineRunning, Mode=TwoWay}"
                       VerticalAlignment="Center"/>
+            <Button Content="Preview Level"
+                    Command="{Binding PreviewLevelCommand}"/>
             <TextBlock Text="{Binding Status.Message}" Margin="12,0,0,0"
                        Foreground="LightGray" VerticalAlignment="Center"/>
             <Button Content="Edit"
@@ -132,6 +134,10 @@
                     PlaceholderText="Select a level file..."/>
           <Button Content="Load Level" Command="{Binding Level.LoadLevelFileCommand}"/>
           <Button Content="Save Level" Command="{Binding Level.SaveLevelFileCommand}"/>
+          <Button Content="Undo" Command="{Binding Level.UndoCommand}" IsEnabled="{Binding Level.CanUndo}"/>
+          <Button Content="Redo" Command="{Binding Level.RedoCommand}" IsEnabled="{Binding Level.CanRedo}"/>
+          <Button Content="Preview Level" Command="{Binding PreviewLevelCommand}"/>
+          <TextBlock Text="{Binding Level.UnsavedChangesSummary}" Foreground="#E0B080" VerticalAlignment="Center"/>
           <TextBlock Text="{Binding Level.LevelFilePath}" Foreground="#ccc" VerticalAlignment="Center"/>
         </StackPanel>
 
@@ -233,6 +239,10 @@
 
                       <!-- CInput has no fields -->
                       <TextBlock Text="No properties" IsVisible="{Binding IsInput}" Foreground="#888"/>
+
+                      <!-- Types with no typed form yet are edited as JSON below -->
+                      <TextBlock Text="Edit this component in its JSON."
+                                 IsVisible="{Binding IsJsonOnly}" Foreground="#888" TextWrapping="Wrap"/>
 
                       <Expander Header="Advanced JSON" IsExpanded="False">
                         <TextBox Text="{Binding RawJson, Mode=TwoWay}" AcceptsReturn="True" FontFamily="Consolas, Courier New" FontSize="12" MinHeight="120" TextWrapping="NoWrap"/>

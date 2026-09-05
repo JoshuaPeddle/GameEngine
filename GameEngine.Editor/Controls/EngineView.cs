@@ -10,8 +10,9 @@ using GameEngine.Core.Systems;
 using GameEngine.Editor.ViewModels;
 using SkiaSharp;
 using System;
-using System.ComponentModel; 
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace GameEngine.Editor.Controls
@@ -29,7 +30,7 @@ namespace GameEngine.Editor.Controls
         {
             SizeChanged += OnSizeChanged;
             DataContextChanged += OnDataContextChanged;
-            PointerPressed += (s, e) => SelectEntityAt(e.GetPosition(this));
+            PointerPressed += OnPointerPressed;
         }
 
         // The preview engine is owned by this view, so leaving the tree ends it. A later
@@ -38,6 +39,61 @@ namespace GameEngine.Editor.Controls
         {
             DisposeEngine();
             base.OnDetachedFromVisualTree(e);
+        }
+
+        // A plain click selects what is under it; holding Shift places a new authored entity
+        // there. Both go through the document, never through the live entities.
+        private void OnPointerPressed(object? sender, global::Avalonia.Input.PointerPressedEventArgs e)
+        {
+            var position = e.GetPosition(this);
+
+            if (e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Shift))
+                PlaceEntityAt(position);
+            else
+                SelectEntityAt(position);
+        }
+
+        private void PlaceEntityAt(Point screenPosition)
+        {
+            var engine = _gameEngine;
+            var viewModel = _vm;
+            if (engine == null || viewModel == null)
+                return;
+
+            var screenPoint = new Vec2(screenPosition.X, screenPosition.Y);
+
+            engine.Post(e =>
+            {
+                if (!TryScreenToWorld(e, screenPoint, out var world))
+                    return;
+
+                Dispatcher.UIThread.Post(() =>
+                    viewModel.Level.PlaceEntity(NextEntityTag(viewModel), world));
+            });
+        }
+
+        private static string NextEntityTag(LevelEditorViewModel viewModel)
+        {
+            var index = 1;
+            while (viewModel.Level.LevelEntities.Any(entity => entity.Tag == "entity" + index))
+                index++;
+
+            return "entity" + index;
+        }
+
+        private static bool TryScreenToWorld(Engine engine, Vec2 screenPoint, out Vec2 world)
+        {
+            world = default;
+
+            var renderSystem = engine.Systems.TryGet<RenderSystem>();
+            if (renderSystem == null)
+                return false;
+
+            var snapshot = new RenderSnapshot();
+            engine.EntityManager.BuildRenderSnapshot(snapshot);
+
+            return renderSystem.TryScreenToWorld(
+                screenPoint, engine.InputManager.RealResolution, snapshot.ActiveCamera, out world);
         }
 
         private void SelectEntityAt(Point screenPosition)
@@ -90,6 +146,7 @@ namespace GameEngine.Editor.Controls
             {
                 _vm.SceneSelected -= OnSceneSelected;
                 _vm.ScenesReloading -= OnScenesReloading;
+                _vm.PreviewLevelRequested -= OnPreviewLevelRequested;
                 _vm.PropertyChanged -= VmOnPropertyChanged;
             }
 
@@ -101,6 +158,7 @@ namespace GameEngine.Editor.Controls
             {
                 _vm.SceneSelected += OnSceneSelected;
                 _vm.ScenesReloading += OnScenesReloading;
+                _vm.PreviewLevelRequested += OnPreviewLevelRequested;
                 _vm.PropertyChanged += VmOnPropertyChanged;
             }
         }
@@ -131,6 +189,52 @@ namespace GameEngine.Editor.Controls
             }
         }
 
+        // The authored level, previewed through the same engine as a compiled scene. ChangeScene
+        // is the engine-thread handoff, so an edit made on the UI thread never touches live
+        // entities directly.
+        private async void OnPreviewLevelRequested(Magic.LevelDocumentScene scene)
+        {
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                var engine = EnsurePreviewEngine();
+                if (engine == null)
+                    return;
+
+                engine.ChangeScene(scene);
+                InvalidateVisual();
+
+                if (!_started)
+                {
+                    _started = true;
+                    await engine.Start();
+                }
+            });
+        }
+
+        private Engine? EnsurePreviewEngine()
+        {
+            if (_gameEngine != null)
+                return _gameEngine;
+
+            var projectPath = _vm?.AssetEditorViewModel?.ProjectEditor?.ProjectFolderPath;
+            if (string.IsNullOrWhiteSpace(projectPath))
+                return null;
+
+            var assetSource = CreateProjectAssetSource(projectPath);
+
+            _gameEngine = OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser()
+                ? new Engine(QueueInvalidate, audioEnabled: false, assetSource)
+                : new Engine(QueueInvalidate, assetSource: assetSource);
+
+            _gameEngine.FaultAction = ReportFault;
+            _gameEngine.RenderOptions.DrawBoundingBoxes = true;
+            _gameEngine.TargetFrameRate = 120;
+            _gameEngine.SetRunning(_vm!.IsEngineRunning);
+            _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
+
+            return _gameEngine;
+        }
+
         private async void OnSceneSelected(Type sceneType)
         {
             if (_vm == null) return;
@@ -139,23 +243,7 @@ namespace GameEngine.Editor.Controls
 
             await Dispatcher.UIThread.InvokeAsync(async () =>
             {
-                if (_gameEngine == null)
-                {
-                    var assetSource = CreateProjectAssetSource(
-                        _vm.AssetEditorViewModel.ProjectEditor.ProjectFolderPath);
-
-                    if (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser())
-                        _gameEngine = new Engine(QueueInvalidate, audioEnabled: false, assetSource);
-                    else
-                        _gameEngine = new Engine(QueueInvalidate, assetSource: assetSource);
-                    _gameEngine.FaultAction = ReportFault;
-                    _gameEngine.RenderOptions.DrawBoundingBoxes = true;
-                    _gameEngine.TargetFrameRate = 120;
-                    _gameEngine.SetRunning(_vm.IsEngineRunning);
-                    _gameEngine.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
-                }
-
-                var engine = _gameEngine
+                var engine = EnsurePreviewEngine()
                     ?? throw new InvalidOperationException("The preview engine was not created.");
                 var sceneInstance = (Scene)Activator.CreateInstance(sceneType)!;
                 engine.ChangeScene(sceneInstance);

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Utils;
+using GameEngine.Editor.Magic;
 using ReactiveUI;
 using Unit = ReactiveUI.Primitives.RxVoid;
 
@@ -26,7 +27,17 @@ namespace GameEngine.Editor.ViewModels
             SceneCatalog.SceneSelected += type => SceneSelected?.Invoke(type);
             SceneCatalog.ScenesReloading += () => ScenesReloading?.Invoke();
 
-            EntitySelectedCommand = ReactiveCommand.Create<EntitySnapshot>(entity => Inspector.Select(entity));
+            EntitySelectedCommand = ReactiveCommand.Create<EntitySnapshot>(SelectEntity);
+            PreviewLevelCommand = ReactiveCommand.Create((Action)PreviewLevel);
+
+            // While the preview is paused it tracks the document; once it is running, the
+            // simulation owns the entities and the document stops pushing at it. Either way the
+            // document is the source of truth — nothing the simulation does is written back.
+            Level.DocumentChanged += () =>
+            {
+                if (!IsEngineRunning && _previewingLevel)
+                    PreviewLevel();
+            };
         }
 
         public LevelEditorViewModel()
@@ -38,6 +49,7 @@ namespace GameEngine.Editor.ViewModels
             Level = new LevelDocumentViewModel(() => ProjectPath, Status);
             SceneCatalog = new SceneCatalogViewModel(() => ProjectPath, Status, () => Inspector.Select(null));
             EntitySelectedCommand = ReactiveCommand.Create<EntitySnapshot>(entity => Inspector.Select(entity));
+            PreviewLevelCommand = ReactiveCommand.Create((Action)PreviewLevel);
 
             SceneCatalog.Scenes.Add("No Project Loaded");
 
@@ -91,8 +103,63 @@ namespace GameEngine.Editor.ViewModels
 
         public ReactiveCommand<EntitySnapshot, Unit> EntitySelectedCommand { get; }
 
+        public ReactiveCommand<Unit, Unit> PreviewLevelCommand { get; }
+
         public event Action<Type>? SceneSelected;
         public event Action? ScenesReloading;
+        public event Action<LevelDocumentScene>? PreviewLevelRequested;
+
+        private bool _previewingLevel;
+        private LevelDocumentScene? _previewScene;
+
+        /// <summary>Builds a preview from the authored document and hands it to the view.</summary>
+        public void PreviewLevel()
+        {
+            var handler = PreviewLevelRequested;
+            if (handler == null)
+                return;
+
+            var projectFolder = AssetEditorViewModel?.ProjectEditor?.ProjectFolderPath;
+            if (string.IsNullOrWhiteSpace(projectFolder))
+            {
+                Status.Message = "Open a project before previewing a level.";
+                return;
+            }
+
+            var (level, documentIds) = Level.Project();
+
+            try
+            {
+                level.Validate();
+            }
+            catch (Exception ex)
+            {
+                Status.Message = $"Level not previewed: {ex.Message}";
+                return;
+            }
+
+            var scene = new LevelDocumentScene(
+                level,
+                documentIds,
+                () => new Assets("assets.json", Controls.EngineView.CreateProjectAssetSource(projectFolder)));
+
+            _previewScene = scene;
+            _previewingLevel = true;
+            handler(scene);
+        }
+
+        // A pick reports a runtime id. Only the preview knows which document row produced it,
+        // and a runtime-only entity produces none — the inspector then shows it read-only.
+        private void SelectEntity(EntitySnapshot entity)
+        {
+            Inspector.Select(entity);
+
+            var documentId = _previewScene?.DocumentIdOf(entity.Id);
+            if (documentId.HasValue)
+                Level.SelectByDocumentId(documentId.Value);
+        }
+
+        public bool IsPreviewingLevel => _previewingLevel;
 
         private bool _isEngineRunning = true;
         public bool IsEngineRunning
