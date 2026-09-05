@@ -32,10 +32,36 @@ namespace GameEngine.Core.Systems
         private readonly List<(Entity entity, CBoundingBox bbox, CTransform transform)> _validEntities = new(1000);
         private readonly List<(Entity entity, CGravity gravity, CTransform transform)> _entitiesWithGravity = new(100);
 
-        private readonly Dictionary<long, List<int>> _grid = new(1024);
+        // A cell is stamped with the frame that last put anything in it, so a still world
+        // re-uses its cells without touching the dictionary and a moving one clears only what
+        // it actually occupies. Cells nothing occupied this frame are dropped once the map has
+        // drifted well past current demand, which is what keeps a world that travels a long
+        // way from accumulating a bucket for every cell it has ever crossed. Dropped cells go
+        // back to a free list, so the retained storage is a bounded high-water pool rather
+        // than a per-frame allocation.
+        private sealed class Cell
+        {
+            public readonly List<int> Items = new(8);
+            public int Frame = -1;
+        }
+
+        private const int PruneSlack = 64;
+
+        private readonly Dictionary<long, Cell> _cells = new(1024);
+        private readonly List<Cell> _occupied = new(1024);
+        private readonly Stack<Cell> _freeCells = new();
+        private readonly List<long> _pruneScratch = new(1024);
+        private int _frame;
+
         private readonly List<int> _candidates = new(64);
         private int[] _lastPairedWith = [];
         private double _cellSize = MinimumCellSize;
+
+        /// <summary>Cells the broad phase keeps mapped: bounded by demand plus a fixed slack.</summary>
+        public int RetainedBroadPhaseCells => _cells.Count;
+
+        /// <summary>Cells occupied by the colliders of the frame just built.</summary>
+        public int OccupiedBroadPhaseCells => _occupied.Count;
 
         public void Update(EntityManager entityManager, double deltaSeconds)
         {
@@ -43,6 +69,7 @@ namespace GameEngine.Core.Systems
             PopulateEntityLists(entityManager);
             ProcessGravity(deltaSeconds);
             ProcessCollisions();
+            DropCellsNothingOccupies();
         }
 
         private void ProcessCollisions()
@@ -93,9 +120,6 @@ namespace GameEngine.Core.Systems
 
         private void BuildSpatialGrid()
         {
-            foreach (var bucket in _grid.Values)
-                bucket.Clear();
-
             _cellSize = ChooseCellSize();
 
             for (int i = 0; i < _validEntities.Count; i++)
@@ -106,17 +130,53 @@ namespace GameEngine.Core.Systems
                 for (int cellY = minY; cellY <= maxY; cellY++)
                 {
                     for (int cellX = minX; cellX <= maxX; cellX++)
-                    {
-                        long key = CellKey(cellX, cellY);
-                        if (!_grid.TryGetValue(key, out var bucket))
-                        {
-                            bucket = new List<int>(8);
-                            _grid[key] = bucket;
-                        }
-                        bucket.Add(i);
-                    }
+                        BucketFor(CellKey(cellX, cellY)).Add(i);
                 }
             }
+        }
+
+        private void ReleaseOccupiedCells()
+        {
+            _occupied.Clear();
+            _frame++;
+        }
+
+        private List<int> BucketFor(long key)
+        {
+            if (!_cells.TryGetValue(key, out var cell))
+            {
+                cell = _freeCells.Count > 0 ? _freeCells.Pop() : new Cell();
+                _cells[key] = cell;
+            }
+
+            if (cell.Frame != _frame)
+            {
+                cell.Items.Clear();
+                cell.Frame = _frame;
+                _occupied.Add(cell);
+            }
+
+            return cell.Items;
+        }
+
+        private void DropCellsNothingOccupies()
+        {
+            if (_cells.Count <= 2 * _occupied.Count + PruneSlack)
+                return;
+
+            foreach (var pair in _cells)
+            {
+                if (pair.Value.Frame != _frame)
+                    _pruneScratch.Add(pair.Key);
+            }
+
+            foreach (var key in _pruneScratch)
+            {
+                if (_cells.Remove(key, out var cell))
+                    _freeCells.Push(cell);
+            }
+
+            _pruneScratch.Clear();
         }
 
         private double ChooseCellSize()
@@ -141,10 +201,10 @@ namespace GameEngine.Core.Systems
             {
                 for (int cellX = minX; cellX <= maxX; cellX++)
                 {
-                    if (!_grid.TryGetValue(CellKey(cellX, cellY), out var bucket))
+                    if (!_cells.TryGetValue(CellKey(cellX, cellY), out var cell) || cell.Frame != _frame)
                         continue;
 
-                    foreach (int other in bucket)
+                    foreach (int other in cell.Items)
                     {
                         if (other <= index || _lastPairedWith[other] == index)
                             continue;
@@ -191,6 +251,7 @@ namespace GameEngine.Core.Systems
 
         private void ResetEntityLists()
         {
+            ReleaseOccupiedCells();
             CollisionEvents.Clear();
             _validEntities.Clear();
             _entitiesWithGravity.Clear();

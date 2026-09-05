@@ -74,6 +74,99 @@ public class RenderBenchmarks
     }
 }
 
+// GE-88: the broad phase used to keep a bucket for every cell any collider had ever
+// occupied, so a travelling world grew its grid without bound. These cover the shapes that
+// stress it differently: a still world, a world in motion, spawn/despawn churn, a dense
+// pile, and a long wall among small colliders.
+[MemoryDiagnoser]
+public class BroadPhaseBenchmarks
+{
+    private const int Count = 1_000;
+
+    private EntityManager _steady = null!;
+    private PhysicsSystem _steadyPhysics = null!;
+
+    private EntityManager _moving = null!;
+    private List<CTransform> _movingTransforms = null!;
+    private PhysicsSystem _movingPhysics = null!;
+
+    private EntityManager _dense = null!;
+    private PhysicsSystem _densePhysics = null!;
+
+    private EntityManager _mixed = null!;
+    private PhysicsSystem _mixedPhysics = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _steady = SceneFactory.CreatePhysicsEntities(Count);
+        _steadyPhysics = Warmed(_steady);
+
+        _moving = SceneFactory.CreatePhysicsEntities(Count);
+        _movingTransforms = _moving.GetEntitiesWithComponents<CTransform>().Select(e => e.Item2).ToList();
+        _movingPhysics = Warmed(_moving);
+
+        _dense = SceneFactory.CreateDenseOverlaps(Count);
+        _densePhysics = Warmed(_dense);
+
+        _mixed = SceneFactory.CreateWallAndPebbles(Count);
+        _mixedPhysics = Warmed(_mixed);
+    }
+
+    private static PhysicsSystem Warmed(EntityManager entities)
+    {
+        var physics = new PhysicsSystem();
+        physics.Update(entities, 1.0 / 60.0);
+        return physics;
+    }
+
+    [Benchmark(Description = "Steady world, 1000 colliders")]
+    public int Steady()
+    {
+        _steadyPhysics.Update(_steady, 1.0 / 60.0);
+        return _steadyPhysics.RetainedBroadPhaseCells;
+    }
+
+    [Benchmark(Description = "Moving world, 1000 colliders travelling")]
+    public int Moving()
+    {
+        foreach (var transform in _movingTransforms)
+            transform.Position += new Vec2(11, 7);
+
+        _movingPhysics.Update(_moving, 1.0 / 60.0);
+        return _movingPhysics.RetainedBroadPhaseCells;
+    }
+
+    [Benchmark(Description = "Spawn, collide and despawn 1000 colliders")]
+    public int Churn()
+    {
+        var entities = SceneFactory.CreatePhysicsEntities(Count);
+        var physics = new PhysicsSystem();
+        physics.Update(entities, 1.0 / 60.0);
+
+        foreach (var entity in entities.GetEntities())
+            entity.Active = false;
+        entities.Update();
+        physics.Update(entities, 1.0 / 60.0);
+
+        return physics.RetainedBroadPhaseCells;
+    }
+
+    [Benchmark(Description = "Dense overlaps, 1000 colliders in one pile")]
+    public int DenseOverlaps()
+    {
+        _densePhysics.Update(_dense, 1.0 / 60.0);
+        return _densePhysics.CollisionEvents.Count;
+    }
+
+    [Benchmark(Description = "Long walls among small colliders")]
+    public int WallsAndPebbles()
+    {
+        _mixedPhysics.Update(_mixed, 1.0 / 60.0);
+        return _mixedPhysics.CollisionEvents.Count;
+    }
+}
+
 internal static class SceneFactory
 {
     public static EntityManager CreateEntities(
@@ -118,6 +211,49 @@ internal static class SceneFactory
                 new Vec2(random.Next(12, 49), random.Next(12, 49)),
                 blockVision: false,
                 blockMove: false));
+        }
+
+        entities.Update();
+        return entities;
+    }
+
+    public static EntityManager CreateDenseOverlaps(int count)
+    {
+        var entities = new EntityManager();
+        var random = new Random(0x0DE5E);
+
+        for (int i = 0; i < count; i++)
+        {
+            var entity = entities.CreateEntity($"dense-{i}");
+            entity.AddComponent(new CTransform(new Vec2(
+                random.NextDouble() * 200,
+                random.NextDouble() * 200)));
+            entity.AddComponent(new CBoundingBox(new Vec2(32, 32), blockVision: false, blockMove: false));
+        }
+
+        entities.Update();
+        return entities;
+    }
+
+    public static EntityManager CreateWallAndPebbles(int count)
+    {
+        var entities = new EntityManager();
+
+        for (int wall = 0; wall < 4; wall++)
+        {
+            var barrier = entities.CreateEntity($"wall-{wall}");
+            barrier.AddComponent(new CTransform(new Vec2(0, wall * 500)));
+            barrier.AddComponent(new CBoundingBox(new Vec2(8_000, 24), blockVision: false, blockMove: false));
+        }
+
+        var random = new Random(0x2A11);
+        for (int i = 0; i < count; i++)
+        {
+            var pebble = entities.CreateEntity($"pebble-{i}");
+            pebble.AddComponent(new CTransform(new Vec2(
+                random.NextDouble() * 8_000,
+                random.NextDouble() * 2_000)));
+            pebble.AddComponent(new CBoundingBox(new Vec2(12, 12), blockVision: false, blockMove: false));
         }
 
         entities.Update();
