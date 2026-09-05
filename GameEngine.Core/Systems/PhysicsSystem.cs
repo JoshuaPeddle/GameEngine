@@ -46,6 +46,7 @@ namespace GameEngine.Core.Systems
         }
 
         private const int PruneSlack = 64;
+        private const int MaxSweptCells = 64;
 
         private readonly Dictionary<long, Cell> _cells = new(1024);
         private readonly List<Cell> _occupied = new(1024);
@@ -54,6 +55,8 @@ namespace GameEngine.Core.Systems
         private int _frame;
 
         private readonly List<int> _candidates = new(64);
+        private readonly List<(int Index, double Entry, bool OnXAxis)> _sweptContacts = new(16);
+        private readonly List<int> _overlapCandidates = new(64);
         private int[] _lastPairedWith = [];
         private double _cellSize = MinimumCellSize;
 
@@ -88,17 +91,17 @@ namespace GameEngine.Core.Systems
             {
                 (Entity entity, CBoundingBox bbox, CTransform transform) entityA = _validEntities[i];
 
-                CollectCandidates(i, entityA.transform.Position, entityA.bbox.Size);
+                CollectCandidates(i, entityA.transform, entityA.bbox.Size);
                 _candidates.Sort();
 
-                foreach (int j in _candidates)
+                SortCandidatesByKind(entityA);
+                ResolveEarliestSweptContacts(entityA);
+
+                // Positions have moved since the pre-filter above, so the overlap is measured
+                // again rather than taken on trust.
+                foreach (int j in _overlapCandidates)
                 {
                     (Entity entity, CBoundingBox bbox, CTransform transform) entityB = _validEntities[j];
-
-                    if (!QuickAABBTest(
-                        entityA.transform.Position, entityA.bbox.Size,
-                        entityB.transform.Position, entityB.bbox.Size))
-                        continue;
 
                     Vec2 overlap = Physics.GetOverlap(
                         entityA.transform, entityB.transform,
@@ -118,6 +121,153 @@ namespace GameEngine.Core.Systems
             }
         }
 
+        // One pass over the candidates, splitting them into the pairs that met somewhere along
+        // this step and the pairs that are simply overlapping now.
+        private void SortCandidatesByKind((Entity entity, CBoundingBox bbox, CTransform transform) a)
+        {
+            _sweptContacts.Clear();
+            _overlapCandidates.Clear();
+
+            foreach (int j in _candidates)
+            {
+                var b = _validEntities[j];
+
+                if (TrySweptContact(
+                        a.transform, a.bbox.Size, b.transform, b.bbox.Size,
+                        out double entryTime, out bool onXAxis))
+                {
+                    _sweptContacts.Add((j, entryTime, onXAxis));
+                    continue;
+                }
+
+                if (QuickAABBTest(
+                        a.transform.Position, a.bbox.Size, b.transform.Position, b.bbox.Size))
+                    _overlapCandidates.Add(j);
+            }
+        }
+
+        // A body fast enough to clear a wall inside one step never overlaps it at the end of
+        // the step, so an overlap test alone cannot see the contact. Sweeping the two boxes
+        // along the paths they took finds the moment they met, and backing the moving body up
+        // to it resolves the contact. Only solid pairs are separated; a pass-through still
+        // reports the contact, so a trigger or a pickup is not missed either.
+        // Every candidate is swept before anything is resolved, because resolving the first
+        // contact found would move the body and hide the walls it met at the same instant.
+        // Only the earliest contacts are kept: anything later did not happen, since the body
+        // stopped before it got there.
+        private void ResolveEarliestSweptContacts((Entity entity, CBoundingBox bbox, CTransform transform) a)
+        {
+            double earliest = double.PositiveInfinity;
+            foreach (var contact in _sweptContacts)
+            {
+                if (contact.Entry < earliest)
+                    earliest = contact.Entry;
+            }
+
+            foreach (var contact in _sweptContacts)
+            {
+                if (contact.Entry <= earliest + epsilon)
+                    ReportSweptContact(a, _validEntities[contact.Index], contact.Entry, contact.OnXAxis);
+            }
+        }
+
+        private void ReportSweptContact(
+            (Entity entity, CBoundingBox bbox, CTransform transform) a,
+            (Entity entity, CBoundingBox bbox, CTransform transform) b,
+            double entryTime, bool onXAxis)
+        {
+            var velocityA = a.transform.Velocity;
+            var velocityB = b.transform.Velocity;
+
+            if (a.bbox.BlockMovement || b.bbox.BlockMovement)
+                ResolveSweptContact(a.bbox, a.transform, b.bbox, b.transform, entryTime, onXAxis);
+
+            CollisionEvents.Add(new CollisionEvent(
+                a.entity, b.entity,
+                Physics.GetOverlap(a.transform, b.transform, a.bbox, b.bbox),
+                velocityA, velocityB));
+        }
+
+        // Slab sweep in the frame where B is still: the entry time is the latest axis to start
+        // overlapping and the exit time the earliest to stop, so a contact needs entry <= exit
+        // within this step.
+        private static bool TrySweptContact(
+            CTransform a, Vec2 sizeA, CTransform b, Vec2 sizeB,
+            out double entryTime, out bool onXAxis)
+        {
+            entryTime = 0;
+            onXAxis = false;
+
+            double relativeX = (a.Position.X - a.PreviousPosition.X) - (b.Position.X - b.PreviousPosition.X);
+            double relativeY = (a.Position.Y - a.PreviousPosition.Y) - (b.Position.Y - b.PreviousPosition.Y);
+
+            if (Math.Abs(relativeX) <= epsilon && Math.Abs(relativeY) <= epsilon)
+                return false;
+
+            if (!AxisSweep(a.PreviousPosition.X, sizeA.X, b.PreviousPosition.X, sizeB.X, relativeX,
+                    out double entryX, out double exitX))
+                return false;
+
+            if (!AxisSweep(a.PreviousPosition.Y, sizeA.Y, b.PreviousPosition.Y, sizeB.Y, relativeY,
+                    out double entryY, out double exitY))
+                return false;
+
+            entryTime = Math.Max(entryX, entryY);
+            double exit = Math.Min(exitX, exitY);
+
+            if (entryTime > exit || entryTime < 0 || entryTime >= 1)
+                return false;
+
+            onXAxis = entryX > entryY;
+            return true;
+        }
+
+        private static bool AxisSweep(
+            double startA, double sizeA, double startB, double sizeB, double relativeDelta,
+            out double entry, out double exit)
+        {
+            if (Math.Abs(relativeDelta) <= epsilon)
+            {
+                entry = double.NegativeInfinity;
+                exit = double.PositiveInfinity;
+                return startA + sizeA > startB && startB + sizeB > startA;
+            }
+
+            double towardPositive = (startB - (startA + sizeA)) / relativeDelta;
+            double towardNegative = (startB + sizeB - startA) / relativeDelta;
+
+            entry = Math.Min(towardPositive, towardNegative);
+            exit = Math.Max(towardPositive, towardNegative);
+            return true;
+        }
+
+        private static void ResolveSweptContact(
+            CBoundingBox boxA, CTransform a, CBoundingBox boxB, CTransform b,
+            double entryTime, bool onXAxis)
+        {
+            double deltaA = onXAxis ? a.Position.X - a.PreviousPosition.X : a.Position.Y - a.PreviousPosition.Y;
+            double deltaB = onXAxis ? b.Position.X - b.PreviousPosition.X : b.Position.Y - b.PreviousPosition.Y;
+
+            GetSeparationShares(boxA.BlockMovement, boxB.BlockMovement, deltaA, deltaB,
+                out double shareA, out double shareB);
+
+            if (shareA > 0)
+            {
+                a.Position = AtContact(a, entryTime);
+                a.Velocity = onXAxis ? new Vec2(0, a.Velocity.Y) : new Vec2(a.Velocity.X, 0);
+            }
+
+            if (shareB > 0)
+            {
+                b.Position = AtContact(b, entryTime);
+                b.Velocity = onXAxis ? new Vec2(0, b.Velocity.Y) : new Vec2(b.Velocity.X, 0);
+            }
+        }
+
+        private static Vec2 AtContact(CTransform transform, double entryTime) =>
+            new(transform.PreviousPosition.X + (transform.Position.X - transform.PreviousPosition.X) * entryTime,
+                transform.PreviousPosition.Y + (transform.Position.Y - transform.PreviousPosition.Y) * entryTime);
+
         private void BuildSpatialGrid()
         {
             _cellSize = ChooseCellSize();
@@ -125,7 +275,7 @@ namespace GameEngine.Core.Systems
             for (int i = 0; i < _validEntities.Count; i++)
             {
                 var (_, bbox, transform) = _validEntities[i];
-                CellRange(transform.Position, bbox.Size, out int minX, out int minY, out int maxX, out int maxY);
+                SweptCellRange(transform, bbox.Size, out int minX, out int minY, out int maxX, out int maxY);
 
                 for (int cellY = minY; cellY <= maxY; cellY++)
                 {
@@ -192,10 +342,10 @@ namespace GameEngine.Core.Systems
             return largestExtent;
         }
 
-        private void CollectCandidates(int index, Vec2 position, Vec2 size)
+        private void CollectCandidates(int index, CTransform transform, Vec2 size)
         {
             _candidates.Clear();
-            CellRange(position, size, out int minX, out int minY, out int maxX, out int maxY);
+            SweptCellRange(transform, size, out int minX, out int minY, out int maxX, out int maxY);
 
             for (int cellY = minY; cellY <= maxY; cellY++)
             {
@@ -214,6 +364,30 @@ namespace GameEngine.Core.Systems
                     }
                 }
             }
+        }
+
+        // The cells a body touched anywhere along this step, so a fast mover and the wall it
+        // crossed land in a shared cell and become a candidate pair. A body that was teleported
+        // would otherwise claim every cell between where it was and where it is, so a sweep
+        // covering more cells than the budget falls back to its current footprint — a jump that
+        // long is a teleport rather than motion, and a teleport cannot tunnel through anything.
+        private void SweptCellRange(CTransform transform, Vec2 size, out int minX, out int minY, out int maxX, out int maxY)
+        {
+            var from = transform.PreviousPosition;
+            var to = transform.Position;
+
+            double width = Math.Max(size.X, 0);
+            double height = Math.Max(size.Y, 0);
+
+            minX = (int)Math.Floor(Math.Min(from.X, to.X) / _cellSize);
+            minY = (int)Math.Floor(Math.Min(from.Y, to.Y) / _cellSize);
+            maxX = (int)Math.Floor((Math.Max(from.X, to.X) + width) / _cellSize);
+            maxY = (int)Math.Floor((Math.Max(from.Y, to.Y) + height) / _cellSize);
+
+            if (((long)maxX - minX + 1) * ((long)maxY - minY + 1) <= MaxSweptCells)
+                return;
+
+            CellRange(to, size, out minX, out minY, out maxX, out maxY);
         }
 
         private void CellRange(Vec2 position, Vec2 size, out int minX, out int minY, out int maxX, out int maxY)

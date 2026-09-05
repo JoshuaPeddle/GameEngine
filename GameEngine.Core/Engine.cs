@@ -125,15 +125,36 @@ namespace GameEngine.Core
             return grown;
         }
 
-        // Optional frame limiter (null = unlimited)
+        // Optional presentation frame limiter (null = unlimited). Presentation pacing is
+        // separate from the simulation rate: this decides how often a frame is offered to the
+        // host, while FixedTimeStep decides how far the simulation moves.
         public int? TargetFrameRate { get; set; } = null;
+
+        public const double DefaultFixedTimeStep = 1.0 / 120.0;
+        public const int DefaultMaxCatchUpSteps = 8;
+
+        private FixedStepAccumulator _accumulator = new(DefaultFixedTimeStep, DefaultMaxCatchUpSteps);
+
+        /// <summary>Seconds of simulated time in one step of the live run loop.</summary>
+        public double FixedTimeStep
+        {
+            get => _accumulator.StepSeconds;
+            set => _accumulator = new FixedStepAccumulator(value, _accumulator.MaxStepsPerFrame);
+        }
+
+        /// <summary>Most steps one host frame may run before the remaining elapsed time is dropped.</summary>
+        public int MaxCatchUpSteps
+        {
+            get => _accumulator.MaxStepsPerFrame;
+            set => _accumulator = new FixedStepAccumulator(_accumulator.StepSeconds, value);
+        }
+
+        /// <summary>Simulated time the run loop has discarded because it could not keep up.</summary>
+        public double DroppedSimulationSeconds => _accumulator.DroppedSeconds;
 
         // Scene-change handoff to engine thread
         private Scene? _pendingScene;
         private volatile bool _pauseUntilFirstPresent;
-
-        // Clamp extreme dt spikes
-        private const double MaxDeltaSeconds = 0.1;
 
         public IAssetSource AssetSource { get; }
 
@@ -239,21 +260,59 @@ namespace GameEngine.Core
             }
         }
 
+        /// Advances the simulation by exactly <paramref name="deltaSeconds"/>, after applying
+        /// any pending scene change and draining posted work. This is the single simulation
+        /// primitive: the run loops reach it through <see cref="FixedStepAccumulator"/>, and a
+        /// headless consumer calls it directly and owns its own pacing — nothing here clamps
+        /// or splits the value it is given.
+        /// Returns false when the engine is stopped or paused, in which case nothing advanced.
         public bool Tick(double deltaSeconds)
         {
+            if (!double.IsFinite(deltaSeconds) || deltaSeconds < 0)
+                throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds,
+                    "Tick needs a finite, non-negative number of seconds.");
+
             if (_stopped)
                 return false;
 
-            var scene = Interlocked.Exchange(ref _pendingScene, null);
-            if (scene != null)
-                ApplySceneChange(scene);
-
-            DrainPostedWork();
+            PumpPendingWork();
 
             if (_pauseUntilFirstPresent || !_isRunning)
                 return false;
 
             Update(deltaSeconds);
+            return true;
+        }
+
+        private void PumpPendingWork()
+        {
+            var scene = Interlocked.Exchange(ref _pendingScene, null);
+            if (scene != null)
+                ApplySceneChange(scene);
+
+            DrainPostedWork();
+        }
+
+        // Pumps pending work and then advances the simulation by whole fixed steps. Returns
+        // false only while the engine is paused, which is the run loop's cue to idle.
+        private bool AdvanceFrame()
+        {
+            PumpPendingWork();
+
+            if (_stopped || !_isRunning || _pauseUntilFirstPresent)
+            {
+                lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
+                _accumulator.Reset();
+                return false;
+            }
+
+            int steps = _accumulator.Advance(CalculateDeltaTime());
+            for (int step = 0; step < steps; step++)
+            {
+                if (!Tick(_accumulator.StepSeconds))
+                    break;
+            }
+
             return true;
         }
 
@@ -266,9 +325,8 @@ namespace GameEngine.Core
             {
                 await Task.Delay(1);
 
-                if (!Tick(CalculateDeltaTime()))
+                if (!AdvanceFrame())
                 {
-                    lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
                     await Task.Delay(1);
                     continue;
                 }
@@ -290,9 +348,8 @@ namespace GameEngine.Core
 
                 double frameStartMs = stopwatch.Elapsed.TotalMilliseconds;
 
-                if (!Tick(CalculateDeltaTime()))
+                if (!AdvanceFrame())
                 {
-                    lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
                     Thread.Sleep(1);
                     continue;
                 }
@@ -435,10 +492,9 @@ namespace GameEngine.Core
             double deltaSeconds = currentTime - lastUpdateTime;
             lastUpdateTime = currentTime;
 
-            if (deltaSeconds < 0) deltaSeconds = 0;
-            if (deltaSeconds > MaxDeltaSeconds) deltaSeconds = MaxDeltaSeconds;
-
-            return deltaSeconds;
+            // The accumulator's catch-up budget is the one place a long frame is bounded, so
+            // there is no second clamp here to disagree with it.
+            return deltaSeconds < 0 ? 0 : deltaSeconds;
         }
 
         public void SizeChanged(int width, int height)
@@ -456,6 +512,7 @@ namespace GameEngine.Core
             {
                 // Reset delta baseline to avoid a large dt spike on resume
                 lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
+                _accumulator.Reset();
                 _pauseUntilFirstPresent = false;
             }
         }

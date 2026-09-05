@@ -130,8 +130,12 @@ public class BroadPhaseBenchmarks
     [Benchmark(Description = "Moving world, 1000 colliders travelling")]
     public int Moving()
     {
+        // What a frame does before physics runs: record where the step started, then move.
         foreach (var transform in _movingTransforms)
+        {
+            transform.PreviousPosition = transform.Position;
             transform.Position += new Vec2(11, 7);
+        }
 
         _movingPhysics.Update(_moving, 1.0 / 60.0);
         return _movingPhysics.RetainedBroadPhaseCells;

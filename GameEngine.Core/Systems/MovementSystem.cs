@@ -9,6 +9,12 @@ namespace GameEngine.Core.Systems
         
         public void Update(EntityManager entityManager, double deltaSeconds)
         {
+            // Every transform records where it started the step, not just the ones this system
+            // moves: the physics sweep reads that to know the path a body took, and an entity
+            // a scene repositions directly would otherwise carry a stale start point forever.
+            foreach (var (_, transform) in entityManager.GetEntitiesWithComponents<CTransform>())
+                transform.PreviousPosition = transform.Position;
+
             var entities = entityManager.GetEntitiesWithComponents<CMovement, CTransform>();
 
             foreach (var (entity, movement, transform) in entities)
@@ -78,8 +84,6 @@ namespace GameEngine.Core.Systems
 
         private static void UpdatePosition(CTransform transform, double deltaSeconds)
         {
-            transform.PreviousPosition = transform.Position;
-            
             transform.Position = new Vec2(
                 transform.Position.X + (transform.Velocity.X * deltaSeconds),
                 transform.Position.Y + (transform.Velocity.Y * deltaSeconds)

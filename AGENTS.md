@@ -77,7 +77,17 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   a caller holds its reference. `ActionMapper` bindings resolve their component per
   invocation, so they follow a replacement and go inert after a removal.
 - **`Engine.Tick(deltaSeconds)` is the single frame primitive.** Both run loops are built
-  on it, which is what makes the headless harness exercise the real path.
+  on it, which is what makes the headless harness exercise the real path. It advances by
+  exactly what it is given and rejects anything that is not a finite, non-negative number of
+  seconds. The live loops reach it through a `FixedStepAccumulator`: `FixedTimeStep` sets the
+  simulation rate, `MaxCatchUpSteps` bounds one frame's catch-up, and time beyond that budget
+  is dropped rather than queued. `TargetFrameRate` paces presentation and nothing else.
+- **Fast bodies are swept, not just tested where they land.** `PhysicsSystem` sweeps each
+  pair along the paths they took this step and resolves at the moment they met, so a body
+  cannot cross a thin solid wall inside one step and a deep overlap is not pushed out the far
+  side. `CTransform.PreviousPosition` is where the entity started the step; `MovementSystem`
+  records it for every transform, so a scene that repositions an entity directly does not
+  leave a stale path behind.
 - **A view owns the engine it constructs and borrows the one it is handed.** `GameView`
   stops and disposes an engine it built when it leaves the visual tree, and reattaching
   builds a fresh one; an engine passed in through the `Engine` property only has the view's

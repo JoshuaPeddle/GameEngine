@@ -13,6 +13,15 @@ public class BroadPhaseLifetimeTests
         return entity;
     }
 
+    // What a frame does: MovementSystem records where every transform started the step before
+    // anything moves it, and PhysicsSystem reads that to know the path a body took.
+    private static void Move(Entity entity, Vec2 to)
+    {
+        var transform = entity.GetComponent<CTransform>();
+        transform.PreviousPosition = transform.Position;
+        transform.Position = to;
+    }
+
     [Test]
     public void TravellingBodiesDoNotGrowRetainedGridStorage()
     {
@@ -28,16 +37,16 @@ public class BroadPhaseLifetimeTests
 
         for (int frame = 0; frame < 10_000; frame++)
         {
-            first.GetComponent<CTransform>().Position += new Vec2(5, 0);
-            second.GetComponent<CTransform>().Position += new Vec2(5, 0);
+            Move(first, first.GetComponent<CTransform>().Position + new Vec2(5, 0));
+            Move(second, second.GetComponent<CTransform>().Position + new Vec2(5, 0));
             physics.Update(manager, 1.0 / 60.0);
             highWater = Math.Max(highWater, physics.RetainedBroadPhaseCells);
         }
 
         Assert.Multiple(() =>
         {
-            Assert.That(physics.OccupiedBroadPhaseCells, Is.LessThanOrEqualTo(8),
-                "two small boxes never occupy more than a handful of cells");
+            Assert.That(physics.OccupiedBroadPhaseCells, Is.LessThanOrEqualTo(16),
+                "two small boxes never occupy more than a handful of cells, swept path included");
             Assert.That(highWater, Is.LessThanOrEqualTo(96),
                 "retained storage must stay near demand rather than track distance travelled");
         });
@@ -82,13 +91,13 @@ public class BroadPhaseLifetimeTests
 
         for (int frame = 0; frame < 4_999; frame++)
         {
-            mover.GetComponent<CTransform>().Position = new Vec2(frame * 10, 0);
+            Move(mover, new Vec2(frame * 10, 0));
             physics.Update(manager, 1.0 / 60.0);
         }
 
         Assert.That(physics.CollisionEvents, Is.Empty);
 
-        mover.GetComponent<CTransform>().Position = new Vec2(50_000, 0);
+        Move(mover, new Vec2(50_000, 0));
         physics.Update(manager, 1.0 / 60.0);
 
         Assert.That(physics.CollisionEvents, Has.Count.EqualTo(1));
