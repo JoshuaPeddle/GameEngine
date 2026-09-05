@@ -215,6 +215,47 @@ public class EngineLifecycleTests
     }
 
     [Test]
+    public void RepeatedSceneChanges_LeaveEverySystemResolvable()
+    {
+        using var engine = new Engine(audioEnabled: false);
+
+        for (int reload = 0; reload < 20; reload++)
+        {
+            engine.ChangeScene(new CountingScene());
+            engine.Tick(0.016);
+            engine.NotifyFirstPresent();
+            engine.Tick(0.016);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.Systems.TryGet<InputSystem>(), Is.Not.Null);
+                Assert.That(engine.Systems.TryGet<RenderSystem>(), Is.Not.Null);
+                Assert.That(engine.EntityManager.GetEntitiesWithTag("counter"), Has.Count.EqualTo(1));
+            });
+        }
+    }
+
+    [Test]
+    public void RepeatedCreateAndDispose_LeavesNoRunningLoop()
+    {
+        for (int reload = 0; reload < 10; reload++)
+        {
+            var engine = new Engine(audioEnabled: false);
+            engine.ChangeScene(new CountingScene());
+            engine.Start();
+            engine.NotifyFirstPresent();
+            engine.Dispose();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.IsStopped, Is.True);
+                Assert.That(engine.IsDisposed, Is.True);
+                Assert.That(engine.Systems.TryGet<RenderSystem>(), Is.Null);
+            });
+        }
+    }
+
+    [Test]
     public void Start_IsIdempotentWhileTheLoopIsRunning()
     {
         using var engine = new Engine(audioEnabled: false);

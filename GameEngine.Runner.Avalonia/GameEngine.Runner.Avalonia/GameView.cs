@@ -50,9 +50,14 @@ namespace GameEngine.Runner.Avalonia
         private int _firstPresentReported;
         private bool _started;
         private bool _ownsEngine;
+        private Action? _previousInvalidateAction;
+        private CancellationTokenSource _syntheticKeyReleases = new();
+        private readonly Action _queueInvalidate;
 
         public GameView()
         {
+            _queueInvalidate = QueueInvalidate;
+
             IsHitTestVisible = true;
             Focusable = true;
 
@@ -110,6 +115,23 @@ namespace GameEngine.Runner.Avalonia
             }
         }
 
+        // Detachment ends the view's use of its engine. One it constructed is stopped and
+        // disposed here, because nothing else will; one it was handed keeps running for its
+        // owner and only has this view's paint callback taken back off it. Reattaching builds
+        // a fresh owned engine, or re-attaches to the supplied one.
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            ReleaseHeldKeys();
+
+            _syntheticKeyReleases.Cancel();
+            _syntheticKeyReleases.Dispose();
+            _syntheticKeyReleases = new CancellationTokenSource();
+
+            ReleaseEngine();
+
+            base.OnDetachedFromVisualTree(e);
+        }
+
         private Engine EnsureEngine()
         {
             if (_gameEngine != null)
@@ -118,14 +140,15 @@ namespace GameEngine.Runner.Avalonia
             var supplied = Engine;
             if (supplied != null)
             {
-                supplied.InvalidateAction = QueueInvalidate;
+                _previousInvalidateAction = supplied.InvalidateAction;
+                supplied.InvalidateAction = _queueInvalidate;
                 _gameEngine = supplied;
                 _ownsEngine = false;
             }
             else
             {
                 var assetSource = AssetSource ?? App.AssetSource ?? new FileAssetSource();
-                _gameEngine = new Engine(QueueInvalidate, AudioEnabled, assetSource);
+                _gameEngine = new Engine(_queueInvalidate, AudioEnabled, assetSource);
                 _ownsEngine = true;
 
                 var scene = Scene ?? SceneFactory?.Invoke() ?? App.StartupScene?.Invoke();
@@ -135,6 +158,42 @@ namespace GameEngine.Runner.Avalonia
 
             Current = _gameEngine;
             return _gameEngine;
+        }
+
+        private void ReleaseEngine()
+        {
+            var engine = _gameEngine;
+            if (engine == null)
+                return;
+
+            _gameEngine = null;
+            _started = false;
+
+            if (ReferenceEquals(Current, engine))
+                Current = null;
+
+            if (_ownsEngine)
+            {
+                engine.Stop();
+                engine.Dispose();
+            }
+            else if (ReferenceEquals(engine.InvalidateAction, _queueInvalidate))
+            {
+                engine.InvalidateAction = _previousInvalidateAction;
+            }
+
+            _ownsEngine = false;
+            _previousInvalidateAction = null;
+        }
+
+        private void ReleaseHeldKeys()
+        {
+            var input = Input;
+
+            foreach (var key in _heldKeys)
+                input?.KeyUp(key);
+
+            _heldKeys.Clear();
         }
 
         private static bool PlatformSupportsAudio() =>
@@ -152,13 +211,23 @@ namespace GameEngine.Runner.Avalonia
             }
         }
 
-        private async Task ReleaseKeyAfterTapAsync(GeKeys key)
+        private async Task ReleaseKeyAfterTapAsync(GeKeys key, CancellationToken cancellation)
         {
-            await Task.Delay(SyntheticKeyHoldMs);
+            try
+            {
+                await Task.Delay(SyntheticKeyHoldMs, cancellation);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
             Input?.KeyUp(key);
         }
 
-        private InputSystem? Input => _gameEngine?.Systems.Get<InputSystem>();
+        // TryGet rather than Get: the container is empty between an engine's disposal and the
+        // last queued UI event that still refers to it.
+        private InputSystem? Input => _gameEngine?.Systems.TryGet<InputSystem>();
 
         private void OnSizeChanged(object? sender, EventArgs args)
         {
@@ -202,15 +271,7 @@ namespace GameEngine.Runner.Avalonia
             base.OnKeyUp(e);
         }
 
-        private void OnLostFocus(object? sender, RoutedEventArgs e)
-        {
-            var input = Input;
-
-            foreach (var key in _heldKeys)
-                input?.KeyUp(key);
-
-            _heldKeys.Clear();
-        }
+        private void OnLostFocus(object? sender, RoutedEventArgs e) => ReleaseHeldKeys();
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
@@ -245,7 +306,7 @@ namespace GameEngine.Runner.Avalonia
                     SwipeThreshold);
 
                 Input?.KeyDown(key);
-                _ = ReleaseKeyAfterTapAsync(key);
+                _ = ReleaseKeyAfterTapAsync(key, _syntheticKeyReleases.Token);
 
                 _pointerStartPosition = null;
             }
@@ -253,12 +314,13 @@ namespace GameEngine.Runner.Avalonia
 
         public override void Render(DrawingContext context)
         {
-            if (_gameEngine == null)
+            var engine = _gameEngine;
+            if (engine == null || engine.IsDisposed)
                 return;
 
             context.Custom(new CustomDrawOp(
                 new Rect(0, 0, Bounds.Width, Bounds.Height),
-                _gameEngine,
+                engine,
                 ReportFirstPresent));
         }
 
@@ -295,9 +357,15 @@ namespace GameEngine.Runner.Avalonia
             var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
             if (leaseFeature == null)
                 return;
+            // The engine can be disposed between this operation being queued and the render
+            // thread reaching it, which empties its container.
+            var renderSystem = _engine.Systems.TryGet<RenderSystem>();
+            if (renderSystem == null)
+                return;
+
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-            _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
+            renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
 
             // Resume updates and report that the first visible frame reached the platform surface.
             _reportFirstPresent();

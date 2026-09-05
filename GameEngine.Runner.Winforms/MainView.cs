@@ -17,6 +17,10 @@ namespace GameEngine
         // Coalesce pending invalidations
         private int _invalidationsPending = 0;
 
+        // TryGet rather than Get: the container is empty between the engine's disposal and the
+        // last queued control event that still refers to it.
+        private InputSystem? Input => _gameEngine.Systems.TryGet<InputSystem>();
+
         public MainView()
         {
             InitializeComponent();
@@ -45,20 +49,27 @@ namespace GameEngine
             skglControl1.KeyDown += KeyPressed;
             skglControl1.KeyUp += KeyReleased;
 
-            skglControl1.MouseDown += (sender, args) => _gameEngine.Systems.Get<InputSystem>().PointerPressed(new PointerPressEvent(new Vec2(args.X, args.Y)));
-            skglControl1.MouseMove += (sender, args) => _gameEngine.Systems.Get<InputSystem>().PointerMoved(new PointerMoveEvent(new Vec2(args.X, args.Y)));
-            skglControl1.MouseUp += (sender, args) => _gameEngine.Systems.Get<InputSystem>().PointerReleased(new PointerReleaseEvent(new Vec2(args.X, args.Y)));
+            skglControl1.MouseDown += (sender, args) => Input?.PointerPressed(new PointerPressEvent(new Vec2(args.X, args.Y)));
+            skglControl1.MouseMove += (sender, args) => Input?.PointerMoved(new PointerMoveEvent(new Vec2(args.X, args.Y)));
+            skglControl1.MouseUp += (sender, args) => Input?.PointerReleased(new PointerReleaseEvent(new Vec2(args.X, args.Y)));
 
             _gameEngine.ChangeScene(new SceneMenu());
             _gameEngine.TargetFrameRate = 1000;
 
             _gameEngine.Start(); // Dont await this, it will block the UI thread
+
+            FormClosed += (_, _) =>
+            {
+                _gameEngine.InvalidateAction = null;
+                _gameEngine.Stop();
+                _gameEngine.Dispose();
+            };
         }
 
         private async Task ReleaseKeyAfterTapAsync(GeKeys key)
         {
             await Task.Delay(SyntheticKeyHoldMs);
-            _gameEngine.Systems.Get<InputSystem>().KeyUp(key);
+            Input?.KeyUp(key);
         }
 
         private void OnSizeChanged(object? sender, EventArgs args)
@@ -70,14 +81,14 @@ namespace GameEngine
         {
             var point = e.Location;
             _pointerStartPosition = point;
-            _gameEngine.Systems.Get<InputSystem>().PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
+            Input?.PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
         }
         private void OnPointerMoved(object? sender, MouseEventArgs e)
         {
             if (_pointerStartPosition.HasValue)
             {
                 var point = e.Location;
-                _gameEngine.Systems.Get<InputSystem>().PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
+                Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
             }
         }
 
@@ -86,7 +97,7 @@ namespace GameEngine
             if (_pointerStartPosition.HasValue)
             {
                 var endPosition = e.Location;
-                _gameEngine.Systems.Get<InputSystem>().PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
+                Input?.PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
 
                 var startPosition = _pointerStartPosition.Value;
 
@@ -95,7 +106,7 @@ namespace GameEngine
                     new Vec2(endPosition.X, endPosition.Y),
                     SwipeThreshold);
 
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(key);
+                Input?.KeyDown(key);
                 _ = ReleaseKeyAfterTapAsync(key);
 
                 _pointerStartPosition = null;
@@ -105,7 +116,7 @@ namespace GameEngine
         void KeyPressed(object? sender, KeyEventArgs args)
         {
             if (KeyMap.TryGetValue(args.KeyCode, out GeKeys value))
-                _gameEngine.Systems.Get<InputSystem>().KeyDown(value);
+                Input?.KeyDown(value);
 
         }
 
@@ -113,7 +124,7 @@ namespace GameEngine
         {
             
             if (KeyMap.TryGetValue(args.KeyCode, out GeKeys value))
-                _gameEngine.Systems.Get<InputSystem>().KeyUp(value);
+                Input?.KeyUp(value);
         }
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -134,8 +145,12 @@ namespace GameEngine
 
         private void OnPaintSurface(object? sender, SKPaintGLSurfaceEventArgs e)
         {
+            var renderSystem = _gameEngine.Systems.TryGet<RenderSystem>();
+            if (renderSystem == null)
+                return;
+
             var canvas = e.Surface.Canvas;
-            _gameEngine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _gameEngine.GetRenderSnapshot());
+            renderSystem.DrawEntitiesToCanvas(canvas, _gameEngine.GetRenderSnapshot());
 
             // Resume updates after first visible frame of a new scene
             _gameEngine.NotifyFirstPresent();

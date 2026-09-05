@@ -73,6 +73,12 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   invocation, so they follow a replacement and go inert after a removal.
 - **`Engine.Tick(deltaSeconds)` is the single frame primitive.** Both run loops are built
   on it, which is what makes the headless harness exercise the real path.
+- **A view owns the engine it constructs and borrows the one it is handed.** `GameView`
+  stops and disposes an engine it built when it leaves the visual tree, and reattaching
+  builds a fresh one; an engine passed in through the `Engine` property only has the view's
+  paint callback put on at attach and the owner's put back at detach. `Engine.Systems` is
+  published as a whole on a scene change, so look systems up with `TryGet` from UI code —
+  the container is empty between disposal and the last queued event that still refers to it.
 - **Zero warnings.** `TreatWarningsAsErrors` is on in Core and Demo.
 - Reference finding IDs from `docs/02-findings.md` in commit messages: `fix(core): read
   velocity from level files (GE-67)`.

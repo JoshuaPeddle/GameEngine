@@ -18,7 +18,13 @@ namespace GameEngine.Core
             set => Volatile.Write(ref _invalidateAction, value);
         }
 
-        public SystemContainer Systems;
+        private SystemContainer _systems = new();
+
+        // Published whole. A host that reads this while a scene change rebuilds the container
+        // sees either the complete previous set or the complete next one, never a container
+        // that is still being filled — which is what a UI thread looking up InputSystem or
+        // RenderSystem during a scene swap used to race with.
+        public SystemContainer Systems => Volatile.Read(ref _systems);
 
         public RenderOptions RenderOptions { get; } = new()
         {
@@ -36,6 +42,7 @@ namespace GameEngine.Core
         private Scene? currentScene;
         private double lastUpdateTime;
         private readonly bool _audioEnabled;
+        private AudioSystem? _audioSystem;
 
         private volatile bool _isRunning = true;
         private volatile bool _stopped;
@@ -46,6 +53,7 @@ namespace GameEngine.Core
 
         public bool IsRunning => _isRunning;
         public bool IsStopped => _stopped;
+        public bool IsDisposed => Volatile.Read(ref _disposeStarted) != 0;
 
         // Pooled render snapshots: filled on the engine thread, read on the UI thread.
         // Three buffers are enough for a single reader — at most one is published and one is
@@ -167,7 +175,7 @@ namespace GameEngine.Core
             InitializeSystems();
         }
 
-        [MemberNotNull(nameof(Systems), nameof(EntityManager), nameof(InputManager))]
+        [MemberNotNull(nameof(EntityManager), nameof(InputManager))]
         public void InitializeSystems()
         {
             if (InputManager is null)
@@ -180,20 +188,25 @@ namespace GameEngine.Core
             else
                 EntityManager.Clear();
 
-            Systems = new SystemContainer();
             lastUpdateTime = 0;
 
-            Systems.Add(new InputSystem(InputManager));
-            Systems.Add(new MovementSystem());
-            Systems.Add(new PhysicsSystem());
-            Systems.Add(new AnimationSystem());
-            Systems.Add(new RenderSystem(RenderOptions));
+            var built = new SystemContainer();
+            built.Add(new InputSystem(InputManager));
+            built.Add(new MovementSystem());
+            built.Add(new PhysicsSystem());
+            built.Add(new AnimationSystem());
+            built.Add(new RenderSystem(RenderOptions));
+
+            // The audio device belongs to the engine, not to a scene: reopening it on every
+            // scene change would leave the previous mixer open and the reopen would fail.
             if (_audioEnabled)
             {
-                var audioSystem = AudioSystem.TryCreate(AssetSource);
-                if (audioSystem != null)
-                    Systems.Add(audioSystem);
+                _audioSystem ??= AudioSystem.TryCreate(AssetSource);
+                if (_audioSystem != null)
+                    built.Add(_audioSystem);
             }
+
+            Volatile.Write(ref _systems, built);
         }
 
         // Start the loop without a forced 1ms delay.
@@ -339,6 +352,8 @@ namespace GameEngine.Core
 
             Stop();
             Systems.Dispose();
+            _audioSystem?.Dispose();
+            _audioSystem = null;
             InputManager.Reset();
             EntityManager.Clear();
             lock (_lifecycleLock)
@@ -381,8 +396,8 @@ namespace GameEngine.Core
             currentScene = scene;
             scene.Engine = this;
 
-            // Rebuild systems and scene
-            Systems.Dispose();
+            // Rebuild systems and scene. The replaced container is simply dropped: the audio
+            // system is the only disposable one in it and the engine owns that for its lifetime.
             InitializeSystems();
             currentScene.Initialize(EntityManager, InputManager, Systems.TryGet<AudioSystem>(), ResetScene);
 

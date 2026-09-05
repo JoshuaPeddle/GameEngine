@@ -39,7 +39,7 @@ public static partial class KeyboardInterop
     public static void HandleKeyDown(string key)
     {
         if (KeyMap.TryGetValue(key, out var value))
-            GameView.Current?.Systems.Get<InputSystem>().KeyDown(value);
+            GameView.Current?.Systems.TryGet<InputSystem>()?.KeyDown(value);
     }
 
     [SupportedOSPlatform("browser")]
@@ -47,7 +47,7 @@ public static partial class KeyboardInterop
     public static void HandleKeyUp(string key)
     {
         if (KeyMap.TryGetValue(key, out var value))
-            GameView.Current?.Systems.Get<InputSystem>().KeyUp(value);
+            GameView.Current?.Systems.TryGet<InputSystem>()?.KeyUp(value);
     }
 }
 

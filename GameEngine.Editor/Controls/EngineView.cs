@@ -32,6 +32,14 @@ namespace GameEngine.Editor.Controls
             PointerPressed += (s, e) => SelectEntityAt(e.GetPosition(this));
         }
 
+        // The preview engine is owned by this view, so leaving the tree ends it. A later
+        // scene selection builds a fresh one.
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            DisposeEngine();
+            base.OnDetachedFromVisualTree(e);
+        }
+
         private void SelectEntityAt(Point screenPosition)
         {
             var engine = _gameEngine;
@@ -55,8 +63,11 @@ namespace GameEngine.Editor.Controls
 
         private static EntitySnapshot? PickEntity(Engine engine, Vec2 screenPoint)
         {
-            var viewport = engine.Systems.Get<RenderSystem>()
-                .ViewportFor(engine.InputManager.RealResolution);
+            var renderSystem = engine.Systems.TryGet<RenderSystem>();
+            if (renderSystem == null)
+                return null;
+
+            var viewport = renderSystem.ViewportFor(engine.InputManager.RealResolution);
 
             if (!viewport.TryToVirtual(screenPoint, out var pick))
                 return null;
@@ -122,9 +133,16 @@ namespace GameEngine.Editor.Controls
 
         private void DisposeEngine()
         {
-            _gameEngine?.Dispose();
+            var engine = _gameEngine;
             _gameEngine = null;
             _started = false;
+
+            if (engine == null)
+                return;
+
+            engine.InvalidateAction = null;
+            engine.Stop();
+            engine.Dispose();
         }
 
         private void VmOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -228,17 +246,20 @@ namespace GameEngine.Editor.Controls
 
             public void Render(ImmediateDrawingContext context)
             {
-                if (_engine == null) return;
+                if (_engine == null || _engine.IsDisposed) return;
                 var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
                 if (leaseFeature == null) return;
+
+                var renderSystem = _engine.Systems.TryGet<RenderSystem>();
+                if (renderSystem == null) return;
 
                 using var lease = leaseFeature.Lease();
                 var canvas = lease.SkCanvas;
 
                 canvas.Save();
                 canvas.ClipRect(new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
-                
-                _engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
+
+                renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
 
                 canvas.Restore();
 
