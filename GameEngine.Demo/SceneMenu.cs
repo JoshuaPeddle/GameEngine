@@ -24,6 +24,7 @@ namespace GameEngine.Demo
         [
             ("Void Bastion", new Lazy<Scene>(() => new SceneVoidBastion())),
             ("Void Siege", new Lazy<Scene>(() => new SceneVoidSiege())),
+            ("Void Salvage", new Lazy<Scene>(() => new SceneVoidSalvage())),
             ("Astral Relay", new Lazy<Scene>(() => new SceneAstralRelay())),
             ("Basic", new Lazy<Scene>(() => new SceneBasic())),
             ("Snake", new Lazy<Scene>(() => new SceneSnake())),

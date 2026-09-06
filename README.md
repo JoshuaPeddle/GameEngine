@@ -31,7 +31,7 @@ dotnet add package GameEngine.Runner.Avalonia # the Avalonia GameView, if you wa
 | Project | What it is |
 |---|---|
 | `GameEngine.Core` | The engine: ECS, systems, rendering, input, level format |
-| `GameEngine.Demo` | Sample games — Void Bastion, Void Siege, Tetris, Astral Relay, Pong, Brick Breaker, Snake, side-scrollers |
+| `GameEngine.Demo` | Sample games — Void Bastion, Void Siege, Void Salvage, Tetris, Astral Relay, Pong, Brick Breaker, Snake, side-scrollers |
 | `GameEngine.Runner.Avalonia` | Shared Avalonia host, with Desktop / Android / Browser / iOS heads |
 | `GameEngine.Runner.Winforms` | WinForms host |
 | `GameEngine.Editor` | Scene and level editor (Avalonia) |
@@ -76,6 +76,16 @@ movement speed, or H for armor and repairs. R restarts; Q returns to the menu.
 The game runs through Core's movement and swept collision systems. It caps projectiles at
 220 and reuses 128 particle entities. `SceneVoidSiegeTests` exercises combat, cover, abilities,
 wave transitions, splitting, the boss, victory, and defeat through the headless engine.
+
+**Void Salvage** is a three-sortie cargo extraction game using the Void fleet artwork.
+Press Space to launch, move with WASD or arrows, and collect green cores on contact.
+Cargo trails behind your tug and slows it down; return to the carrier ring to bank it
+and repair one hull. Meet each sortie's quota before the 65-second jump window closes.
+Space dashes and destroys raiders on contact. Enemy hits scatter recoverable cargo;
+the carrier repels nearby raiders. Between sorties choose F for cargo capacity, G for
+engine speed, or H for armor; every upgrade fully repairs the tug. R restarts, Q opens
+the menu. Headless tests cover towing, banking, damage, swept ramming, upgrades,
+the complete campaign, deadline failure, and scene navigation.
 
 Android, iOS and Browser heads need their platform workloads and SDKs installed.
 
