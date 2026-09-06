@@ -31,7 +31,7 @@ dotnet add package GameEngine.Runner.Avalonia # the Avalonia GameView, if you wa
 | Project | What it is |
 |---|---|
 | `GameEngine.Core` | The engine: ECS, systems, rendering, input, level format |
-| `GameEngine.Demo` | Sample games — Pong, Brick Breaker, Snake, side-scrollers |
+| `GameEngine.Demo` | Sample games — Void Bastion, Tetris, Astral Relay, Pong, Brick Breaker, Snake, side-scrollers |
 | `GameEngine.Runner.Avalonia` | Shared Avalonia host, with Desktop / Android / Browser / iOS heads |
 | `GameEngine.Runner.Winforms` | WinForms host |
 | `GameEngine.Editor` | Scene and level editor (Avalonia) |
@@ -49,6 +49,22 @@ dotnet run --project GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Deskt
 dotnet run --project GameEngine.Runner.Winforms          # Windows only
 dotnet run --project GameEngine.Editor.Desktop           # the editor
 ```
+
+**Void Bastion** is the first entry in the demo menu: a twelve-wave tower defence game
+in the same neon sci-fi setting. Click a socket and a tower card to build. Pulse guns
+handle light drones, Rail guns pierce armor and shields, Cryo slows groups, and Mortars
+fire predictive splash shells. Every tower has three tiers and First / Strongest / Nearest
+targeting; selling recovers 70% of its investment.
+
+Press Space to send the next convoy. E triggers an ion storm that strips shields and slows
+enemies; P pauses while you plan or build, and B toggles double speed. Arrow keys select
+sockets, A/S/D/F build, U upgrades, X sells, T changes targeting, R restarts, and Q returns
+to the menu. Clear rewards fund reinforcements and repair one point of core hull. Wardens
+arrive on waves 4, 8, and 12 and deal six core damage if they escape.
+
+`BastionBattle` owns deterministic combat and economy rules; `SceneVoidBastion` maps them
+onto pooled engine entities and mouse/keyboard input. Tests play the campaign through
+`Engine.Tick`, including victory, defeat, letterboxing, pause, speed, and economy checks.
 
 Android, iOS and Browser heads need their platform workloads and SDKs installed.
 

@@ -26,7 +26,33 @@
     "TexTetrisZ": "images/tetris/z.png",
     "TexTetrisJ": "images/tetris/j.png",
     "TexTetrisL": "images/tetris/l.png",
-    "TexTetrisWall": "images/tetris/wall.png"
+    "TexTetrisWall": "images/tetris/wall.png",
+    "BastionArmor": "images/void-bastion/Armor.png",
+    "BastionCryo": "images/void-bastion/Cryo.png",
+    "BastionDrone": "images/void-bastion/Drone.png",
+    "BastionMortar": "images/void-bastion/Mortar.png",
+    "BastionPulse": "images/void-bastion/Pulse.png",
+    "BastionRail": "images/void-bastion/Rail.png",
+    "BastionRunner": "images/void-bastion/Runner.png",
+    "BastionShield": "images/void-bastion/Shield.png",
+    "BastionWarden": "images/void-bastion/Warden.png",
+    "Bastionbeam0": "images/void-bastion/beam0.png",
+    "Bastionbeam1": "images/void-bastion/beam1.png",
+    "Bastionbeam2": "images/void-bastion/beam2.png",
+    "Bastionbeam3": "images/void-bastion/beam3.png",
+    "Bastioncore": "images/void-bastion/core.png",
+    "BastionhealthBar": "images/void-bastion/healthBar.png",
+    "Bastionmap": "images/void-bastion/map.png",
+    "Bastionpad": "images/void-bastion/pad.png",
+    "Bastionrange": "images/void-bastion/range.png",
+    "Bastionring0": "images/void-bastion/ring0.png",
+    "Bastionring1": "images/void-bastion/ring1.png",
+    "Bastionring2": "images/void-bastion/ring2.png",
+    "Bastionring3": "images/void-bastion/ring3.png",
+    "BastionshieldBar": "images/void-bastion/shieldBar.png",
+    "BastiontrackBar": "images/void-bastion/trackBar.png",
+    "Bastionhud": "images/void-bastion/hud.png",
+    "Bastionresult": "images/void-bastion/result.png"
   },
   "animations": {
     "TetrisI": {
@@ -166,6 +192,136 @@
     },
     "AstralCore": {
       "texture": "TexAstralCore",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionArmor": {
+      "texture": "BastionArmor",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionCryo": {
+      "texture": "BastionCryo",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionDrone": {
+      "texture": "BastionDrone",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionMortar": {
+      "texture": "BastionMortar",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionPulse": {
+      "texture": "BastionPulse",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionRail": {
+      "texture": "BastionRail",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionRunner": {
+      "texture": "BastionRunner",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionShield": {
+      "texture": "BastionShield",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionWarden": {
+      "texture": "BastionWarden",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionbeam0": {
+      "texture": "Bastionbeam0",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionbeam1": {
+      "texture": "Bastionbeam1",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionbeam2": {
+      "texture": "Bastionbeam2",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionbeam3": {
+      "texture": "Bastionbeam3",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastioncore": {
+      "texture": "Bastioncore",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionhealthBar": {
+      "texture": "BastionhealthBar",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionmap": {
+      "texture": "Bastionmap",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionpad": {
+      "texture": "Bastionpad",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionrange": {
+      "texture": "Bastionrange",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionring0": {
+      "texture": "Bastionring0",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionring1": {
+      "texture": "Bastionring1",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionring2": {
+      "texture": "Bastionring2",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionring3": {
+      "texture": "Bastionring3",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastionshieldBar": {
+      "texture": "BastionshieldBar",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "BastiontrackBar": {
+      "texture": "BastiontrackBar",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionhud": {
+      "texture": "Bastionhud",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Bastionresult": {
+      "texture": "Bastionresult",
       "frames": 1,
       "frameDelayMs": 0
     }

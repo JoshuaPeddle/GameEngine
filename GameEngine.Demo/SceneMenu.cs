@@ -22,6 +22,7 @@ namespace GameEngine.Demo
 
         private readonly List<(string, Lazy<Scene>)> scenes =
         [
+            ("Void Bastion", new Lazy<Scene>(() => new SceneVoidBastion())),
             ("Astral Relay", new Lazy<Scene>(() => new SceneAstralRelay())),
             ("Basic", new Lazy<Scene>(() => new SceneBasic())),
             ("Snake", new Lazy<Scene>(() => new SceneSnake())),
