@@ -31,7 +31,7 @@ dotnet add package GameEngine.Runner.Avalonia # the Avalonia GameView, if you wa
 | Project | What it is |
 |---|---|
 | `GameEngine.Core` | The engine: ECS, systems, rendering, input, level format |
-| `GameEngine.Demo` | Sample games — Void Bastion, Tetris, Astral Relay, Pong, Brick Breaker, Snake, side-scrollers |
+| `GameEngine.Demo` | Sample games — Void Bastion, Void Siege, Tetris, Astral Relay, Pong, Brick Breaker, Snake, side-scrollers |
 | `GameEngine.Runner.Avalonia` | Shared Avalonia host, with Desktop / Android / Browser / iOS heads |
 | `GameEngine.Runner.Winforms` | WinForms host |
 | `GameEngine.Editor` | Scene and level editor (Avalonia) |
@@ -65,6 +65,17 @@ arrive on waves 4, 8, and 12 and deal six core damage if they escape.
 `BastionBattle` owns deterministic combat and economy rules; `SceneVoidBastion` maps them
 onto pooled engine entities and mouse/keyboard input. Tests play the campaign through
 `Engine.Tick`, including victory, defeat, letterboxing, pause, speed, and economy checks.
+
+**Void Siege** is also available in the demo menu. Press Space to start a five-sector
+arena campaign: automatic targeting, pursuing drones, strafing gunners, splitting enemies,
+destructible cover, salvage repairs, upgrade choices, and a two-phase bullet-pattern boss.
+Move with WASD or arrows, dash with Space, and use E for an EMP that clears nearby enemy
+shots and stuns drones. Between sectors, choose F for more projectiles, G for firing and
+movement speed, or H for armor and repairs. R restarts; Q returns to the menu.
+
+The game runs through Core's movement and swept collision systems. It caps projectiles at
+220 and reuses 128 particle entities. `SceneVoidSiegeTests` exercises combat, cover, abilities,
+wave transitions, splitting, the boss, victory, and defeat through the headless engine.
 
 Android, iOS and Browser heads need their platform workloads and SDKs installed.
 

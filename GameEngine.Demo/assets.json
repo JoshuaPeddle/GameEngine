@@ -27,6 +27,18 @@
     "TexTetrisJ": "images/tetris/j.png",
     "TexTetrisL": "images/tetris/l.png",
     "TexTetrisWall": "images/tetris/wall.png",
+    "Siegearena": "images/void-siege/arena.png",
+    "Siegepilot": "images/void-siege/pilot.png",
+    "Siegehunter": "images/void-siege/hunter.png",
+    "Siegegunner": "images/void-siege/gunner.png",
+    "Siegesplitter": "images/void-siege/splitter.png",
+    "Siegeboss": "images/void-siege/boss.png",
+    "Siegecover": "images/void-siege/cover.png",
+    "Siegescrap": "images/void-siege/scrap.png",
+    "Siegeshot": "images/void-siege/shot.png",
+    "Siegehostile": "images/void-siege/hostile.png",
+    "Siegespark": "images/void-siege/spark.png",
+    "Siegering": "images/void-siege/ring.png",
     "BastionArmor": "images/void-bastion/Armor.png",
     "BastionCryo": "images/void-bastion/Cryo.png",
     "BastionDrone": "images/void-bastion/Drone.png",
@@ -192,6 +204,66 @@
     },
     "AstralCore": {
       "texture": "TexAstralCore",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegearena": {
+      "texture": "Siegearena",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegepilot": {
+      "texture": "Siegepilot",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegehunter": {
+      "texture": "Siegehunter",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegegunner": {
+      "texture": "Siegegunner",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegesplitter": {
+      "texture": "Siegesplitter",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegeboss": {
+      "texture": "Siegeboss",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegecover": {
+      "texture": "Siegecover",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegescrap": {
+      "texture": "Siegescrap",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegeshot": {
+      "texture": "Siegeshot",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegehostile": {
+      "texture": "Siegehostile",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegespark": {
+      "texture": "Siegespark",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Siegering": {
+      "texture": "Siegering",
       "frames": 1,
       "frameDelayMs": 0
     },
