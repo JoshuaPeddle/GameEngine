@@ -1,13 +1,14 @@
-import { dotnet } from './_framework/dotnet.js'
+import { installKeyboard } from './keyboardInterop.js';
 
-const is_browser = typeof window != "undefined";
-if (!is_browser) throw new Error(`Expected to be running in a browser`);
-
-const dotnetRuntime = await dotnet
-    .withDiagnosticTracing(false)
-    .withApplicationArgumentsFromQuery()
-    .create();
-
-const config = dotnetRuntime.getConfig();
-
-await dotnetRuntime.runMain(config.mainAssemblyName, [globalThis.location.href]);
+try {
+    const { dotnet } = await import('./_framework/dotnet.js');
+    const runtime = await dotnet.withDiagnosticTracing(false).withApplicationArgumentsFromQuery().create();
+    const config = runtime.getConfig();
+    const exports = await runtime.getAssemblyExports(config.mainAssemblyName);
+    installKeyboard(exports.KeyboardInterop);
+    await runtime.runMain(config.mainAssemblyName, [globalThis.location.href]);
+    document.getElementById('loading').remove();
+} catch (error) {
+    console.error(error);
+    document.getElementById('loading').textContent = 'The game could not start. Please reload to retry.';
+}

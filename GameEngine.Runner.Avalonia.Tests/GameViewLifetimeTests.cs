@@ -34,6 +34,34 @@ public class GameViewLifetimeTests
         new() { AudioEnabled = false, AssetSource = new DelegateAssetSource(_ => Stream.Null), SceneFactory = () => new CountingScene() };
 
     [AvaloniaTest]
+    public void AHostCanUseCssInputDimensionsOnAHighDpiSurface()
+    {
+        var previous = App.InputViewportSize;
+        var view = OwnedView();
+        Window? window = null;
+        try
+        {
+            App.InputViewportSize = () => new Vec2(1280, 800);
+            window = WindowWith(view);
+            view.Measure(new global::Avalonia.Size(2560, 1600));
+            view.Arrange(new global::Avalonia.Rect(0, 0, 2560, 1600));
+            var engine = GameView.Current!;
+            Assert.That(engine.InputManager.RealResolution, Is.EqualTo(new Vec2(1280, 800)));
+            engine.InputManager.VirtualResolution = new Vec2(1280, 800);
+            Vec2? received = null;
+            engine.InputManager.BindPointerAction(GameEngine.Core.Pointer.PointerEventType.Press, e => received = e.Position);
+            engine.InputManager.HandlePointerEvent(GameEngine.Core.Pointer.PointerEventType.Press, new GameEngine.Core.Pointer.PointerPressEvent(new Vec2(380, 412)));
+            engine.InputManager.DispatchPointerEvents();
+            Assert.That(received, Is.EqualTo(new Vec2(380, 412)));
+        }
+        finally
+        {
+            if (window != null) { window.Content = null; window.Close(); }
+            App.InputViewportSize = previous;
+        }
+    }
+
+    [AvaloniaTest]
     public void AnOwnedEngine_IsStoppedAndDisposedWhenTheViewLeavesTheTree()
     {
         var view = OwnedView();

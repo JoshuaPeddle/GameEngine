@@ -231,7 +231,8 @@ namespace GameEngine.Runner.Avalonia
 
         private void OnSizeChanged(object? sender, EventArgs args)
         {
-            _gameEngine?.SizeChanged((int)Bounds.Width, (int)Bounds.Height);
+            var size = App.InputViewportSize?.Invoke() ?? new Vec2(Bounds.Width, Bounds.Height);
+            _gameEngine?.SizeChanged((int)size.X, (int)size.Y);
         }
 
         private static Dictionary<Key, GeKeys> BuildKeyMap()

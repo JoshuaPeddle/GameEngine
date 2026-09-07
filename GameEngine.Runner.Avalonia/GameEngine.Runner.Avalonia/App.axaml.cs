@@ -18,6 +18,7 @@ namespace GameEngine.Runner.Avalonia
         public static Core.IAssetSource? AssetSource;
         public static Func<Core.Scene>? StartupScene;
         public static Action? FirstFramePresented;
+        public static Func<Core.Vec2>? InputViewportSize;
 
         public override void Initialize()
         {

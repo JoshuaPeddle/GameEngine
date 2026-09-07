@@ -457,3 +457,7 @@ $RECYCLE.BIN/
 *_Review.md
 IMPROVEMENTS.md
 tool_test_report.txt
+
+# Local browser verification
+.playwright-cli/
+output/playwright/

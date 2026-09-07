@@ -235,8 +235,9 @@ by replacement. A failed write preserves the previous file.
 
 Loading cancels activity and resets resource and ordinary-enemy timers. Permanent
 boss defeats, beacons, the bridge, and quest rewards remain. Batch orders, sidebar
-selection, repeat preference, and mute are session state. Browser disk saves
-report that persistent storage is unavailable on that host.
+selection, repeat preference, and mute are session state. The web client stores progress in this browser on this device. Clearing site data
+removes that save; desktop and browser saves are independent. Storage failures
+remain visible and never claim a successful save.
 
 ## Structure and verification
 

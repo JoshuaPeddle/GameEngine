@@ -1,17 +1,14 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>GameEngine.Runner.Avalonia.Browser</title>
+    <title>Emberbrook — GameEngine</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--<link rel="stylesheet" href="./app.css" />-->
+    <link rel="stylesheet" href="./app.css">
 </head>
-
-<body style="margin: 0; overflow: hidden">
-    <div id="out"/>
-    <script type='module' src="./main.js"></script>
-    <script src="./keyboardInterop.js"></script>
+<body>
+    <div id="loading" role="status">Loading Emberbrook…<br><small>The first visit downloads the game. Progress saves in this browser.</small></div>
+    <div id="out"></div>
+    <script type="module" src="./main.js"></script>
 </body>
-
 </html>

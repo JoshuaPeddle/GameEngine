@@ -66,3 +66,17 @@ would add more surface area than this project currently needs.
 The highest-return improvement is a compact UI/input layer backed by better
 failure assertions. It addresses bugs players have actually encountered and
 removes substantially more authoring work than another low-level ECS optimization.
+
+## Findings from the web deployment
+
+The trimmed publish exposed two reflection-dependent paths (GE-99): level metadata
+JSON and the Avalonia view locator. They now use generated JSON metadata and an
+explicit view mapping. Browser saves also use a generated JSON context.
+
+A real Chromium session with a backing surface twice the CSS dimensions exposed a separate host input defect
+(GE-100): the engine recorded a 2560×1600 input viewport while DOM pointer positions
+were in a 1280×800 CSS viewport. Correct-looking rendering alone did not catch it.
+The browser now supplies its CSS viewport dimensions to the view's input mapping;
+desktop keeps its normal control bounds. Chromium checks cover starting an adventure,
+walking, saving through the UI, and continuing after a reload. A headless host test
+checks the backing-surface/CSS coordinate mapping.

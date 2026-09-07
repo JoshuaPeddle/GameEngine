@@ -70,12 +70,6 @@ namespace GameEngine.Core.Utils
 
         public static LevelFile LoadFromJson(string json)
         {
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                ReadCommentHandling = JsonCommentHandling.Skip
-            };
-
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
 
@@ -92,7 +86,7 @@ namespace GameEngine.Core.Utils
             if (root.TryGetProperty("metadata", out var metadataElement))
             {
                 RejectUnknownKeys(metadataElement, MetadataKeys, "level metadata");
-                levelFile.Metadata = JsonSerializer.Deserialize<LevelMetadata>(metadataElement, options) ?? new LevelMetadata();
+                levelFile.Metadata = JsonSerializer.Deserialize(metadataElement, LevelMetadataJson.Default.LevelMetadata) ?? new LevelMetadata();
             }
 
             JsonElement entitiesElement;

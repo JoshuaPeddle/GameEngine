@@ -18,6 +18,14 @@ public static partial class KeyboardInterop
 {
     public static Dictionary<string, GeKeys> KeyMap { get; } = BuildKeyMap();
 
+    [SupportedOSPlatform("browser")]
+    [JSExport]
+    public static string Diagnostics()
+    {
+        var engine = GameView.Current;
+        return $"Input {engine?.InputManager.RealResolution} / virtual {engine?.InputManager.VirtualResolution} / fault {engine?.Fault?.Exception}";
+    }
+
     private static Dictionary<string, GeKeys> BuildKeyMap()
     {
         var map = new Dictionary<string, GeKeys>(StringComparer.OrdinalIgnoreCase);
@@ -56,8 +64,10 @@ internal sealed partial class Program
 {
     private static Task Main(string[] args)
     {
+        App.InputViewportSize = () => new Vec2(JSHost.GlobalThis.GetPropertyAsDouble("innerWidth"), JSHost.GlobalThis.GetPropertyAsDouble("innerHeight"));
         App.AssetSource = new GameEngine.Core.DelegateAssetSource(LoadFile);
-        App.StartupScene = () => new GameEngine.Demo.SceneMenu();
+        GameEngine.Demo.SceneEmberbrook.SaveStoreFactory = () => new BrowserSaveStore();
+        App.StartupScene = () => new GameEngine.Demo.SceneEmberbrook();
 
         return BuildAvaloniaApp()
             .With(new BrowserPlatformOptions

@@ -1,1 +1,4 @@
-﻿
+html, body, #out { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { background: #202b29; color: #e9d4a0; font: 18px system-ui, sans-serif; }
+#loading { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; padding: 24px; }
+#loading small { color: #c6c2a0; margin-top: 12px; }

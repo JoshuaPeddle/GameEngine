@@ -47,7 +47,8 @@ public sealed partial class SceneEmberbrook : Scene
     private CText activity = null!;
     private CText hover = null!;
 
-    public SceneEmberbrook() : this(EmberbrookFileSaveStore.Default(), true) { }
+    public static Func<IEmberbrookSaveStore> SaveStoreFactory { get; set; } = EmberbrookFileSaveStore.Default;
+    public SceneEmberbrook() : this(SaveStoreFactory(), true) { }
     public SceneEmberbrook(IEmberbrookSaveStore saveStore, bool showWelcome = false) { this.saveStore = saveStore; welcome = showWelcome; }
     public EmberbrookWorld World { get; } = new();
     public override int VirtualWidth => 1280;

@@ -248,3 +248,5 @@ no performance regression or measured leak is claimed by this review.
 | GE-96 | S2 | Host persistence capabilities lack an engine-level service boundary | browser host / RPG save store | code review | open |
 | GE-97 | S2 | Headless harness does not reject faults captured internally by Engine.Tick | SceneHarness.Run | code review | open |
 | GE-98 | S3 | Save milestones rebuild unrelated map art; content presentation definitions repeat | SceneEmberbrook / VillageProgress | code review | open |
+| GE-99 | S2 | Trimmed browser publish uses reflection for level metadata and view lookup | LevelFile / ViewLocator | publish warnings | fixed |
+| GE-100 | S1 | Browser high-DPI layout dimensions differ from CSS pointer coordinates; clicks miss buttons | browser / GameView | Chromium pointer and reload checks | fixed |
