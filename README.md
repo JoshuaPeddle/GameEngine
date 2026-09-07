@@ -31,7 +31,7 @@ dotnet add package GameEngine.Runner.Avalonia # the Avalonia GameView, if you wa
 | Project | What it is |
 |---|---|
 | `GameEngine.Core` | The engine: ECS, systems, rendering, input, level format |
-| `GameEngine.Demo` | Sample games — Void Bastion, Void Siege, Void Salvage, Tetris, Astral Relay, Pong, Brick Breaker, Snake, side-scrollers |
+| `GameEngine.Demo` | Sample games — Emberbrook RPG, Void Bastion, Void Siege, Void Salvage, Tetris, Astral Relay, Pong, Brick Breaker, Snake, side-scrollers |
 | `GameEngine.Runner.Avalonia` | Shared Avalonia host, with Desktop / Android / Browser / iOS heads |
 | `GameEngine.Runner.Winforms` | WinForms host |
 | `GameEngine.Editor` | Scene and level editor (Avalonia) |
@@ -50,7 +50,32 @@ dotnet run --project GameEngine.Runner.Winforms          # Windows only
 dotnet run --project GameEngine.Editor.Desktop           # the editor
 ```
 
-**Void Bastion** is the first entry in the demo menu: a twelve-wave tower defence game
+**Emberbrook RPG** is the first demo-menu entry. Choose New adventure or Continue.
+Click to walk and interact; release the mouse and the action continues. **X** stops
+an action; **M** repeats gathering. Backpack, Skills, and Journal tabs keep the
+current activity running while you inspect your progress.
+
+Complete four connected quests through the village, Sunken Halls, and Ashen Trail.
+Gather ore, fish, and ash; use explicit recipe panels to craft equipment and batch
+cook food. The **Broken Crossing** is a parallel project after Copper Promise:
+pay Bram with materials or coins to open a shortcut and learn smoked trout.
+Reinforced tools open a richer vein; an ash spear trades shield protection for
+reach. Defeated bosses, a restored bell, a feast, and repaired crossings leave
+persistent changes in the world.
+
+The twelve-slot backpack stacks materials to five and smoked trout to two.
+The bank supports all item types. **E** eats food; **T** switches the earned charm;
+**S/L** save/load; **Q** returns to the menu. Safe village milestones autosave,
+with a persistent status for failures. The Sound button mutes feedback cues.
+
+This chapter uses version 6 saves and requires a fresh adventure for older saves.
+Desktop saves live under local application data at
+`GameEngine/Emberbrook/save.json`; browser disk saves are not supported yet.
+See [the RPG play guide](GameEngine.Demo/Emberbrook/README.md) for recipes, quests,
+controls, and verification, and [the design plan](GameEngine.Demo/Emberbrook/DESIGN.md)
+for the chapter's rationale and remaining human playtest questions.
+
+**Void Bastion** is available in the demo menu: a twelve-wave tower defence game
 in the same neon sci-fi setting. Click a socket and a tower card to build. Pulse guns
 handle light drones, Rail guns pierce armor and shields, Cryo slows groups, and Mortars
 fire predictive splash shells. Every tower has three tiers and First / Strongest / Nearest

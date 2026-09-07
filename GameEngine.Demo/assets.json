@@ -64,7 +64,133 @@
     "BastionshieldBar": "images/void-bastion/shieldBar.png",
     "BastiontrackBar": "images/void-bastion/trackBar.png",
     "Bastionhud": "images/void-bastion/hud.png",
-    "Bastionresult": "images/void-bastion/result.png"
+    "Bastionresult": "images/void-bastion/result.png",
+    "Emberbank": "images/emberbrook/bank.png",
+    "Emberbridge": "images/emberbrook/bridge.png",
+    "Emberbutton": "images/emberbrook/button.png",
+    "Emberelder": "images/emberbrook/elder.png",
+    "Emberforge": "images/emberbrook/forge.png",
+    "Embergrass0": "images/emberbrook/grass0.png",
+    "Embergrass1": "images/emberbrook/grass1.png",
+    "Embergrass2": "images/emberbrook/grass2.png",
+    "Embermerchant": "images/emberbrook/merchant.png",
+    "Embermossling": "images/emberbrook/mossling.png",
+    "Emberore": "images/emberbrook/ore.png",
+    "Emberpanel": "images/emberbrook/panel.png",
+    "Emberpaper": "images/emberbrook/paper.png",
+    "Emberpath": "images/emberbrook/path.png",
+    "Emberplayer": "images/emberbrook/player.png",
+    "Embertarget": "images/emberbrook/target.png",
+    "Embertree": "images/emberbrook/tree.png",
+    "Emberwater": "images/emberbrook/water.png",
+    "Embercottage": "images/emberbrook/cottage.png",
+    "Emberdanger": "images/emberbrook/danger.png",
+    "Emberfloor": "images/emberbrook/floor.png",
+    "Embergate": "images/emberbrook/gate.png",
+    "Emberguardian": "images/emberbrook/guardian.png",
+    "Emberrelic": "images/emberbrook/relic.png",
+    "Embersentinel": "images/emberbrook/sentinel.png",
+    "Emberwall": "images/emberbrook/wall.png",
+    "Emberfishing": "images/emberbrook/fishing.png",
+    "Embercampfire": "images/emberbrook/campfire.png",
+    "Emberash": "images/emberbrook/ash.png",
+    "Emberbeacon": "images/emberbrook/beacon.png",
+    "Emberwolf": "images/emberbrook/wolf.png",
+    "Emberhart": "images/emberbrook/hart.png",
+    "Emberhealth": "images/emberbrook/health.png",
+    "Emberwound": "images/emberbrook/wound.png",
+    "Emberprogress": "images/emberbrook/progress.png",
+    "Emberitemore": "images/emberbrook/itemore.png",
+    "Emberitembar": "images/emberbrook/itembar.png",
+    "Emberitemlog": "images/emberbrook/itemlog.png",
+    "Emberitemtrout": "images/emberbrook/itemtrout.png",
+    "Emberitemmeal": "images/emberbrook/itemmeal.png",
+    "Emberitemsmoked": "images/emberbrook/itemsmoked.png",
+    "Emberitemration": "images/emberbrook/itemration.png",
+    "Emberfeast": "images/emberbrook/feast.png",
+    "Emberplayerupidle": "images/emberbrook/playerupidle.png",
+    "Emberplayerupwork": "images/emberbrook/playerupwork.png",
+    "Emberplayerdownidle": "images/emberbrook/playerdownidle.png",
+    "Emberplayerdownwork": "images/emberbrook/playerdownwork.png",
+    "Emberplayerleftidle": "images/emberbrook/playerleftidle.png",
+    "Emberplayerleftwork": "images/emberbrook/playerleftwork.png",
+    "Emberplayerrightidle": "images/emberbrook/playerrightidle.png",
+    "Emberplayerrightwork": "images/emberbrook/playerrightwork.png",
+    "Emberbrokenbridge": "images/emberbrook/brokenbridge.png",
+    "Emberwatermotion": "images/emberbrook/watermotion.png",
+    "Embertreemotion": "images/emberbrook/treemotion.png",
+    "Emberashmotion": "images/emberbrook/ashmotion.png",
+    "Embermosslingmotion": "images/emberbrook/mosslingmotion.png",
+    "Emberwolfmotion": "images/emberbrook/wolfmotion.png",
+    "Embersentinelmotion": "images/emberbrook/sentinelmotion.png",
+    "Emberguardianmotion": "images/emberbrook/guardianmotion.png",
+    "Emberhartmotion": "images/emberbrook/hartmotion.png",
+    "Embereldermotion": "images/emberbrook/eldermotion.png",
+    "Embermerchantmotion": "images/emberbrook/merchantmotion.png",
+    "Emberfishingmotion": "images/emberbrook/fishingmotion.png",
+    "Embercampfiremotion": "images/emberbrook/campfiremotion.png",
+    "Emberforgemotion": "images/emberbrook/forgemotion.png",
+    "Emberheroupidle": "images/emberbrook/heroupidle.png",
+    "Emberheroupwalk": "images/emberbrook/heroupwalk.png",
+    "Emberheroupmine": "images/emberbrook/heroupmine.png",
+    "Emberheroupchop": "images/emberbrook/heroupchop.png",
+    "Emberheroupfish": "images/emberbrook/heroupfish.png",
+    "Emberheroupcook": "images/emberbrook/heroupcook.png",
+    "Emberheroupattack": "images/emberbrook/heroupattack.png",
+    "Emberheroupspear": "images/emberbrook/heroupspear.png",
+    "Emberherodownidle": "images/emberbrook/herodownidle.png",
+    "Emberherodownwalk": "images/emberbrook/herodownwalk.png",
+    "Emberherodownmine": "images/emberbrook/herodownmine.png",
+    "Emberherodownchop": "images/emberbrook/herodownchop.png",
+    "Emberherodownfish": "images/emberbrook/herodownfish.png",
+    "Emberherodowncook": "images/emberbrook/herodowncook.png",
+    "Emberherodownattack": "images/emberbrook/herodownattack.png",
+    "Emberherodownspear": "images/emberbrook/herodownspear.png",
+    "Emberheroleftidle": "images/emberbrook/heroleftidle.png",
+    "Emberheroleftwalk": "images/emberbrook/heroleftwalk.png",
+    "Emberheroleftmine": "images/emberbrook/heroleftmine.png",
+    "Emberheroleftchop": "images/emberbrook/heroleftchop.png",
+    "Emberheroleftfish": "images/emberbrook/heroleftfish.png",
+    "Emberheroleftcook": "images/emberbrook/heroleftcook.png",
+    "Emberheroleftattack": "images/emberbrook/heroleftattack.png",
+    "Emberheroleftspear": "images/emberbrook/heroleftspear.png",
+    "Emberherorightidle": "images/emberbrook/herorightidle.png",
+    "Emberherorightwalk": "images/emberbrook/herorightwalk.png",
+    "Emberherorightmine": "images/emberbrook/herorightmine.png",
+    "Emberherorightchop": "images/emberbrook/herorightchop.png",
+    "Emberherorightfish": "images/emberbrook/herorightfish.png",
+    "Emberherorightcook": "images/emberbrook/herorightcook.png",
+    "Emberherorightattack": "images/emberbrook/herorightattack.png",
+    "Emberherorightspear": "images/emberbrook/herorightspear.png",
+    "Emberspark": "images/emberbrook/spark.png",
+    "Embersplash": "images/emberbrook/splash.png",
+    "Emberstrike": "images/emberbrook/strike.png",
+    "Emberguardiancast": "images/emberbrook/guardiancast.png",
+    "Emberhartcast": "images/emberbrook/hartcast.png",
+    "Emberwolfwalk": "images/emberbrook/wolfwalk.png",
+    "Embersentinelwalk": "images/emberbrook/sentinelwalk.png",
+    "Embersmoke": "images/emberbrook/smoke.png",
+    "Emberbutterfly": "images/emberbrook/butterfly.png",
+    "Embermote": "images/emberbrook/mote.png",
+    "Embertorch": "images/emberbrook/torch.png",
+    "Embernell": "images/emberbrook/nell.png",
+    "Emberorin": "images/emberbrook/orin.png",
+    "Emberfloodmark": "images/emberbrook/floodmark.png",
+    "Emberquarrymarks": "images/emberbrook/quarrymarks.png",
+    "Embertablet": "images/emberbrook/tablet.png",
+    "Emberfloat": "images/emberbrook/float.png",
+    "Emberfallenlog": "images/emberbrook/fallenlog.png",
+    "Emberspring": "images/emberbrook/spring.png",
+    "Emberspringbloom": "images/emberbrook/springbloom.png",
+    "Emberjetty": "images/emberbrook/jetty.png",
+    "Emberruinedjetty": "images/emberbrook/ruinedjetty.png",
+    "Emberreturngate": "images/emberbrook/returngate.png",
+    "Emberruinedgate": "images/emberbrook/ruinedgate.png",
+    "Emberbowls": "images/emberbrook/bowls.png",
+    "Emberwheel": "images/emberbrook/wheel.png",
+    "Emberlunches": "images/emberbrook/lunches.png",
+    "Embersign": "images/emberbrook/sign.png",
+    "Emberbanner": "images/emberbrook/banner.png"
   },
   "animations": {
     "TetrisI": {
@@ -396,10 +522,581 @@
       "texture": "Bastionresult",
       "frames": 1,
       "frameDelayMs": 0
+    },
+    "Emberbank": {
+      "texture": "Emberbank",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberbridge": {
+      "texture": "Emberbridge",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberbutton": {
+      "texture": "Emberbutton",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberelder": {
+      "texture": "Embereldermotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberforge": {
+      "texture": "Emberforgemotion",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Embergrass0": {
+      "texture": "Embergrass0",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embergrass1": {
+      "texture": "Embergrass1",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embergrass2": {
+      "texture": "Embergrass2",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embermerchant": {
+      "texture": "Embermerchantmotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Embermossling": {
+      "texture": "Embermosslingmotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberore": {
+      "texture": "Emberore",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberpanel": {
+      "texture": "Emberpanel",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberpaper": {
+      "texture": "Emberpaper",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberpath": {
+      "texture": "Emberpath",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayer": {
+      "texture": "Emberplayer",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embertarget": {
+      "texture": "Embertarget",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embertree": {
+      "texture": "Embertreemotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberwater": {
+      "texture": "Emberwatermotion",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Embercottage": {
+      "texture": "Embercottage",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberdanger": {
+      "texture": "Emberdanger",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberfloor": {
+      "texture": "Emberfloor",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embergate": {
+      "texture": "Embergate",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberguardian": {
+      "texture": "Emberguardianmotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberrelic": {
+      "texture": "Emberrelic",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embersentinel": {
+      "texture": "Embersentinelmotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberwall": {
+      "texture": "Emberwall",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberfishing": {
+      "texture": "Emberfishingmotion",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Embercampfire": {
+      "texture": "Embercampfiremotion",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberash": {
+      "texture": "Emberashmotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberbeacon": {
+      "texture": "Emberbeacon",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberwolf": {
+      "texture": "Emberwolfmotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberhart": {
+      "texture": "Emberhartmotion",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberhealth": {
+      "texture": "Emberhealth",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberwound": {
+      "texture": "Emberwound",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberprogress": {
+      "texture": "Emberprogress",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberitemore": {
+      "texture": "Emberitemore",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberitembar": {
+      "texture": "Emberitembar",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberitemlog": {
+      "texture": "Emberitemlog",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberitemtrout": {
+      "texture": "Emberitemtrout",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberitemmeal": {
+      "texture": "Emberitemmeal",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberitemsmoked": {
+      "texture": "Emberitemsmoked",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberitemration": {
+      "texture": "Emberitemration",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberfeast": {
+      "texture": "Emberfeast",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerupidle": {
+      "texture": "Emberplayerupidle",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerupwork": {
+      "texture": "Emberplayerupwork",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerdownidle": {
+      "texture": "Emberplayerdownidle",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerdownwork": {
+      "texture": "Emberplayerdownwork",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerleftidle": {
+      "texture": "Emberplayerleftidle",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerleftwork": {
+      "texture": "Emberplayerleftwork",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerrightidle": {
+      "texture": "Emberplayerrightidle",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberplayerrightwork": {
+      "texture": "Emberplayerrightwork",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberbrokenbridge": {
+      "texture": "Emberbrokenbridge",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberheroupidle": {
+      "texture": "Emberheroupidle",
+      "frames": 4,
+      "frameDelayMs": 400
+    },
+    "Emberheroupwalk": {
+      "texture": "Emberheroupwalk",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Emberheroupmine": {
+      "texture": "Emberheroupmine",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroupchop": {
+      "texture": "Emberheroupchop",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroupfish": {
+      "texture": "Emberheroupfish",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroupcook": {
+      "texture": "Emberheroupcook",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroupattack": {
+      "texture": "Emberheroupattack",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroupspear": {
+      "texture": "Emberheroupspear",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherodownidle": {
+      "texture": "Emberherodownidle",
+      "frames": 4,
+      "frameDelayMs": 400
+    },
+    "Emberherodownwalk": {
+      "texture": "Emberherodownwalk",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Emberherodownmine": {
+      "texture": "Emberherodownmine",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherodownchop": {
+      "texture": "Emberherodownchop",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherodownfish": {
+      "texture": "Emberherodownfish",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherodowncook": {
+      "texture": "Emberherodowncook",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherodownattack": {
+      "texture": "Emberherodownattack",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherodownspear": {
+      "texture": "Emberherodownspear",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroleftidle": {
+      "texture": "Emberheroleftidle",
+      "frames": 4,
+      "frameDelayMs": 400
+    },
+    "Emberheroleftwalk": {
+      "texture": "Emberheroleftwalk",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Emberheroleftmine": {
+      "texture": "Emberheroleftmine",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroleftchop": {
+      "texture": "Emberheroleftchop",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroleftfish": {
+      "texture": "Emberheroleftfish",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroleftcook": {
+      "texture": "Emberheroleftcook",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroleftattack": {
+      "texture": "Emberheroleftattack",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberheroleftspear": {
+      "texture": "Emberheroleftspear",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherorightidle": {
+      "texture": "Emberherorightidle",
+      "frames": 4,
+      "frameDelayMs": 400
+    },
+    "Emberherorightwalk": {
+      "texture": "Emberherorightwalk",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Emberherorightmine": {
+      "texture": "Emberherorightmine",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherorightchop": {
+      "texture": "Emberherorightchop",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherorightfish": {
+      "texture": "Emberherorightfish",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherorightcook": {
+      "texture": "Emberherorightcook",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherorightattack": {
+      "texture": "Emberherorightattack",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberherorightspear": {
+      "texture": "Emberherorightspear",
+      "frames": 4,
+      "frameDelayMs": 180
+    },
+    "Emberspark": {
+      "texture": "Emberspark",
+      "frames": 4,
+      "frameDelayMs": 80
+    },
+    "Embersplash": {
+      "texture": "Embersplash",
+      "frames": 4,
+      "frameDelayMs": 80
+    },
+    "Emberstrike": {
+      "texture": "Emberstrike",
+      "frames": 4,
+      "frameDelayMs": 80
+    },
+    "Emberguardiancast": {
+      "texture": "Emberguardiancast",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Emberhartcast": {
+      "texture": "Emberhartcast",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Emberwolfwalk": {
+      "texture": "Emberwolfwalk",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Embersentinelwalk": {
+      "texture": "Embersentinelwalk",
+      "frames": 4,
+      "frameDelayMs": 130
+    },
+    "Embersmoke": {
+      "texture": "Embersmoke",
+      "frames": 4,
+      "frameDelayMs": 250
+    },
+    "Emberbutterfly": {
+      "texture": "Emberbutterfly",
+      "frames": 4,
+      "frameDelayMs": 140
+    },
+    "Embermote": {
+      "texture": "Embermote",
+      "frames": 4,
+      "frameDelayMs": 250
+    },
+    "Embertorch": {
+      "texture": "Embertorch",
+      "frames": 4,
+      "frameDelayMs": 140
+    },
+    "Embernell": {
+      "texture": "Embernell",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberorin": {
+      "texture": "Emberorin",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberfloodmark": {
+      "texture": "Emberfloodmark",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberquarrymarks": {
+      "texture": "Emberquarrymarks",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embertablet": {
+      "texture": "Embertablet",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberfloat": {
+      "texture": "Emberfloat",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberfallenlog": {
+      "texture": "Emberfallenlog",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberspring": {
+      "texture": "Emberspring",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberspringbloom": {
+      "texture": "Emberspringbloom",
+      "frames": 4,
+      "frameDelayMs": 280
+    },
+    "Emberjetty": {
+      "texture": "Emberjetty",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberruinedjetty": {
+      "texture": "Emberruinedjetty",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberreturngate": {
+      "texture": "Emberreturngate",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberruinedgate": {
+      "texture": "Emberruinedgate",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberbowls": {
+      "texture": "Emberbowls",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberwheel": {
+      "texture": "Emberwheel",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberlunches": {
+      "texture": "Emberlunches",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Embersign": {
+      "texture": "Embersign",
+      "frames": 1,
+      "frameDelayMs": 0
+    },
+    "Emberbanner": {
+      "texture": "Emberbanner",
+      "frames": 1,
+      "frameDelayMs": 0
     }
   },
   "sounds": {
     "Hit": "sounds/hit.wav",
-    "Level1": "sounds/level1.wav"
+    "Level1": "sounds/level1.wav",
+    "EmberSelect": "sounds/emberbrook/Select.wav",
+    "EmberGather": "sounds/emberbrook/Gather.wav",
+    "EmberCraft": "sounds/emberbrook/Craft.wav",
+    "EmberDamage": "sounds/emberbrook/Damage.wav",
+    "EmberDanger": "sounds/emberbrook/Danger.wav",
+    "EmberComplete": "sounds/emberbrook/Complete.wav"
   }
 }

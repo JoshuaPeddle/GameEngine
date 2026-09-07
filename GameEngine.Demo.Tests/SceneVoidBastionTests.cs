@@ -237,7 +237,8 @@ public class SceneVoidBastionTests
         harness.Engine.NotifyFirstPresent();
         Assert.That(harness.Require("bastionStatus").GetComponent<CText>().Text, Does.Contain("CREDITS 270"));
         harness.PressAndRelease(GeKeys.Q, 1);
-        Assert.That(harness.Require("scene0").GetComponent<CText>().Text, Is.EqualTo("Void Bastion"));
+        Assert.That(harness.Entities.GetEntities().Any(e => e.Tag.StartsWith("scene")
+            && e.TryGetComponent<CText>()?.Text == "Void Bastion"), Is.True);
     }
 
     [Test]
