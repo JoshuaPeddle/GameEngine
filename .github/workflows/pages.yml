@@ -1,0 +1,55 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches: [master, reliability-plan]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/configure-pages@v6
+      - name: Install WebAssembly workload
+        run: dotnet workload install wasm-tools
+      - name: Publish browser client
+        run: >-
+          dotnet publish
+          GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Browser/GameEngine.Runner.Avalonia.Browser.csproj
+          -c Release -p:UsedAvaloniaProducts=
+          -p:RunAOTCompilation=false -p:WasmStripILAfterAOT=false
+          -o artifacts/browser
+      - name: Verify static entry points
+        run: |
+          test -f artifacts/browser/wwwroot/index.html
+          test -f artifacts/browser/wwwroot/main.js
+          test -f artifacts/browser/wwwroot/_framework/dotnet.js
+          touch artifacts/browser/wwwroot/.nojekyll
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: artifacts/browser/wwwroot
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

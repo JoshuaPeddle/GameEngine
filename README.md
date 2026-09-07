@@ -364,3 +364,18 @@ so the harness exercises the same path the runners do.
 MIT — see [`LICENSE`](LICENSE). Dependency and redistributed-binary notices are in
 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md). Demo art and audio are CC0
 (`GameEngine.Demo/assets/LICENSE`).
+
+## Web client
+
+Play [Emberbrook on the web](https://joshuapeddle.com/GameEngine/).
+
+The browser build opens Emberbrook directly; Q returns to the complete demo menu.
+Progress is saved in this browser using local storage. The first visit downloads
+the WebAssembly runtime and game assets. Browser audio is not yet connected.
+
+`.github/workflows/pages.yml` publishes the static client after pushes to
+`master` or `reliability-plan`. GitHub Pages uses GitHub Actions as its source.
+
+The workflow uses the interpreted WebAssembly build for a shorter deployment
+cycle. Release packaging retains its existing AOT configuration. All asset URLs
+are relative, so the client works under a repository path as well as a domain root.
