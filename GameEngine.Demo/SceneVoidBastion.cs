@@ -52,7 +52,7 @@ public sealed class SceneVoidBastion : Scene
     {
         entities = entityManager;
         audio = audioPlayer;
-        assets ??= new Assets("assets.json", AssetSource);
+        assets = LoadAssets("assets.json");
         Battle = new BastionBattle();
         SelectedPad = lastKills = 0;
         blueprint = BastionTowerKind.Pulse;

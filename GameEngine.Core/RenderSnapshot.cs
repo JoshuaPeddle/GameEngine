@@ -11,9 +11,9 @@ namespace GameEngine.Core;
 /// <para>
 /// Instances are pooled and recycled by <see cref="Engine"/>. The buffer returned by
 /// <see cref="Engine.GetRenderSnapshot"/> stays valid until that reader asks for the next
-/// one; the engine never fills a buffer a reader still holds. Steady-state rendering
-/// allocates nothing — <see cref="Entries"/>' backing array only grows when the entity
-/// count exceeds its capacity.
+/// one. Explicit snapshot leases keep their buffer valid until disposed. The backing
+/// array only grows when the entity count exceeds its capacity; acquiring a lease
+/// allocates a small ownership token.
 /// </para>
 /// </summary>
 public sealed class RenderSnapshot

@@ -10,6 +10,11 @@ namespace GameEngine.Core
             ?? throw new InvalidOperationException(
                 $"{GetType().Name} has no engine yet; assets are only available from Initialize onwards.");
 
+        protected Assets LoadAssets(string manifestPath) => (Engine ?? throw new InvalidOperationException(
+            $"{GetType().Name} has no engine yet.")).LoadAssets(manifestPath);
+
+        public virtual void Unload() { }
+
         public virtual int VirtualWidth => 1600;
         public virtual int VirtualHeight => 1600;
 

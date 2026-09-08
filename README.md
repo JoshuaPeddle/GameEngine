@@ -139,7 +139,7 @@ public class MyScene : Scene
     public override void Initialize(EntityManager entities, InputManager input,
         AudioSystem? audio, Action<Scene?> resetScene)
     {
-        assets ??= new Assets("assets.json", AssetSource);
+        assets = LoadAssets("assets.json");
 
         input.AddAction(GeKeys.W, "Up");
         input.AddAction(GeKeys.Up, "Up");
@@ -203,6 +203,39 @@ culling, and editor picking agree on the requested size.
 `GetAnimationForSheet(name, size)` names the older whole-sheet resizing behavior
 explicitly. The existing `GetAnimation(name, size)` overload retains that behavior
 for compatibility.
+
+## Scene resources and entity groups
+
+Scenes can call `LoadAssets("assets.json")` during initialization. The engine caches
+one `Assets` per manifest path, so returning to a scene reuses its decoded textures
+and animation variants. These assets are borrowed: the engine owns their disposal.
+Externally constructed `Assets` remain owned by their caller.
+
+Override `Scene.Unload()` to release scene-specific resources. It runs before the
+next scene initializes and when the engine is disposed, including after a partial
+initialization failure. An unload exception becomes an engine fault; another scene
+can recover. Do not dispose borrowed assets from this hook.
+
+For a map or panel, create `var group = entityManager.CreateGroup()` and construct
+members with `group.CreateEntity(tag)`. The returned handles work immediately, while
+queries retain their normal next-update visibility. `group.Clear()` schedules all
+members for removal at the next entity-manager update and lets the group be reused.
+`group.Dispose()` also prevents further construction. Unrelated groups are untouched.
+The game UI owns such a group; dispose it from the scene's unload hook.
+
+Hosts should paint within an explicit snapshot lease:
+
+```csharp
+using var snapshot = engine.AcquireRenderSnapshot();
+renderer.DrawEntitiesToCanvas(canvas, snapshot.Snapshot);
+```
+
+Each lease pins its buffer independently. Engine disposal releases cached textures
+only after every outstanding reader returns its snapshot. Leases must be disposed;
+their snapshots must not be used afterward. Acquiring a lease allocates a small token.
+The older single-reader `GetRenderSnapshot()` API remains available; its final read
+must be returned with `ReleaseRenderSnapshot()` so engine-owned assets can be freed.
+Avalonia, WinForms, and the editor use explicit leases.
 
 ## Small game UI
 

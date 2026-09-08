@@ -16,7 +16,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
-            assets ??= new Assets("assets.json", AssetSource);
+            assets = LoadAssets("assets.json");
 
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.BindGestureAction(PointerGesture.Up, "Up");

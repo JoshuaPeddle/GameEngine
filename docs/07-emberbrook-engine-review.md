@@ -112,5 +112,18 @@ workbench panel; other Emberbrook panels remain on the old helpers for now.
 Tests cover drawing/input order, hidden and disabled controls, modal blocking,
 layout geometry, glyph-width wrapping, and the existing crafting playthroughs.
 
-Next: entity groups and explicit asset ownership (GE-94, GE-95), then shared
-host services (GE-96). Wider UI migration and content rebuilding (GE-98) remain.
+GE-94 and GE-95 are implemented. `EntityGroup` returns immediate member handles,
+retains deferred query semantics, and retires a group's live and pending entities
+together. Emberbrook maps and the game UI use groups. `Scene.Unload` provides a
+local-resource release hook, with captured unload faults and recovery.
+
+Scene `LoadAssets` borrows an engine-owned manifest cache; all asset-loading demos
+and the template use it. `AcquireRenderSnapshot` provides independent disposable
+reader leases, and all three rendering hosts use them. Cached assets survive scene
+changes and engine disposal while a reader holds them, then release when the last
+reader returns. External assets remain caller-owned. Regression tests cover repeated
+scene transitions, single decoding, scaled-cache reuse, held readers, repeated lease
+disposal, legacy reader release, failed initialization, and unload recovery.
+
+Next: shared host services (GE-96). Wider UI migration and content rebuilding
+(GE-98) remain.

@@ -28,7 +28,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> ResetScene)
         {
-            assets ??= new("assets.json", AssetSource);
+            assets = LoadAssets("assets.json");
 
             CreateBall(entityManager);
 

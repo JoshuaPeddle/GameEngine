@@ -324,7 +324,8 @@ namespace GameEngine.Runner.Avalonia
 
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-            renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
+            using var snapshot = _engine.AcquireRenderSnapshot();
+            renderSystem.DrawEntitiesToCanvas(canvas, snapshot.Snapshot);
 
             // Resume updates and report that the first visible frame reached the platform surface.
             _reportFirstPresent();

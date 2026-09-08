@@ -22,7 +22,8 @@ namespace GameEngine.Core
         {
             ArgumentNullException.ThrowIfNull(source);
             this.source = source;
-            Load(AssetManifest.Load(manifestPath, source));
+            try { Load(AssetManifest.Load(manifestPath, source)); }
+            catch { Dispose(); throw; }
         }
 
         public IAssetSource Source => source;

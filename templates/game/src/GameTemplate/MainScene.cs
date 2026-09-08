@@ -23,7 +23,7 @@ public class MainScene : Scene
         AudioSystem? audio,
         Action<Scene> resetScene)
     {
-        assets ??= new Assets(AssetManifest.DefaultFileName, AssetSource);
+        assets = LoadAssets(AssetManifest.DefaultFileName);
 
         input.AddAction(GeKeys.W, "Up");
         input.BindGestureAction(PointerGesture.Up, "Up");

@@ -85,12 +85,68 @@ namespace GameEngine.Core
         // Pooled render snapshots: filled on the engine thread, read on the UI thread.
         // Three buffers are enough for a single reader — at most one is published and one is
         // held by the reader, which always leaves one free for the engine to fill. Recycling
-        // them keeps steady-state rendering allocation-free.
+        // them avoids copying the render entries for each paint.
         private readonly object _snapshotLock = new();
         private readonly List<RenderSnapshot> _snapshotPool = [new(), new(), new()];
         private RenderSnapshot? _publishedSnapshot;
         private RenderSnapshot? _readerSnapshot;
         private RenderSnapshot? _fillingSnapshot;
+        private bool _releaseOwnedAssets;
+        private readonly object _assetsLock = new();
+        private readonly Dictionary<string, Assets> _ownedAssets = new(StringComparer.Ordinal);
+
+        public Assets LoadAssets(string manifestPath)
+        {
+            lock (_assetsLock)
+            {
+                ObjectDisposedException.ThrowIf(IsDisposed, this);
+                if (!_ownedAssets.TryGetValue(manifestPath, out var assets))
+                {
+                    assets = new Assets(manifestPath, AssetSource);
+                    _ownedAssets.Add(manifestPath, assets);
+                }
+                return assets;
+            }
+        }
+
+        public RenderSnapshotLease AcquireRenderSnapshot()
+        {
+            lock (_snapshotLock)
+            {
+                var snapshot = IsDisposed ? RenderSnapshot.Empty : _publishedSnapshot ?? RenderSnapshot.Empty;
+                if (snapshot != RenderSnapshot.Empty) snapshot.Readers++;
+                return new RenderSnapshotLease(this, snapshot);
+            }
+        }
+
+        internal void ReleaseSnapshot(RenderSnapshot snapshot)
+        {
+            lock (_snapshotLock)
+            {
+                if (snapshot != RenderSnapshot.Empty) snapshot.Readers--;
+                TryReleaseOwnedAssets();
+            }
+        }
+
+        public void ReleaseRenderSnapshot()
+        {
+            lock (_snapshotLock)
+            {
+                if (_readerSnapshot != null) _readerSnapshot.Readers--;
+                _readerSnapshot = null;
+                TryReleaseOwnedAssets();
+            }
+        }
+
+        private void TryReleaseOwnedAssets()
+        {
+            if (!_releaseOwnedAssets || _snapshotPool.Any(snapshot => snapshot.Readers != 0)) return;
+            lock (_assetsLock)
+            {
+                foreach (var assets in _ownedAssets.Values) assets.Dispose();
+                _ownedAssets.Clear();
+            }
+        }
 
         /// Called by the UI/render thread to get a consistent view of entity state.
         /// The returned buffer stays valid until this method is called again, at which point
@@ -104,7 +160,8 @@ namespace GameEngine.Core
                 if (_readerSnapshot != null)
                     _readerSnapshot.Readers--;
 
-                _readerSnapshot = _publishedSnapshot;
+                _readerSnapshot = IsDisposed ? null : _publishedSnapshot;
+                TryReleaseOwnedAssets();
                 if (_readerSnapshot == null)
                     return RenderSnapshot.Empty;
 
@@ -436,6 +493,7 @@ namespace GameEngine.Core
                 return;
 
             Stop();
+            UnloadCurrentScene();
             Systems.Dispose();
             _audioSystem?.Dispose();
             _audioSystem = null;
@@ -445,6 +503,11 @@ namespace GameEngine.Core
             {
                 currentScene = null;
                 Interlocked.Exchange(ref _pendingScene, null);
+            }
+            lock (_snapshotLock)
+            {
+                _releaseOwnedAssets = true;
+                TryReleaseOwnedAssets();
             }
             GC.SuppressFinalize(this);
         }
@@ -494,16 +557,25 @@ namespace GameEngine.Core
         }
 
         // Called from engine thread
+        private bool UnloadCurrentScene()
+        {
+            var scene = currentScene;
+            if (scene == null) return true;
+            try { scene.Unload(); return true; }
+            catch (Exception exception) { Fail("scene unload", null, exception); return false; }
+            finally { scene.Engine = null; currentScene = null; }
+        }
+
         private void ApplySceneChange(Scene scene)
         {
+            if (!UnloadCurrentScene()) return;
             Volatile.Write(ref _fault, null);
             currentScene = scene;
             scene.Engine = this;
 
             // Rebuild systems and scene. The replaced container is simply dropped: the audio
             // system is the only disposable one in it and the engine owns that for its lifetime.
-            // Assets are not touched here — they belong to whoever created them, and a snapshot
-            // the host is still painting may hold textures from the scene being left.
+            // Engine-owned assets stay cached across scene changes for readers of older snapshots.
             InitializeSystems();
 
             try

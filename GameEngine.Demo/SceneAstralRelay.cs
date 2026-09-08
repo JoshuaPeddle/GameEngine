@@ -59,7 +59,7 @@ public sealed class SceneAstralRelay : Scene
         AudioSystem? audioPlayer,
         Action<Scene?> ResetScene)
     {
-        assets ??= new Assets("assets.json", AssetSource);
+        assets = LoadAssets("assets.json");
         resetScene = ResetScene;
         audioSystem = audioPlayer;
 

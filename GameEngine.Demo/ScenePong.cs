@@ -21,7 +21,7 @@ namespace GameEngine.Demo
         private int _wallThickness = 30;
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> ResetScene)
         {
-            assets ??= new("assets.json", AssetSource);
+            assets = LoadAssets("assets.json");
 
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.BindGestureAction(PointerGesture.Up, "Up");

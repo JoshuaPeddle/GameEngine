@@ -30,7 +30,7 @@ public sealed partial class SceneEmberbrook : Scene
     private readonly IEmberbrookSaveStore saveStore;
     private readonly Dictionary<string, Entity> siteSprites = [];
     private readonly Dictionary<string, CText> siteLabels = [];
-    private readonly List<Entity> mapEntities = [];
+    private EntityGroup mapEntities = null!;
     private readonly List<Entity> dangerTiles = [];
     private Region renderedRegion;
     private bool buildingMap;
@@ -54,13 +54,20 @@ public sealed partial class SceneEmberbrook : Scene
     public override int VirtualWidth => 1280;
     public override int VirtualHeight => 800;
 
+    public override void Unload()
+    {
+        mapEntities?.Dispose();
+        workbenchUi?.Dispose();
+    }
+
     public override void Initialize(EntityManager entityManager, InputManager inputManager,
         AudioSystem? audioPlayer, Action<Scene?> ResetScene)
     {
         audio = audioPlayer;
         World.Crafted += () => PlayCue("Craft");
         entities = entityManager;
-        assets = new Assets("assets.json", AssetSource);
+        mapEntities = entities.CreateGroup();
+        assets = LoadAssets("assets.json");
         Sprite("emberBackdrop", "panel", new Vec2(640, 400), new Vec2(1280, 800), -100);
         BuildMap();
         player = Sprite("emberPlayer", "player", Position(World.Player), new Vec2(40, 40), 20);
@@ -103,7 +110,6 @@ public sealed partial class SceneEmberbrook : Scene
 
     private void BuildMap()
     {
-        foreach (var entity in mapEntities) entity.Active = false;
         mapEntities.Clear();
         siteSprites.Clear();
         siteLabels.Clear();
@@ -302,8 +308,7 @@ public sealed partial class SceneEmberbrook : Scene
 
     private Entity Sprite(string tag, string image, Vec2 position, Vec2 size, int layer)
     {
-        var entity = entities.CreateEntity(tag);
-        if (buildingMap) mapEntities.Add(entity);
+        var entity = buildingMap ? mapEntities.CreateEntity(tag) : entities.CreateEntity(tag);
         entity.AddComponent(new CTransform(position) { Layer = layer });
         var animation = new CAnimation(Drawing(image, size));
         if (buildingMap) animation.Update((Math.Abs(position.X * 7 + position.Y * 13) % 17) * 0.09);
@@ -313,8 +318,7 @@ public sealed partial class SceneEmberbrook : Scene
 
     private CText Label(string tag, string value, Vec2 position, int size, string color, SKTextAlign align = SKTextAlign.Left, int layer = 100)
     {
-        var entity = entities.CreateEntity(tag);
-        if (buildingMap) mapEntities.Add(entity);
+        var entity = buildingMap ? mapEntities.CreateEntity(tag) : entities.CreateEntity(tag);
         entity.AddComponent(new CTransform(position) { Layer = layer });
         var text = new CText(value, size) { TextAlign = align };
         text.Paint.Color = SKColor.Parse(color);

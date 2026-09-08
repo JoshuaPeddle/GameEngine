@@ -74,7 +74,7 @@ namespace GameEngine.Demo
             AudioSystem? audioPlayer,
             Action<Scene?> ResetScene)
         {
-            assets ??= new Assets("assets.json", AssetSource);
+            assets = LoadAssets("assets.json");
             board = new TetrisBoard(_seed);
             resetScene = ResetScene;
 

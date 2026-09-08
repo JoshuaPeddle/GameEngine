@@ -121,7 +121,8 @@ namespace GameEngine
                 return;
 
             var canvas = e.Surface.Canvas;
-            renderSystem.DrawEntitiesToCanvas(canvas, _gameEngine.GetRenderSnapshot());
+            using var snapshot = _gameEngine.AcquireRenderSnapshot();
+            renderSystem.DrawEntitiesToCanvas(canvas, snapshot.Snapshot);
 
             // Resume updates after first visible frame of a new scene
             _gameEngine.NotifyFirstPresent();

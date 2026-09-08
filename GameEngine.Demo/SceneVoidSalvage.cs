@@ -55,7 +55,7 @@ public sealed class SceneVoidSalvage : Scene
         AudioSystem? audioPlayer, Action<Scene?> ResetScene)
     {
         entities = entityManager;
-        assets = new Assets("assets.json", AssetSource);
+        assets = LoadAssets("assets.json");
         reset = ResetScene;
         audio = audioPlayer;
         Sprite("salvageArena", "Siegearena", new Vec2(640, 400), 1280, 800, -100);

@@ -99,14 +99,19 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   system, a scene's `Update`, or a scene's `Initialize` is recorded as an `EngineFault`
   naming the scene, the operation and the system, handed to `Engine.FaultAction`, and stops
   the simulation. The last snapshot stays paintable and loading another scene clears it.
-- **Assets outlive the engines that draw from them.** An `Assets` owns every texture it
-  decodes and every scaled animation it derives; a plain `Animation` borrows its texture and
-  releases nothing. Nothing is freed when an entity, an animation or a scene goes away,
-  because a render snapshot the host is still painting holds those bitmaps. Dispose an
-  `Assets` only after the engines using it. Prefer `GetAnimationForFrame(name, frameSize)` for draw-time sizing with shared
-  textures and nearest-neighbour sampling. `GetAnimationForSheet(name, sheetSize)`
-  names the legacy cached bitmap-resizing behavior; avoid `AsScaledAnimation`, which
-  allocates a bitmap for each call.
+- **Asset ownership follows the engine or the caller.** Scene `LoadAssets(manifest)`
+  borrows from the engine's cache; never dispose those assets in game code. The engine
+  releases them after disposal and the final render-snapshot lease returns. Hosts use
+  `AcquireRenderSnapshot()` in a `using` scope. Legacy single-reader callers must return
+  their final snapshot with `ReleaseRenderSnapshot()`. Externally created `Assets` remain
+  caller-owned and must outlive every engine and snapshot borrowing their bitmaps.
+  Prefer `GetAnimationForFrame(name, frameSize)` for draw-time sizing with shared textures
+  and nearest-neighbour sampling. `GetAnimationForSheet` retains cached sheet resizing.
+- **Scenes release local resources in `Unload`.** It runs on replacement and engine
+  disposal, including after partial initialization. Groups created with
+  `EntityManager.CreateGroup()` return immediate construction handles; `Clear` retires
+  their members at the next manager update and supports rebuilding, while `Dispose`
+  also closes the group. Queries retain their deferred visibility.
 - **Audio integration lives outside Core.** Core defines `IAudioBackend` and always builds
   an `AudioSystem` when audio is enabled; a host registers a backend through
   `AudioBackends.Factory` before the first engine. With none registered the service reports
