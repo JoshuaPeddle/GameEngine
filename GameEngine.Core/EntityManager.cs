@@ -31,6 +31,8 @@ namespace GameEngine.Core
 
         public EntityManager() { }
 
+        public EntityGroup CreateGroup() => new(this);
+
         public void Update()
         {
             if (entitiesToAdd.Count > 0)

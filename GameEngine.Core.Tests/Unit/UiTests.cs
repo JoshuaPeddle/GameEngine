@@ -10,6 +10,24 @@ public class UiTests
     private static Animation Background(SKBitmap bitmap) => new(bitmap, 1, 0);
 
     [Test]
+    public void DisposingUiRetiresItsGroupAndKeepsBorrowedTexturesAlive()
+    {
+        var entities = new EntityManager();
+        entities.CreateEntity("world");
+        var ui = new UiSystem(entities);
+        var panel = ui.AddPanel(new SKRect(0, 0, 100, 100));
+        using var bitmap = new SKBitmap(2, 2);
+        ui.AddButton(panel, "button", new SKRect(0, 0, 100, 30), "Make", Background(bitmap), () => { });
+        ui.Update();
+        ui.Dispose();
+        ui.Dispose();
+        entities.Update();
+        Assert.That(entities.GetEntities().Single().Tag, Is.EqualTo("world"));
+        Assert.That(bitmap.Handle, Is.Not.EqualTo(IntPtr.Zero));
+        Assert.Throws<ObjectDisposedException>(() => ui.Update());
+    }
+
+    [Test]
     public void RowsColumnsAndPaddingShareExactEdges()
     {
         var bounds = UiLayout.Inset(new SKRect(0, 0, 244, 82), 10);

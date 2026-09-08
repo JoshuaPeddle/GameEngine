@@ -4,7 +4,7 @@ using SkiaSharp;
 
 namespace GameEngine.Core.Systems;
 
-public sealed class UiSystem
+public sealed class UiSystem : IDisposable
 {
     private readonly record struct ButtonState(SKRect Bounds, string Caption, float Size, float Padding, SKColor Color, bool Visible);
     private readonly record struct TextState(SKRect Bounds, string Text, float Size, SKColor Color, bool Visible);
@@ -19,12 +19,14 @@ public sealed class UiSystem
     private readonly List<UiPanel> panels = [];
     private readonly List<ButtonView> buttons = [];
     private readonly List<TextView> texts = [];
-    private readonly EntityManager entities;
+    private readonly EntityGroup entities;
+    private bool disposed;
 
-    public UiSystem(EntityManager entities) => this.entities = entities;
+    public UiSystem(EntityManager entities) => this.entities = entities.CreateGroup();
 
     public UiPanel AddPanel(SKRect bounds, int layer = 120)
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         UiLayout.Validate(bounds);
         if (panels.Any(p => p.Layer == layer)) throw new ArgumentException("Each UI panel needs a distinct layer.", nameof(layer));
         var panel = new UiPanel(bounds, layer);
@@ -98,6 +100,7 @@ public sealed class UiSystem
 
     public void Update()
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         foreach (var view in buttons)
         {
             var button = view.Button;
@@ -150,4 +153,14 @@ public sealed class UiSystem
             view.State = state;
         }
     }
+    public void Dispose()
+    {
+        if (disposed) return;
+        disposed = true;
+        entities.Dispose();
+        panels.Clear();
+        buttons.Clear();
+        texts.Clear();
+    }
+
 }
