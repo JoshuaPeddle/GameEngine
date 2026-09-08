@@ -204,6 +204,38 @@ culling, and editor picking agree on the requested size.
 explicitly. The existing `GetAnimation(name, size)` overload retains that behavior
 for compatibility.
 
+## Small game UI
+
+`GameEngine.Core.UI` provides panel/button/text data and `UiLayout.Row`, `Column`,
+and `Inset` helpers in virtual coordinates. `GameEngine.Core.Systems.UiSystem`
+creates and retains the sprite/text entities, measures text with the renderer's
+font, and updates them together. Rendering still goes through `RenderSystem`.
+
+```csharp
+var ui = new UiSystem(entityManager);
+var panel = ui.AddPanel(new SKRect(20, 20, 244, 90), layer: 120);
+var row = UiLayout.Row(UiLayout.Inset(panel.Bounds, 8), 2, gap: 8);
+var make = ui.AddButton(panel, "make", row[0], "Make bar",
+    assets.GetAnimationForFrame("Button", new Vec2(100, 28)), MakeBar);
+make.Enabled = canCraft;
+ui.Update();
+```
+
+Keep the UI owner with the scene. Update the models and call `ui.Update()` after
+gameplay updates, including initialization. Before handling a world click, call
+`ui.TryPress(position)` and return if it consumes the press. A disabled button
+consumes its click without invoking its action. Hidden controls neither draw nor
+activate. A visible modal panel consumes clicks outside its bounds too, blocking
+panels below it. Give panels distinct layers; buttons added later in one panel
+appear above earlier buttons and take input first.
+
+Panel bounds define the input region, not a background image. Child bounds are
+absolute virtual coordinates and must fit inside their panel. Button captions
+ellipsize to the available width; text blocks wrap by glyph width with an ellipsis
+when their line budget is exhausted. Unchanged controls reuse their measured
+layout. Background animations are borrowed and follow the normal asset lifetime.
+Emberbrook's shared forge/cooking workbench is the first consumer.
+
 ## Embedding
 
 `GameEngine.Core` has no UI dependency: `Engine.Tick(deltaSeconds)` advances one frame on
