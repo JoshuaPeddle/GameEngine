@@ -25,8 +25,7 @@ public partial class SceneEmberbrookTests
     {
         var viewport = ViewportTransform.Create(harness.Input.RealResolution, new Vec2(1280, 800), GameEngine.Core.Systems.ScalingStrategy.Letterbox);
         var real = new Vec2(point.X * viewport.ScaleX + viewport.OffsetX, point.Y * viewport.ScaleY + viewport.OffsetY);
-        harness.Input.HandlePointerEvent(Pointer.PointerEventType.Press, new Pointer.PointerPressEvent(real));
-        harness.Run(1);
+        harness.PointerGesture(real, real);
     }
 
     private static void Visit(SceneHarness harness, SceneEmberbrook scene, string id)

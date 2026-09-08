@@ -1,4 +1,3 @@
-using System.Reflection;
 using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
@@ -28,6 +27,8 @@ public sealed class SceneHarness
 
         engine.Tick(FrameSeconds);
 
+        try { AssertHealthy(engine, scene, "initial load"); }
+        catch { engine.Dispose(); throw; }
         engine.NotifyFirstPresent();
 
         return new SceneHarness(engine, scene);
@@ -46,10 +47,36 @@ public sealed class SceneHarness
                 Assert.Fail($"{Scene.GetType().Name} threw on frame {frame}: {ex}");
             }
 
+            AssertHealthy(Engine, Scene, $"frame {frame}");
             AssertStateIsFinite(frame);
         }
 
         return this;
+    }
+
+    private static void AssertHealthy(Engine engine, Scene scene, string phase)
+    {
+        if (engine.Fault is { } fault)
+            Assert.Fail($"{scene.GetType().Name} faulted during {phase}: {fault}\n{fault.Exception}");
+    }
+
+    public SceneHarness ExpectFault(int frames, string message)
+    {
+        for (int frame = 0; frame < frames && Engine.Fault == null; frame++)
+            Engine.Tick(FrameSeconds);
+        Assert.That(Engine.Fault, Is.Not.Null, "Expected the engine to fault.");
+        Assert.That(Engine.Fault!.Exception.Message, Does.Contain(message));
+        return this;
+    }
+
+    public void PointerGesture(Vec2 start, Vec2 end)
+    {
+        Input.HandlePointerEvent(Pointer.PointerEventType.Press, new Pointer.PointerPressEvent(start));
+        Run(1);
+        Input.HandlePointerEvent(Pointer.PointerEventType.Move, new Pointer.PointerMoveEvent(end));
+        Run(1);
+        Input.HandlePointerEvent(Pointer.PointerEventType.Release, new Pointer.PointerReleaseEvent(end));
+        Run(1);
     }
 
     private void AssertStateIsFinite(int frame)
