@@ -107,6 +107,11 @@ public sealed class SceneVoidSiege : Scene
             var cover = Body("siegeCover", "cover", centre, 58, 2, true);
             cover.AddComponent(new CSiegeActor { Kind = SiegeKind.Cover, Hull = 8, MaxHull = 8 });
         }
+        inputManager.BindGestureAction(PointerGesture.Up, "SiegeUp");
+        inputManager.BindGestureAction(PointerGesture.Down, "SiegeDown");
+        inputManager.BindGestureAction(PointerGesture.Left, "SiegeLeft");
+        inputManager.BindGestureAction(PointerGesture.Right, "SiegeRight");
+        inputManager.BindGestureAction(PointerGesture.Tap, "SiegeDash");
         BindMove(inputManager, GeKeys.W, GeKeys.Up, "SiegeUp", (c, v) => c.Up = v);
         BindMove(inputManager, GeKeys.S, GeKeys.Down, "SiegeDown", (c, v) => c.Down = v);
         BindMove(inputManager, GeKeys.A, GeKeys.Left, "SiegeLeft", (c, v) => c.Left = v);

@@ -148,6 +148,11 @@ public sealed class SceneAstralRelay : Scene
 
     private void ConfigureInput(InputManager inputManager, Entity player)
     {
+        inputManager.BindGestureAction(PointerGesture.Up, "AstralUp");
+        inputManager.BindGestureAction(PointerGesture.Down, "AstralDown");
+        inputManager.BindGestureAction(PointerGesture.Left, "AstralLeft");
+        inputManager.BindGestureAction(PointerGesture.Right, "AstralRight");
+        inputManager.BindGestureAction(PointerGesture.Tap, "AstralDash");
         inputManager.AddAction(GeKeys.W, "AstralUp");
         inputManager.AddAction(GeKeys.S, "AstralDown");
         inputManager.AddAction(GeKeys.A, "AstralLeft");

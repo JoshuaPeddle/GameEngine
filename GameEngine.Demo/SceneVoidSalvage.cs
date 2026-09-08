@@ -73,6 +73,11 @@ public sealed class SceneVoidSalvage : Scene
         status = Label("salvageStatus", "", new Vec2(390, 55), 19, "#E3F5FF");
         message = Label("salvageMessage", "", new Vec2(48, 733), 22, "#75FFF1");
         detail = Label("salvageDetail", "", new Vec2(48, 765), 15, "#A3BBCD");
+        inputManager.BindGestureAction(PointerGesture.Up, "SalvageUp");
+        inputManager.BindGestureAction(PointerGesture.Down, "SalvageDown");
+        inputManager.BindGestureAction(PointerGesture.Left, "SalvageLeft");
+        inputManager.BindGestureAction(PointerGesture.Right, "SalvageRight");
+        inputManager.BindGestureAction(PointerGesture.Tap, "SalvageDash");
         MoveBinding(inputManager, GeKeys.W, GeKeys.Up, "SalvageUp", (c, v) => c.Up = v);
         MoveBinding(inputManager, GeKeys.S, GeKeys.Down, "SalvageDown", (c, v) => c.Down = v);
         MoveBinding(inputManager, GeKeys.A, GeKeys.Left, "SalvageLeft", (c, v) => c.Left = v);
