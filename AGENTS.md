@@ -103,8 +103,10 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   decodes and every scaled animation it derives; a plain `Animation` borrows its texture and
   releases nothing. Nothing is freed when an entity, an animation or a scene goes away,
   because a render snapshot the host is still painting holds those bitmaps. Dispose an
-  `Assets` only after the engines using it. Use `GetAnimation(name, scaleSize)` rather than
-  `AsScaledAnimation` — the cached one does not decode a new bitmap per scene load.
+  `Assets` only after the engines using it. Prefer `GetAnimationForFrame(name, frameSize)` for draw-time sizing with shared
+  textures and nearest-neighbour sampling. `GetAnimationForSheet(name, sheetSize)`
+  names the legacy cached bitmap-resizing behavior; avoid `AsScaledAnimation`, which
+  allocates a bitmap for each call.
 - **Audio integration lives outside Core.** Core defines `IAudioBackend` and always builds
   an `AudioSystem` when audio is enabled; a host registers a backend through
   `AudioBackends.Factory` before the first engine. With none registered the service reports

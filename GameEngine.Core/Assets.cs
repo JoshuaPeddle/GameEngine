@@ -13,6 +13,8 @@ namespace GameEngine.Core
         private readonly Dictionary<string, Animation> animations = [];
         private readonly Dictionary<string, Animation> scaledAnimations = [];
 
+        private readonly Dictionary<(string Name, double Width, double Height, SKFilterMode Sampling), Animation> frameAnimations = [];
+
         private readonly IAssetSource source;
         private bool disposed;
 
@@ -55,7 +57,24 @@ namespace GameEngine.Core
 
         // Scaled variants are cached rather than rebuilt, because each one decodes a bitmap of
         // its own: without this, every scene reload leaked one per scaled entity.
-        public Animation GetAnimation(string name, Vec2 scaleSize)
+        public Animation GetAnimation(string name, Vec2 scaleSize) => GetAnimationForSheet(name, scaleSize);
+
+        public Animation GetAnimationForFrame(string name, Vec2 frameSize, SKFilterMode sampling = SKFilterMode.Nearest)
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            if (!double.IsFinite(frameSize.X) || !double.IsFinite(frameSize.Y) || frameSize.X <= 0 || frameSize.Y <= 0)
+                throw new ArgumentOutOfRangeException(nameof(frameSize));
+            if (!Enum.IsDefined(sampling)) throw new ArgumentOutOfRangeException(nameof(sampling));
+            var key = (name, frameSize.X, frameSize.Y, sampling);
+            if (!frameAnimations.TryGetValue(key, out var animation))
+            {
+                animation = new Animation(GetAnimation(name), frameSize, sampling);
+                frameAnimations[key] = animation;
+            }
+            return animation;
+        }
+
+        public Animation GetAnimationForSheet(string name, Vec2 scaleSize)
         {
             var key = $"{name}@{scaleSize.X}x{scaleSize.Y}";
 
@@ -100,6 +119,7 @@ namespace GameEngine.Core
             foreach (var scaled in scaledAnimations.Values)
                 scaled.Dispose();
             scaledAnimations.Clear();
+            frameAnimations.Clear();
 
             foreach (var texture in textures.Values)
                 texture.Dispose();

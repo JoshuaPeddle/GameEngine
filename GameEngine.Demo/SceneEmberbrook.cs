@@ -296,8 +296,7 @@ public sealed partial class SceneEmberbrook : Scene
 
     private Animation Drawing(string name, Vec2 size)
     {
-        var original = assets.GetAnimation("Ember" + name);
-        return assets.GetAnimation("Ember" + name, new Vec2(size.X * original.frames, size.Y));
+        return assets.GetAnimationForFrame("Ember" + name, size);
     }
 
     private Entity Sprite(string tag, string image, Vec2 position, Vec2 size, int layer)

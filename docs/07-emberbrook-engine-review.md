@@ -96,5 +96,13 @@ GE-91 and GE-97 are implemented on the first engine improvement branch:
 - Regression coverage includes actual Avalonia mouse events, hover, gesture expiry,
   held keyboard keys, letterboxing, scene reset, and captured scene failures.
 
-Next: frame-sized animations (GE-92), then a compact UI layer exercised by one
-Emberbrook workbench (GE-93). Asset ownership and host services remain open.
+GE-92 is also implemented. `Assets.GetAnimationForFrame` accepts per-frame virtual
+size and explicit nearest/linear sampling, caches variants, and borrows the original
+texture. Rendering scales at draw time; snapshots retain destination size and sampling
+so drawing, culling, and picking agree. Emberbrook no longer multiplies requested
+width by the sheet's frame count. `GetAnimationForSheet` names the older resizing
+behavior, and the existing overload remains compatible. Tests cover pixel output,
+frame timing, shared ownership, picking, bounds, and legacy sizing.
+
+Next: a compact UI layer exercised by one Emberbrook workbench (GE-93).
+Asset ownership and host services remain open.

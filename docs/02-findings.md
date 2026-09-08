@@ -241,7 +241,7 @@ no performance regression or measured leak is claimed by this review.
 | ID | Sev | Finding | Location | Confirmed | Status |
 |---|---|---|---|---|---|
 | GE-91 | S1 | Pointer releases synthesize keys without scene opt-in; Avalonia hover requires a pressed pointer | GameView / MainView | code + RPG regression history | fixed |
-| GE-92 | S2 | Animation size means entire sheet, forcing frame-count compensation in games | Assets / Animation | code + RPG drawing helper | open |
+| GE-92 | S2 | Animation size means entire sheet, forcing frame-count compensation in games | Assets / Animation | code + RPG drawing helper | fixed |
 | GE-93 | S2 | Game UI has independent visual/hit-test state and manual text layout | SceneEmberbrook panels | observed layout correction | open |
 | GE-94 | S3 | Deferred entity queries lack a convenient construction/group ownership API | EntityManager / scene builders | observed initialization fault | open |
 | GE-95 | S2 | Scene-created assets have no lifecycle hook or supplied owner satisfying snapshot lifetimes | Scene / Assets / Engine | code review | open |

@@ -36,12 +36,16 @@ public sealed class RenderSnapshot
     {
         public readonly SKBitmap Texture;
         public readonly SKRect SourceRect;
+        public readonly Vec2 FrameSize;
+        public readonly SKFilterMode Sampling;
         public readonly bool ShouldDraw;
 
         public AnimationData(CAnimation a)
         {
             Texture = a.Texture;
             SourceRect = a.GetSourceRect();
+            FrameSize = a.Animation.DrawFrameSize;
+            Sampling = a.Animation.Sampling;
             ShouldDraw = a.ShouldDraw;
         }
     }

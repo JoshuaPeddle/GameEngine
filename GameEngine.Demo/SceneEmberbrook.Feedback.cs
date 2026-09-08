@@ -91,7 +91,7 @@ public sealed partial class SceneEmberbrook
         previousHealth = World.Hull;
         previousLevels = TotalLevels;
         Fill(healthFill, World.Hull / 20.0, 1016, 224, 219);
-        healthFill.GetComponent<CAnimation>().Animation = assets.GetAnimation(World.Hull <= 6 ? "Emberwound" : "Emberhealth", new Vec2(224, 6));
+        healthFill.GetComponent<CAnimation>().Animation = assets.GetAnimationForFrame(World.Hull <= 6 ? "Emberwound" : "Emberhealth", new Vec2(224, 6));
         Fill(actionFill, World.ActionProgress, 24, 960, 718);
     }
 

@@ -175,8 +175,8 @@ namespace GameEngine.Core.Systems
         private static void DrawSnapshotAnimation(SKCanvas canvas,
             in RenderSnapshot.Entry entry, in RenderSnapshot.AnimationData anim)
         {
-            float frameWidth = anim.SourceRect.Width;
-            float frameHeight = anim.SourceRect.Height;
+            float frameWidth = (float)anim.FrameSize.X;
+            float frameHeight = (float)anim.FrameSize.Y;
 
             var scale = entry.Transform.Scale;
             if (scale.X == 0 || scale.Y == 0)
@@ -195,7 +195,7 @@ namespace GameEngine.Core.Systems
                 (frameWidth / 2),
                 (frameHeight / 2));
 
-            canvas.DrawBitmap(anim.Texture, anim.SourceRect, destRect, _animationSampling, _animationPaint);
+            canvas.DrawBitmap(anim.Texture, anim.SourceRect, destRect, new SKSamplingOptions(anim.Sampling, SKMipmapMode.None), _animationPaint);
             canvas.Restore();
         }
 
@@ -219,7 +219,7 @@ namespace GameEngine.Core.Systems
             {
                 bounds = SpriteGeometry.Union(bounds, SpriteGeometry.SpriteBounds(
                     SpriteGeometry.Center(position, boxSize),
-                    new Vec2(animation.SourceRect.Width, animation.SourceRect.Height),
+                    animation.FrameSize,
                     entry.Transform.Scale,
                     entry.Transform.Rotation));
             }
@@ -287,7 +287,7 @@ namespace GameEngine.Core.Systems
                 && SpriteGeometry.SpriteContains(
                     worldPoint,
                     SpriteGeometry.Center(position, boxSize),
-                    new Vec2(animation.SourceRect.Width, animation.SourceRect.Height),
+                    animation.FrameSize,
                     entry.Transform.Scale,
                     entry.Transform.Rotation))
                 return true;
@@ -322,9 +322,6 @@ namespace GameEngine.Core.Systems
         }
 
         private readonly SKFont _textFont = new(SKTypeface.Default, 24);
-
-        private readonly static SKSamplingOptions _animationSampling =
-            new(SKFilterMode.Linear, SKMipmapMode.None);
 
         private readonly static SKPaint _animationPaint = new SKPaint
         {

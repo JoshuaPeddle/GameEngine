@@ -12,6 +12,16 @@ namespace GameEngine.Core
         public SKRect[]? _cachedFrames;
 
         private readonly double frameDurationSeconds;
+        private readonly Vec2? drawFrameSize;
+        public Vec2 DrawFrameSize => drawFrameSize ?? new Vec2(frameWidth, frameHeight);
+        public SKFilterMode Sampling { get; } = SKFilterMode.Linear;
+
+        internal Animation(Animation source, Vec2 frameSize, SKFilterMode sampling)
+            : this(source.Texture, source.frames, source.delay)
+        {
+            drawFrameSize = frameSize;
+            Sampling = sampling;
+        }
 
         public Animation(SKBitmap texture, int frames, float delayMs)
         {

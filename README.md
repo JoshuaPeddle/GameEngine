@@ -191,6 +191,19 @@ duration. They share named action callbacks with keys without releasing a held k
 Gesture distances use virtual coordinates; presses outside the viewport are ignored.
 Bindings and active gestures are cleared on scene changes.
 
+## Sprite frame sizes
+
+`assets.GetAnimationForFrame("PlayerIdle", new Vec2(40, 40))` draws every frame at
+40×40 virtual pixels, regardless of the number of frames in the sheet. It shares
+the original texture and caches the animation variant; no resized bitmap is allocated.
+Nearest-neighbour sampling is the default. Pass `SKFilterMode.Linear` as the third
+argument for smooth scaling. Transform scale and rotation still apply, and drawing,
+culling, and editor picking agree on the requested size.
+
+`GetAnimationForSheet(name, size)` names the older whole-sheet resizing behavior
+explicitly. The existing `GetAnimation(name, size)` overload retains that behavior
+for compatibility.
+
 ## Embedding
 
 `GameEngine.Core` has no UI dependency: `Engine.Tick(deltaSeconds)` advances one frame on

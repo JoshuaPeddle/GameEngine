@@ -169,7 +169,7 @@ public sealed partial class SceneEmberbrook
             if (i < contents.Count)
             {
                 var (item, count) = contents[i];
-                slot.Icon.GetComponent<CAnimation>().Animation = assets.GetAnimation("Ember" + ItemImage(item), new Vec2(24, 24));
+                slot.Icon.GetComponent<CAnimation>().Animation = assets.GetAnimationForFrame("Ember" + ItemImage(item), new Vec2(24, 24));
                 slot.Quantity.Text = count.ToString();
                 slots[i] = (slot.Icon, slot.Quantity, item);
             }
