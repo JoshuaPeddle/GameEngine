@@ -19,10 +19,15 @@ namespace GameEngine.Demo
 
             // Input setup
             inputManager.AddAction(GeKeys.W, "Jump");
+            inputManager.BindGestureAction(PointerGesture.Up, "Jump");
             inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.BindGestureAction(PointerGesture.Down, "Down");
             inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.BindGestureAction(PointerGesture.Left, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.BindGestureAction(PointerGesture.Right, "Right");
             inputManager.AddAction(GeKeys.Space, "Jump");
+            inputManager.BindGestureAction(PointerGesture.Tap, "Jump");
 
             // Create player
             var player = entityManager.CreateEntity("player");

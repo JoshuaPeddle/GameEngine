@@ -240,13 +240,13 @@ no performance regression or measured leak is claimed by this review.
 
 | ID | Sev | Finding | Location | Confirmed | Status |
 |---|---|---|---|---|---|
-| GE-91 | S1 | Pointer releases synthesize keys without scene opt-in; Avalonia hover requires a pressed pointer | GameView / MainView | code + RPG regression history | open |
+| GE-91 | S1 | Pointer releases synthesize keys without scene opt-in; Avalonia hover requires a pressed pointer | GameView / MainView | code + RPG regression history | fixed |
 | GE-92 | S2 | Animation size means entire sheet, forcing frame-count compensation in games | Assets / Animation | code + RPG drawing helper | open |
 | GE-93 | S2 | Game UI has independent visual/hit-test state and manual text layout | SceneEmberbrook panels | observed layout correction | open |
 | GE-94 | S3 | Deferred entity queries lack a convenient construction/group ownership API | EntityManager / scene builders | observed initialization fault | open |
 | GE-95 | S2 | Scene-created assets have no lifecycle hook or supplied owner satisfying snapshot lifetimes | Scene / Assets / Engine | code review | open |
 | GE-96 | S2 | Host persistence capabilities lack an engine-level service boundary | browser host / RPG save store | code review | open |
-| GE-97 | S2 | Headless harness does not reject faults captured internally by Engine.Tick | SceneHarness.Run | code review | open |
+| GE-97 | S2 | Headless harness does not reject faults captured internally by Engine.Tick | SceneHarness.Run | code review | fixed |
 | GE-98 | S3 | Save milestones rebuild unrelated map art; content presentation definitions repeat | SceneEmberbrook / VillageProgress | code review | open |
 | GE-99 | S2 | Trimmed browser publish uses reflection for level metadata and view lookup | LevelFile / ViewLocator | publish warnings | fixed |
 | GE-100 | S1 | Browser high-DPI layout dimensions differ from CSS pointer coordinates; clicks miss buttons | browser / GameView | Chromium pointer and reload checks | fixed |

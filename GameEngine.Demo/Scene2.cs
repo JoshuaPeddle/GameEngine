@@ -21,9 +21,13 @@ namespace GameEngine.Demo
             assets ??= new("assets.json", AssetSource);
 
             inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.BindGestureAction(PointerGesture.Up, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.BindGestureAction(PointerGesture.Down, "Down");
             inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.BindGestureAction(PointerGesture.Left, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.BindGestureAction(PointerGesture.Right, "Right");
 
             playerEntity = entityManager.CreateEntity("player");
             playerEntity.AddComponent(new CAnimation(assets.GetAnimation("JeepBack")));

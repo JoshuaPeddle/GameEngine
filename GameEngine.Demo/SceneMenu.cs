@@ -46,10 +46,15 @@ namespace GameEngine.Demo
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
             inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.BindGestureAction(PointerGesture.Up, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.BindGestureAction(PointerGesture.Down, "Down");
             inputManager.AddAction(GeKeys.Space, "Go");
+            inputManager.BindGestureAction(PointerGesture.Tap, "Go");
             inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.BindGestureAction(PointerGesture.Right, "Right");
             inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.BindGestureAction(PointerGesture.Left, "Left");
 
             // Create menu items
             CreateMenuItems(entityManager, scenes.Select(s => s.Item1), new Vec2(SceneMenuX, MenuStartY), SceneItemYSpacing, SceneFontSize, "scene");

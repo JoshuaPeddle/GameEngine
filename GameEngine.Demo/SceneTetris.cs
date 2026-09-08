@@ -166,14 +166,19 @@ namespace GameEngine.Demo
         private void BindInput(InputManager inputManager)
         {
             inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.BindGestureAction(PointerGesture.Left, "Left");
             inputManager.AddAction(GeKeys.Left, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.BindGestureAction(PointerGesture.Right, "Right");
             inputManager.AddAction(GeKeys.Right, "Right");
             inputManager.AddAction(GeKeys.S, "SoftDrop");
+            inputManager.BindGestureAction(PointerGesture.Down, "SoftDrop");
             inputManager.AddAction(GeKeys.Down, "SoftDrop");
             inputManager.AddAction(GeKeys.W, "Rotate");
+            inputManager.BindGestureAction(PointerGesture.Up, "Rotate");
             inputManager.AddAction(GeKeys.Up, "Rotate");
             inputManager.AddAction(GeKeys.Space, "HardDrop");
+            inputManager.BindGestureAction(PointerGesture.Tap, "HardDrop");
             inputManager.AddAction(GeKeys.R, "Restart");
 
             // Held keys drive their own repeat in Update, so they read the flags rather than

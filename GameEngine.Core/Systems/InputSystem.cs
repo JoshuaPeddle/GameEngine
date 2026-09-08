@@ -14,7 +14,7 @@ namespace GameEngine.Core.Systems
         public void Update(EntityManager entityManager, double deltaSeconds)
         {
             inputManager.DispatchPointerEvents();
-            inputManager.DoActions();
+            inputManager.DoActions(deltaSeconds);
         }
 
         public void KeyDown(GeKeys key)

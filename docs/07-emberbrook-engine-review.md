@@ -3,8 +3,7 @@
 September 7, 2026. This is a usage-driven review of the current code, not a new
 performance benchmark. Emberbrook's 601-test baseline and both boss playthroughs
 show that the simulation foundation works. Most friction is now in game-authoring
-APIs and host integration. Proposed engine changes below are not implemented by
-this review.
+APIs and host integration. Implementation progress is recorded below; remaining proposals are not yet implemented.
 
 ## What to preserve
 
@@ -80,3 +79,22 @@ The browser now supplies its CSS viewport dimensions to the view's input mapping
 desktop keeps its normal control bounds. Chromium checks cover starting an adventure,
 walking, saving through the UI, and continuing after a reload. A headless host test
 checks the backing-surface/CSS coordinate mapping.
+
+## Implementation progress
+
+GE-91 and GE-97 are implemented on the first engine improvement branch:
+
+- Both hosts forward raw pointer events once, including unpressed hover. WinForms'
+  duplicate event subscriptions and both hosts' synthetic key timers are removed.
+- `InputManager.BindGestureAction` opts a scene into named tap/directional actions.
+  Gestures use virtual coordinates and a configurable duration in simulation seconds,
+  independent of physical key state. The legacy mobile demos opt in explicitly;
+  Emberbrook and pointer-controlled demos retain raw pointer input.
+- `SceneHarness` rejects captured faults after initial load and every normal tick.
+  `ExpectFault` supports deliberate failure/recovery tests. Its pointer helper sends
+  press, move, and release; Emberbrook's click tests now use that complete sequence.
+- Regression coverage includes actual Avalonia mouse events, hover, gesture expiry,
+  held keyboard keys, letterboxing, scene reset, and captured scene failures.
+
+Next: frame-sized animations (GE-92), then a compact UI layer exercised by one
+Emberbrook workbench (GE-93). Asset ownership and host services remain open.

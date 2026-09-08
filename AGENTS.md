@@ -68,8 +68,8 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   collision geometry and is deliberately unaffected by `CTransform.Scale`. `SpriteGeometry`
   is the single definition, shared by drawing, culling and the editor's picking.
 - **`GeKeys` is the key vocabulary** (`A`–`Z`, `Space`, arrows). Every runner builds its
-  map from those names, so adding a value reaches all platforms; a swipe is classified as
-  `W`/`A`/`S`/`D`. Several keys may share one action.
+  map from those names, so adding a value reaches all platforms; pointer events stay raw, and games opt into
+  named gesture actions with `InputManager.BindGestureAction`. Several keys may share one action.
 - **Entity mutation goes through the entity.** `Id` is immutable, `Tag` is a property and
   `Components` is read-only from outside, because every one of those changes has to reach
   `EntityManager` to invalidate its cached queries — replacing a component included, even

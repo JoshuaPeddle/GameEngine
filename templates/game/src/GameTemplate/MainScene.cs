@@ -25,14 +25,17 @@ public class MainScene : Scene
     {
         assets ??= new Assets(AssetManifest.DefaultFileName, AssetSource);
 
-        // A swipe is classified as W/A/S/D, so binding both means touch input works too.
         input.AddAction(GeKeys.W, "Up");
+        input.BindGestureAction(PointerGesture.Up, "Up");
         input.AddAction(GeKeys.Up, "Up");
         input.AddAction(GeKeys.S, "Down");
+        input.BindGestureAction(PointerGesture.Down, "Down");
         input.AddAction(GeKeys.Down, "Down");
         input.AddAction(GeKeys.A, "Left");
+        input.BindGestureAction(PointerGesture.Left, "Left");
         input.AddAction(GeKeys.Left, "Left");
         input.AddAction(GeKeys.D, "Right");
+        input.BindGestureAction(PointerGesture.Right, "Right");
         input.AddAction(GeKeys.Right, "Right");
 
         LevelManager.LoadLevelIntoScene("levels/level1.json", entities, input, audio, assets);

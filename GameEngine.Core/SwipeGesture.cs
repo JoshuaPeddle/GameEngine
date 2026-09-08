@@ -1,8 +1,20 @@
 namespace GameEngine.Core;
 
+public enum PointerGesture { Tap, Up, Down, Left, Right }
+
 public static class SwipeGesture
 {
     public const double DefaultThreshold = 20.0;
+
+    public static PointerGesture Recognize(Vec2 start, Vec2 end, double threshold = DefaultThreshold) =>
+        Classify(start, end, threshold) switch
+        {
+            GeKeys.W => PointerGesture.Up,
+            GeKeys.S => PointerGesture.Down,
+            GeKeys.A => PointerGesture.Left,
+            GeKeys.D => PointerGesture.Right,
+            _ => PointerGesture.Tap
+        };
 
     public static GeKeys Classify(Vec2 start, Vec2 end, double threshold = DefaultThreshold)
     {

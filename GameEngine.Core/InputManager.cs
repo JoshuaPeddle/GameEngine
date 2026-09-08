@@ -20,7 +20,19 @@ namespace GameEngine.Core
         private readonly ConcurrentDictionary<PointerEventType, IReadOnlyList<Action<PointerEvent>>> pointerActionBindings = [];
         private readonly ConcurrentQueue<(PointerEventType Type, Vec2 RealPosition)> queuedPointerEvents = new();
 
+        private readonly ConcurrentDictionary<PointerGesture, (string Action, double HoldSeconds)> gestureBindings = new();
+        private readonly ConcurrentDictionary<string, double> gestureStates = new();
+        private Vec2? gestureStart;
         private Vec2 _realResolution;
+
+        public void BindGestureAction(PointerGesture gesture, string actionName, double holdSeconds = 0.1)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(actionName);
+            if (!Enum.IsDefined(gesture)) throw new ArgumentOutOfRangeException(nameof(gesture));
+            if (!double.IsFinite(holdSeconds) || holdSeconds <= 0)
+                throw new ArgumentOutOfRangeException(nameof(holdSeconds));
+            gestureBindings[gesture] = (actionName, holdSeconds);
+        }
 
         public InputManager()
         {
@@ -34,6 +46,9 @@ namespace GameEngine.Core
             actionStates.Clear();
             actionBindings.Clear();
             pointerActionBindings.Clear();
+            gestureBindings.Clear();
+            gestureStates.Clear();
+            gestureStart = null;
 
             while (queuedPointerEvents.TryDequeue(out _)) { }
         }
@@ -71,6 +86,9 @@ namespace GameEngine.Core
                 heldKeys.TryRemove(mapping.Key, out _);
             }
 
+            foreach (var gesture in gestureBindings.Where(x => x.Value.Action == actionName).Select(x => x.Key).ToArray())
+                gestureBindings.TryRemove(gesture, out _);
+            gestureStates.TryRemove(actionName, out _);
             actionStates.TryRemove(actionName, out _);
             actionBindings.TryRemove(actionName, out _);
         }
@@ -142,7 +160,21 @@ namespace GameEngine.Core
             while (queuedPointerEvents.TryDequeue(out var queued))
             {
                 if (!TryMapToVirtual(queued.RealPosition, out Vec2 virtualPosition))
+                {
+                    if (queued.Type is PointerEventType.Press or PointerEventType.Release)
+                        gestureStart = null;
                     continue;
+                }
+
+                if (queued.Type == PointerEventType.Press)
+                    gestureStart = virtualPosition;
+                else if (queued.Type == PointerEventType.Release)
+                {
+                    var start = gestureStart;
+                    gestureStart = null;
+                    if (start.HasValue && gestureBindings.TryGetValue(SwipeGesture.Recognize(start.Value, virtualPosition), out var binding))
+                        gestureStates[binding.Action] = binding.HoldSeconds;
+                }
 
                 if (!pointerActionBindings.TryGetValue(queued.Type, out var actions))
                     continue;
@@ -158,20 +190,31 @@ namespace GameEngine.Core
                 .Create(_realResolution, VirtualResolution, ScalingStrategy)
                 .TryToVirtual(realPosition, out virtualPosition);
 
-        public void DoActions()
+        public void DoActions() => DoActions(1.0 / 60.0);
+
+        public void DoActions(double deltaSeconds)
         {
+            if (!double.IsFinite(deltaSeconds) || deltaSeconds < 0)
+                throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
             foreach (var binding in actionBindings)
             {
-                bool isActive = actionStates.TryGetValue(binding.Key, out bool state) && state;
+                bool isActive = IsActionActive(binding.Key);
                 var actions = binding.Value;
 
                 for (int i = 0; i < actions.Count; i++)
                     actions[i](isActive);
             }
+            foreach (var action in gestureStates.Keys.ToArray())
+            {
+                if (!gestureStates.TryGetValue(action, out var duration)) continue;
+                var remaining = duration - deltaSeconds;
+                if (remaining <= 0) gestureStates.TryRemove(action, out _);
+                else gestureStates[action] = remaining;
+            }
         }
 
         public bool IsActionActive(string actionName) =>
-            actionStates.TryGetValue(actionName, out bool isActive) && isActive;
+            (actionStates.TryGetValue(actionName, out bool isActive) && isActive) || gestureStates.ContainsKey(actionName);
     }
 
     // A binding names an entity and a component type, not one component instance: replacing

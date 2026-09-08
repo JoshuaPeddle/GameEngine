@@ -182,8 +182,14 @@ Keys are bound to named actions, and **several keys can share one action**: an a
 active until the last key holding it is released, so binding both `D` and `Right` to
 `"Right"` behaves the way a player expects.
 
-A touch swipe is classified as `W`/`A`/`S`/`D` (`SwipeGesture.Classify`), so a game that
-wants touch input should bind those letters, with or without the arrows alongside.
+Pointer press, move (including hover), and release never synthesize keyboard input.
+Games opt into gestures explicitly, for example
+`inputManager.BindGestureAction(PointerGesture.Up, "Jump")` or
+`inputManager.BindGestureAction(PointerGesture.Tap, "Jump")`. Gesture actions last
+0.1 seconds of simulation time by default; the optional third argument sets that
+duration. They share named action callbacks with keys without releasing a held key.
+Gesture distances use virtual coordinates; presses outside the viewport are ignored.
+Bindings and active gestures are cleared on scene changes.
 
 ## Embedding
 

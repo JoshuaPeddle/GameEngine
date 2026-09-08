@@ -10,9 +10,6 @@ namespace GameEngine
     public partial class MainView : Form
     {
         private readonly Engine _gameEngine;
-        private Point? _pointerStartPosition;
-        private const double SwipeThreshold = 20.0;
-        private const int SyntheticKeyHoldMs = 100;
 
         // Coalesce pending invalidations
         private int _invalidationsPending = 0;
@@ -49,9 +46,6 @@ namespace GameEngine
             skglControl1.KeyDown += KeyPressed;
             skglControl1.KeyUp += KeyReleased;
 
-            skglControl1.MouseDown += (sender, args) => Input?.PointerPressed(new PointerPressEvent(new Vec2(args.X, args.Y)));
-            skglControl1.MouseMove += (sender, args) => Input?.PointerMoved(new PointerMoveEvent(new Vec2(args.X, args.Y)));
-            skglControl1.MouseUp += (sender, args) => Input?.PointerReleased(new PointerReleaseEvent(new Vec2(args.X, args.Y)));
 
             _gameEngine.ChangeScene(new SceneMenu());
             _gameEngine.TargetFrameRate = 1000;
@@ -66,12 +60,6 @@ namespace GameEngine
             };
         }
 
-        private async Task ReleaseKeyAfterTapAsync(GeKeys key)
-        {
-            await Task.Delay(SyntheticKeyHoldMs);
-            Input?.KeyUp(key);
-        }
-
         private void OnSizeChanged(object? sender, EventArgs args)
         {
             _gameEngine.SizeChanged(skglControl1.Width, skglControl1.Height);
@@ -79,38 +67,21 @@ namespace GameEngine
 
         private void OnPointerPressed(object? sender, MouseEventArgs e)
         {
+            skglControl1.Focus();
             var point = e.Location;
-            _pointerStartPosition = point;
             Input?.PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
         }
+
         private void OnPointerMoved(object? sender, MouseEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
-            {
-                var point = e.Location;
-                Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
-            }
+            var point = e.Location;
+            Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
         }
 
         private void OnPointerReleased(object? sender, MouseEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
-            {
-                var endPosition = e.Location;
-                Input?.PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
-
-                var startPosition = _pointerStartPosition.Value;
-
-                var key = SwipeGesture.Classify(
-                    new Vec2(startPosition.X, startPosition.Y),
-                    new Vec2(endPosition.X, endPosition.Y),
-                    SwipeThreshold);
-
-                Input?.KeyDown(key);
-                _ = ReleaseKeyAfterTapAsync(key);
-
-                _pointerStartPosition = null;
-            }
+            var point = e.Location;
+            Input?.PointerReleased(new PointerReleaseEvent(new Vec2(point.X, point.Y)));
         }
 
         void KeyPressed(object? sender, KeyEventArgs args)

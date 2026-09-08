@@ -8,11 +8,10 @@ using Avalonia.Skia;
 using GameEngine.Core;
 using GameEngine.Core.Systems;
 using System;
+using System.Threading;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using static GameEngine.Core.Pointer;
 using Avalonia.Threading;
-using System.Threading;
 
 namespace GameEngine.Runner.Avalonia
 {
@@ -42,16 +41,12 @@ namespace GameEngine.Runner.Avalonia
         private static readonly Dictionary<Key, GeKeys> KeyMap = BuildKeyMap();
         private readonly HashSet<GeKeys> _heldKeys = new();
 
-        private Point? _pointerStartPosition;
-        private const double SwipeThreshold = 20.0;
-        private const int SyntheticKeyHoldMs = 100;
 
         private int _invalidationsPending = 0;
         private int _firstPresentReported;
         private bool _started;
         private bool _ownsEngine;
         private Action? _previousInvalidateAction;
-        private CancellationTokenSource _syntheticKeyReleases = new();
         private readonly Action _queueInvalidate;
 
         public GameView()
@@ -123,9 +118,6 @@ namespace GameEngine.Runner.Avalonia
         {
             ReleaseHeldKeys();
 
-            _syntheticKeyReleases.Cancel();
-            _syntheticKeyReleases.Dispose();
-            _syntheticKeyReleases = new CancellationTokenSource();
 
             ReleaseEngine();
 
@@ -211,20 +203,6 @@ namespace GameEngine.Runner.Avalonia
             }
         }
 
-        private async Task ReleaseKeyAfterTapAsync(GeKeys key, CancellationToken cancellation)
-        {
-            try
-            {
-                await Task.Delay(SyntheticKeyHoldMs, cancellation);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            Input?.KeyUp(key);
-        }
-
         // TryGet rather than Get: the container is empty between an engine's disposal and the
         // last queued UI event that still refers to it.
         private InputSystem? Input => _gameEngine?.Systems.TryGet<InputSystem>();
@@ -277,40 +255,20 @@ namespace GameEngine.Runner.Avalonia
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
             Focus();
-
             var point = e.GetPosition(this);
-            _pointerStartPosition = point;
             Input?.PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
         }
 
         private void OnPointerMoved(object? sender, PointerEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
-            {
-                var point = e.GetPosition(this);
-                Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
-            }
+            var point = e.GetPosition(this);
+            Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
         }
 
         private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
-            {
-                var endPosition = e.GetPosition(this);
-                Input?.PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
-
-                var startPosition = _pointerStartPosition.Value;
-
-                var key = Core.SwipeGesture.Classify(
-                    new Vec2(startPosition.X, startPosition.Y),
-                    new Vec2(endPosition.X, endPosition.Y),
-                    SwipeThreshold);
-
-                Input?.KeyDown(key);
-                _ = ReleaseKeyAfterTapAsync(key, _syntheticKeyReleases.Token);
-
-                _pointerStartPosition = null;
-            }
+            var point = e.GetPosition(this);
+            Input?.PointerReleased(new PointerReleaseEvent(new Vec2(point.X, point.Y)));
         }
 
         public override void Render(DrawingContext context)

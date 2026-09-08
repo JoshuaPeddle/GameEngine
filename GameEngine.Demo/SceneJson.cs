@@ -53,10 +53,15 @@ namespace GameEngine.Demo
         private void SetupInputActions(InputManager inputManager)
         {
             inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.BindGestureAction(PointerGesture.Up, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.BindGestureAction(PointerGesture.Down, "Down");
             inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.BindGestureAction(PointerGesture.Left, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.BindGestureAction(PointerGesture.Right, "Right");
             inputManager.AddAction(GeKeys.Space, "PlaySound");
+            inputManager.BindGestureAction(PointerGesture.Tap, "PlaySound");
         }
 
         private void LoadLevel(string levelFilePath, EntityManager entityManager, InputManager inputManager)
@@ -130,14 +135,19 @@ namespace GameEngine.Demo
             levelLoader.RegisterEntityHandler("player", SceneJson.WirePlayerInput);
 
             inputManager.AddAction(GeKeys.W, "Up");
+            inputManager.BindGestureAction(PointerGesture.Up, "Up");
             inputManager.AddAction(GeKeys.Up, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
+            inputManager.BindGestureAction(PointerGesture.Down, "Down");
             inputManager.AddAction(GeKeys.Down, "Down");
             inputManager.AddAction(GeKeys.A, "Left");
+            inputManager.BindGestureAction(PointerGesture.Left, "Left");
             inputManager.AddAction(GeKeys.Left, "Left");
             inputManager.AddAction(GeKeys.D, "Right");
+            inputManager.BindGestureAction(PointerGesture.Right, "Right");
             inputManager.AddAction(GeKeys.Right, "Right");
             inputManager.AddAction(GeKeys.Space, "PlaySound");
+            inputManager.BindGestureAction(PointerGesture.Tap, "PlaySound");
             inputManager.AddAction(GeKeys.N, "NextLevel");
             inputManager.AddAction(GeKeys.P, "PrevLevel");
 

@@ -34,6 +34,37 @@ public class GameViewLifetimeTests
         new() { AudioEnabled = false, AssetSource = new DelegateAssetSource(_ => Stream.Null), SceneFactory = () => new CountingScene() };
 
     [AvaloniaTest]
+    public void MouseHoverAndClickAreForwardedOnceWithoutSpace()
+    {
+        using var engine = new Engine(audioEnabled: false);
+        engine.ChangeScene(new CountingScene());
+        engine.Tick(0);
+        engine.NotifyFirstPresent();
+        engine.InputManager.AddAction(GeKeys.Space, "Jump");
+        int moves = 0, presses = 0, releases = 0;
+        engine.InputManager.BindPointerAction(Core.Pointer.PointerEventType.Move, _ => moves++);
+        engine.InputManager.BindPointerAction(Core.Pointer.PointerEventType.Press, _ => presses++);
+        engine.InputManager.BindPointerAction(Core.Pointer.PointerEventType.Release, _ => releases++);
+        var window = WindowWith(new GameView { Engine = engine });
+        try
+        {
+            window.MouseMove(new global::Avalonia.Point(40, 40));
+            engine.Tick(0.016);
+            Assert.That(moves, Is.GreaterThan(0));
+            window.MouseDown(new global::Avalonia.Point(40, 40), MouseButton.Left);
+            window.MouseUp(new global::Avalonia.Point(40, 40), MouseButton.Left);
+            engine.Tick(0.016);
+            Assert.Multiple(() =>
+            {
+                Assert.That(presses, Is.EqualTo(1));
+                Assert.That(releases, Is.EqualTo(1));
+                Assert.That(engine.InputManager.IsActionActive("Jump"), Is.False);
+            });
+        }
+        finally { window.Content = null; window.Close(); }
+    }
+
+    [AvaloniaTest]
     public void AHostCanUseCssInputDimensionsOnAHighDpiSurface()
     {
         var previous = App.InputViewportSize;
