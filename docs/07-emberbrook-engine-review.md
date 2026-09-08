@@ -104,5 +104,13 @@ width by the sheet's frame count. `GetAnimationForSheet` names the older resizin
 behavior, and the existing overload remains compatible. Tests cover pixel output,
 frame timing, shared ownership, picking, bounds, and legacy sizing.
 
-Next: a compact UI layer exercised by one Emberbrook workbench (GE-93).
-Asset ownership and host services remain open.
+GE-93 now has a working pilot: an optional `UiSystem` with panel/button/text models,
+row/column/padding helpers, measured wrapping and caption ellipsis, shared visual
+and input state, disabled-click consumption, and modal routing. It retains its
+entity handles and caches unchanged layouts. Both forge and cooking use the same
+workbench panel; other Emberbrook panels remain on the old helpers for now.
+Tests cover drawing/input order, hidden and disabled controls, modal blocking,
+layout geometry, glyph-width wrapping, and the existing crafting playthroughs.
+
+Next: entity groups and explicit asset ownership (GE-94, GE-95), then shared
+host services (GE-96). Wider UI migration and content rebuilding (GE-98) remain.

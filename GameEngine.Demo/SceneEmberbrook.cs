@@ -224,6 +224,7 @@ public sealed partial class SceneEmberbrook : Scene
 
     private void Click(Vec2 point)
     {
+        if (workbenchUi.TryPress(point)) { UpdatePanels(); return; }
         foreach (var button in panelButtons)
             if (button.Visible() && button.Bounds.Contains((float)point.X, (float)point.Y)) { button.Action(); PlayCue("Select"); return; }
         if (welcome || World.HomecomingOpen) return;

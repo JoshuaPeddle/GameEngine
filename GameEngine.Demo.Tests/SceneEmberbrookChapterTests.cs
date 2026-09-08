@@ -77,7 +77,7 @@ public partial class SceneEmberbrookTests
         world.Restore(world.Capture() with { Ore = 9 });
         Approach(harness, scene, "forge");
         Assert.That(world.Count(Item.Ore), Is.EqualTo(9));
-        Assert.That(harness.Require("emberDetail4").GetComponent<CText>().Text, Does.Contain("3 ore"));
+        Assert.That(WorkbenchText(harness), Does.Contain("3 ore"));
         Click(harness, new Vec2(1065, 564));
         Click(harness, new Vec2(1180, 564));
         harness.Run(55);

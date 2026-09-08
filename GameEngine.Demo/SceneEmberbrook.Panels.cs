@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using GameEngine.Core;
 using GameEngine.Core.Components;
+using GameEngine.Core.Systems;
+using GameEngine.Core.UI;
 using GameEngine.Demo.Emberbrook;
 using SkiaSharp;
 
@@ -13,6 +15,11 @@ public sealed partial class SceneEmberbrook
     private enum SidebarPage { Backpack, Skills, Journal }
     private sealed record PanelButton(SKRect Bounds, Action Action, Func<bool> Visible, Entity Sprite, CText Text, Func<string> Caption);
     private readonly List<PanelButton> panelButtons = [];
+    private UiSystem workbenchUi = null!;
+    private UiPanel workbenchPanel = null!;
+    private UiTextBlock workbenchDetail = null!;
+    private UiButton craftButton = null!;
+    private UiButton amountButton = null!;
     private readonly List<(Entity Icon, CText Quantity, Item? Item)> slots = [];
     private readonly List<Entity> welcomeEntities = [];
     private TextBlock detail = null!;
@@ -93,17 +100,14 @@ public sealed partial class SceneEmberbrook
         }
         detail = Lines("emberDetail", 7, 16, new Vec2(1016, 393), 12, "#e3e4cb");
         pageText = Lines("emberPage", 13, 17, new Vec2(1016, 279), 12, "#e3e4cb");
+        InitializeWorkbench();
         serviceTitle = Label("emberServiceTitle", "", new Vec2(1016, 505), 14, "#e9d4a0");
-        PanelButtonAt("emberPreviousRecipe", () => "< Recipe", 1016, 516, 108, () => SelectRecipe(-1), () => !welcome && (AtForge || AtFire));
-        PanelButtonAt("emberNextRecipe", () => "Recipe >", 1132, 516, 108, () => SelectRecipe(1), () => !welcome && (AtForge || AtFire));
         PanelButtonAt("emberTalk", () => "Talk to Bram", 1016, 516, 108, World.TalkToBram, () => !welcome && AtShop);
         PanelButtonAt("emberBuy", () => $"Buy {quantity} / {quantity * 3}c", 1132, 516, 108, () => World.BuyRation(quantity), () => !welcome && AtShop);
         PanelButtonAt("emberDepositAll", () => "Deposit all", 1016, 516, 108, World.DepositAll, () => !welcome && AtBank);
         PanelButtonAt("emberBankQuantity", () => "Amount: " + quantity, 1132, 516, 108, CycleQuantity, () => !welcome && AtBank);
         PanelButtonAt("emberDeposit", () => "Deposit " + quantity, 1016, 550, 108, () => World.Deposit(selectedItem, quantity), () => !welcome && AtBank);
         PanelButtonAt("emberWithdraw", () => "Withdraw " + quantity, 1132, 550, 108, () => World.Withdraw(selectedItem, quantity), () => !welcome && AtBank);
-        PanelButtonAt("emberCraftAmount", () => "Batch: " + quantity, 1016, 550, 108, CycleQuantity, () => !welcome && (AtForge || AtFire));
-        PanelButtonAt("emberCraft", () => CraftCaption, 1132, 550, 108, () => { page = SidebarPage.Backpack; World.StartBatch(SelectedRecipe.Id, quantity); }, () => !welcome && (AtForge || AtFire));
         PanelButtonAt("emberRepairSupplies", () => "4 logs + 1 bar", 1016, 550, 108, () => World.RepairBridge(false), () => !welcome && AtShop && World.BridgeStage == 1);
         PanelButtonAt("emberRepairCoins", () => "Repair / 45c", 1132, 550, 108, () => World.RepairBridge(true), () => !welcome && AtShop && World.BridgeStage == 1);
         PanelButtonAt("emberShopQuantity", () => "Amount: " + quantity, 1016, 550, 224, CycleQuantity, () => !welcome && AtShop && World.BridgeStage != 1);
@@ -129,6 +133,27 @@ public sealed partial class SceneEmberbrook
         PanelButtonAt("emberNew", () => "New adventure", 290, 398, 190, () => { World.Restore(new EmberbrookWorld().Capture()); page = SidebarPage.Backpack; journalSection = bookIndex = residentIndex = 0; welcome = false; ResetFeedback(); savedMilestone = Milestone; saveMessage = "New adventure / not saved"; World.Notify("Welcome to Emberbrook. Meet Elin in the village square."); }, () => welcome);
         PanelButtonAt("emberContinue", () => "Continue", 510, 398, 190, Load, () => welcome);
     }
+    private void InitializeWorkbench()
+    {
+        workbenchUi = new UiSystem(entities);
+        workbenchPanel = workbenchUi.AddPanel(new SKRect(1016, 380, 1240, 578));
+        workbenchDetail = workbenchUi.AddText(workbenchPanel, "emberWorkbenchDetail", new SKRect(1016, 380, 1240, 492), 7);
+        workbenchDetail.Color = SKColor.Parse("#e3e4cb");
+        var rows = UiLayout.Column(new SKRect(1016, 516, 1240, 578), 2, 6);
+        var top = UiLayout.Row(rows[0], 2, 8);
+        var bottom = UiLayout.Row(rows[1], 2, 8);
+        UiButton Button(string tag, string caption, SKRect bounds, Action action)
+        {
+            var button = workbenchUi.AddButton(workbenchPanel, tag, bounds, caption, Drawing("button", new Vec2(108, 28)), () => { action(); PlayCue("Select"); });
+            button.Color = SKColor.Parse("#eee0b3");
+            return button;
+        }
+        Button("emberPreviousRecipe", "< Recipe", top[0], () => SelectRecipe(-1));
+        Button("emberNextRecipe", "Recipe >", top[1], () => SelectRecipe(1));
+        amountButton = Button("emberCraftAmount", "", bottom[0], CycleQuantity);
+        craftButton = Button("emberCraft", "", bottom[1], () => { page = SidebarPage.Backpack; World.StartBatch(SelectedRecipe.Id, quantity); });
+    }
+
     private CText welcomeTitle = null!;
     private CText welcomeIntro = null!;
     private void CycleQuantity() => quantity = quantity == 1 ? 5 : quantity == 5 ? 10 : 1;
@@ -175,7 +200,7 @@ public sealed partial class SceneEmberbrook
             }
             else slots[i] = (slot.Icon, slot.Quantity, null);
         }
-        detail.Text = page != SidebarPage.Backpack || welcome ? "" : $"{EmberbrookWorld.ItemName(selectedItem).ToUpperInvariant()}\nCarry {World.Count(selectedItem)} / Bank {World.BankCount(selectedItem)}\nPack {World.PackUsed}/12 slots / stack {EmberbrookWorld.StackSize(selectedItem)}\n" +
+        var detailText = page != SidebarPage.Backpack || welcome ? "" : $"{EmberbrookWorld.ItemName(selectedItem).ToUpperInvariant()}\nCarry {World.Count(selectedItem)} / Bank {World.BankCount(selectedItem)}\nPack {World.PackUsed}/12 slots / stack {EmberbrookWorld.StackSize(selectedItem)}\n" +
             (AtForge || AtFire ? $"{SelectedRecipe.Name}\nNeeds: {SelectedRecipe.Cost}\nOre {World.Count(Item.Ore)} Bars {World.Count(Item.Bar)} Logs {World.Count(Item.Log)}\nTrout {World.Count(Item.Trout)} / coins {World.Coins}" : selectedItem is Item.Meal or Item.Ration or Item.SmokedTrout ? $"Heals {(selectedItem == Item.Meal ? World.MealHealing : 8)} health.\nUse Eat or E when wounded." : selectedItem switch
             {
                 Item.Ore => "Smelt 3 ore into 1 copper bar.\nUse the village workbench.",
@@ -183,6 +208,7 @@ public sealed partial class SceneEmberbrook
                 Item.Log => "Repair bridges, light beacons,\nforge spears, or smoke trout.",
                 _ => "Cook at the western fire.\nGrill for healing or smoke\nfor compact expedition food."
             });
+        detail.Text = detailText;
         pageText.Text = welcome || page == SidebarPage.Backpack ? "" : page == SidebarPage.Skills
             ? $"Mining Lv {World.MiningLevel} / {World.MiningXp} XP\n{(World.HasTool ? "Tools ready: rich vein / 3 ore" : "Forge tools to unlock rich vein")}\n\nCombat Lv {World.CombatLevel}\nBonus +{World.CombatBonus}/4 (every 2 levels)\n\nFishing Lv {World.FishingLevel}\nLv 3: use a built fishing jetty\nCooking Lv {World.CookingLevel}\nLv 2/3: meals heal 14/16\nWoodcutting Lv {World.WoodcuttingLevel}\nLv 3: clear the Lost Way.\nTool recipe: 2 bars + 30c"
             : $"{QuestStatus(World.QuestStage, 2, true)} Copper Promise\n{QuestStatus(World.RuinQuestStage, 3, World.QuestStage == 2)} Sunken Bell\n{QuestStatus(World.RiverQuestStage, 2, World.RuinQuestStage == 3)} River's Bounty\n{QuestStatus(World.TrailQuestStage, 3, World.RiverQuestStage == 2)} Ashen Trail\n{QuestStatus(World.BridgeStage, 2, World.QuestStage == 2)} Broken Crossing\n\n"
@@ -191,5 +217,12 @@ public sealed partial class SceneEmberbrook
                 + (World.BridgeStage < 2 && World.QuestStage == 2 ? "Bram: repair the crossing.\n" : "Look for unusual landmarks.\n") + "Browse more work below.";
         serviceTitle.Text = AtElder ? "ELIN / VILLAGE WARDEN" : AtBank ? "BANK / select stored item" : AtForge ? "WORKBENCH" : AtFire ? "COOKING FIRE" : AtShop ? "BRAM / PROVISIONS" : page == SidebarPage.Journal ? "TRACK AN OBJECTIVE" : "PREPARE FOR THE ROAD";
         UpdateVillagePanels();
+        workbenchPanel.Visible = VillageButtonVisible("emberCraft", 550, () => !welcome && (AtForge || AtFire));
+        workbenchDetail.Visible = page == SidebarPage.Backpack;
+        workbenchDetail.Text = detailText;
+        if (workbenchPanel.Visible) detail.Text = "";
+        amountButton.Caption = "Batch: " + quantity;
+        craftButton.Caption = CraftCaption;
+        workbenchUi.Update();
     }
 }

@@ -28,6 +28,9 @@ public partial class SceneEmberbrookTests
         harness.PointerGesture(real, real);
     }
 
+    private static string WorkbenchText(SceneHarness harness) => string.Join(" ",
+        Enumerable.Range(0, 7).Select(i => harness.Require("emberWorkbenchDetail" + i).GetComponent<CText>().Text));
+
     private static void Visit(SceneHarness harness, SceneEmberbrook scene, string id)
     {
         var site = scene.World.Sites.Single(s => s.Id == id);
@@ -44,8 +47,9 @@ public partial class SceneEmberbrookTests
                     ? scene.World.HasSword ? Recipe.Shield : Recipe.Sword : Recipe.Bar;
             string name = EmberbrookWorld.Recipes.Single(r => r.Id == recipe).Name;
             harness.Run(1);
-            for (int i = 0; i < 5 && harness.Require("emberDetail3").GetComponent<CText>().Text != name; i++)
+            for (int i = 0; i < 5 && !WorkbenchText(harness).Contains(name, StringComparison.Ordinal); i++)
                 Click(harness, new Vec2(1180, 529));
+            Assert.That(WorkbenchText(harness), Does.Contain(name));
             Click(harness, new Vec2(1180, 564));
             harness.Run(60);
         }
