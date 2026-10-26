@@ -250,3 +250,15 @@ no performance regression or measured leak is claimed by this review.
 | GE-98 | S3 | Save milestones rebuild unrelated map art; content presentation definitions repeat | SceneEmberbrook / VillageProgress | code review | open |
 | GE-99 | S2 | Trimmed browser publish uses reflection for level metadata and view lookup | LevelFile / ViewLocator | publish warnings | fixed |
 | GE-100 | S1 | Browser high-DPI layout dimensions differ from CSS pointer coordinates; clicks miss buttons | browser / GameView | Chromium pointer and reload checks | fixed |
+
+
+## Batched rendering review, October 26, 2026
+
+The Note10+ stress harness demonstrated draw submission pressure at the intended mobile density. See [batched rendering](08-batched-rendering.md) for the engine API, ordering contract, measurements and verification limits.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-101 | S1 | Many gameplay sprites require individual canvas transforms and bitmap submissions | RenderSystem / EntityManager / RenderSnapshot | Note10+ stress results and raster benchmarks | fixed: opt-in sprite groups with atlas submissions and layer-aware snapshot copies |
+| GE-102 | S1 | Cosmetic particles require entity churn or game-local pools with no shared bounded emitter API | ParticleSystem / ParticleStore / ParticleEmitter | stress harness and Core lifecycle, capacity and seed tests | fixed: pooled arrays, reusable snapshots, bounded oldest-first recycling and counters |
+| GE-103 | S2 | Mobile GameView offers 240 presentation frames per second and does not expose host simulation rates | GameView | code and host rate tests | fixed: configurable rates, Android/iOS 60/60 defaults, preserved desktop and borrowed-engine rates |
+| GE-104 | S2 | Shared sprite textures allocate a managed image wrapper per instance and layer sorting allocates a comparer adapter per snapshot | RenderSystem / RenderSnapshot | before and after MemoryDiagnoser results | fixed: frame-scoped shared images and span sorting |

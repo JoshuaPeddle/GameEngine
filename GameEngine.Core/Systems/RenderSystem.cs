@@ -62,33 +62,41 @@ namespace GameEngine.Core.Systems
         /// </summary>
         public void DrawEntitiesToCanvas(SKCanvas canvas, RenderSnapshot snapshot)
         {
-            canvas.Clear(SKColors.White);
-
-            var canvasBounds = canvas.LocalClipBounds;
-            var viewport = ViewportFor(new Vec2(canvasBounds.Width, canvasBounds.Height));
-
-            canvas.Save();
-            canvas.Translate((float)viewport.OffsetX, (float)viewport.OffsetY);
-            canvas.Scale((float)viewport.ScaleX, (float)viewport.ScaleY);
-
-            if (snapshot.ActiveCamera is { } camera)
+            try
             {
-                canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
-                canvas.Scale(camera.Zoom, camera.Zoom);
-                canvas.Translate(-((float)camera.Position.X), -((float)camera.Position.Y));
+                canvas.Clear(SKColors.White);
 
-                DrawSnapshotEntries(canvas, snapshot, camera);
+                var canvasBounds = canvas.LocalClipBounds;
+                var viewport = ViewportFor(new Vec2(canvasBounds.Width, canvasBounds.Height));
+
+                canvas.Save();
+                canvas.Translate((float)viewport.OffsetX, (float)viewport.OffsetY);
+                canvas.Scale((float)viewport.ScaleX, (float)viewport.ScaleY);
+
+                if (snapshot.ActiveCamera is { } camera)
+                {
+                    canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
+                    canvas.Scale(camera.Zoom, camera.Zoom);
+                    canvas.Translate(-((float)camera.Position.X), -((float)camera.Position.Y));
+
+                    DrawSnapshotEntries(canvas, snapshot, camera);
+                }
+                else
+                {
+                    DrawSnapshotEntries(canvas, snapshot, null);
+                }
+
+                canvas.Restore();
+
+                if (options.DrawFps)
+                {
+                    DrawFpsCounter(canvas, _fps);
+                }
             }
-            else
+            finally
             {
-                DrawSnapshotEntries(canvas, snapshot, null);
-            }
-
-            canvas.Restore();
-
-            if (options.DrawFps)
-            {
-                DrawFpsCounter(canvas, _fps);
+                foreach (var image in _frameImages.Values) image.Dispose();
+                _frameImages.Clear();
             }
         }
 
@@ -124,9 +132,13 @@ namespace GameEngine.Core.Systems
                 cameraBounds.Inflate(100, 100);
             }
 
+            int batchIndex = 0;
+            var batches = snapshot.AtlasBatches;
             for (int i = 0; i < entries.Length; i++)
             {
                 ref readonly var entry = ref entries[i];
+                while (batchIndex < batches.Length && batches[batchIndex].Layer < entry.Layer)
+                    DrawAtlasBatch(canvas, batches[batchIndex++]);
 
                 // Visibility culling, against everything the entry draws rather than against
                 // its origin: a scaled or rotated sprite whose origin has left the view is
@@ -170,9 +182,20 @@ namespace GameEngine.Core.Systems
                     canvas.DrawPoint((float)center.X, (float)center.Y, _debugPointPaint);
                 }
             }
+            while (batchIndex < batches.Length) DrawAtlasBatch(canvas, batches[batchIndex++]);
         }
 
-        private static void DrawSnapshotAnimation(SKCanvas canvas,
+        private void DrawAtlasBatch(SKCanvas canvas, RenderSnapshot.AtlasBatch batch)
+        {
+            if (!options.DrawAnimations || batch.Count == 0) return;
+            canvas.DrawAtlas(batch.Texture, batch.Sources, batch.Matrices, batch.Tints,
+                SKBlendMode.Modulate, _animationSampling,
+                batch.Blend == SpriteBlend.Additive ? _additivePaint : _animationPaint);
+        }
+
+        private static readonly SKPaint _additivePaint = new() { BlendMode = SKBlendMode.Plus };
+
+        private void DrawSnapshotAnimation(SKCanvas canvas,
             in RenderSnapshot.Entry entry, in RenderSnapshot.AnimationData anim)
         {
             float frameWidth = anim.SourceRect.Width;
@@ -195,7 +218,12 @@ namespace GameEngine.Core.Systems
                 (frameWidth / 2),
                 (frameHeight / 2));
 
-            canvas.DrawBitmap(anim.Texture, anim.SourceRect, destRect, _animationSampling, _animationPaint);
+            if (!_frameImages.TryGetValue(anim.Texture, out var image))
+            {
+                image = SKImage.FromBitmap(anim.Texture);
+                _frameImages.Add(anim.Texture, image);
+            }
+            canvas.DrawImage(image, anim.SourceRect, destRect, _animationSampling, _animationPaint);
             canvas.Restore();
         }
 
@@ -321,6 +349,8 @@ namespace GameEngine.Core.Systems
             options.VirtualHeight = height;
         }
 
+        private readonly Dictionary<SKBitmap, SKImage> _frameImages = [];
+
         private readonly SKFont _textFont = new(SKTypeface.Default, 24);
 
         private readonly static SKSamplingOptions _animationSampling =
@@ -356,8 +386,8 @@ namespace GameEngine.Core.Systems
     public class RenderOptions
     {
         public static RenderOptions Default => new();
-        public float VirtualWidth { get; set; } = 1600; 
-        public float VirtualHeight { get; set; } = 1600; 
+        public float VirtualWidth { get; set; } = 1600;
+        public float VirtualHeight { get; set; } = 1600;
         public bool DrawBoundingBoxes { get; set; } = true;
         public bool DrawAnimations { get; set; } = true;
         public bool DrawEntityCenters { get; set; } = false;

@@ -33,6 +33,18 @@ namespace GameEngine.Runner.Avalonia
         public static readonly StyledProperty<bool> AudioEnabledProperty =
             AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: PlatformSupportsAudio());
 
+        public static readonly StyledProperty<int> TargetFrameRateProperty =
+            AvaloniaProperty.Register<GameView, int>(nameof(TargetFrameRate),
+                defaultValue: OperatingSystem.IsBrowser() || IsMobile() ? 60 : 240,
+                validate: value => value > 0);
+
+        public static readonly StyledProperty<double> FixedTimeStepProperty =
+            AvaloniaProperty.Register<GameView, double>(nameof(FixedTimeStep),
+                defaultValue: IsMobile() ? 1.0 / 60 : Core.Engine.DefaultFixedTimeStep,
+                validate: value => double.IsFinite(value) && value > 0);
+
+        private static bool IsMobile() => OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
+
         // The engine of the most recently attached view. A convenience for hosts that have no
         // reference to the control — the browser head's JSExport interop, for one.
         public static Engine? Current { get; private set; }
@@ -95,6 +107,34 @@ namespace GameEngine.Runner.Avalonia
             set => SetValue(AudioEnabledProperty, value);
         }
 
+        public int TargetFrameRate
+        {
+            get => GetValue(TargetFrameRateProperty);
+            set => SetValue(TargetFrameRateProperty, value);
+        }
+
+        public double FixedTimeStep
+        {
+            get => GetValue(FixedTimeStepProperty);
+            set => SetValue(FixedTimeStepProperty, value);
+        }
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (!_ownsEngine || _gameEngine is not { } engine) return;
+            if (change.Property == TargetFrameRateProperty)
+            {
+                int rate = TargetFrameRate;
+                engine.Post(target => target.TargetFrameRate = rate);
+            }
+            else if (change.Property == FixedTimeStepProperty)
+            {
+                double step = FixedTimeStep;
+                engine.Post(target => target.FixedTimeStep = step);
+            }
+        }
+
         // Called instead of Scene when the host wants a fresh scene per view.
         public Func<Scene>? SceneFactory { get; set; }
 
@@ -110,7 +150,8 @@ namespace GameEngine.Runner.Avalonia
 
             if (_ownsEngine)
             {
-                engine.TargetFrameRate = OperatingSystem.IsBrowser() ? 60 : 240;
+                engine.TargetFrameRate = TargetFrameRate;
+                engine.FixedTimeStep = FixedTimeStep;
                 engine.Start();
             }
         }

@@ -125,7 +125,7 @@ namespace GameEngine.Core
 
             // Filled outside the lock. The buffer is unreachable by readers (not published)
             // and excluded from any further rent, so nothing else can touch it.
-            EntityManager.BuildRenderSnapshot(buffer);
+            EntityManager.BuildRenderSnapshot(buffer, Fault is null ? Systems.TryGet<ParticleSystem>() : null);
 
             lock (_snapshotLock)
             {
@@ -156,6 +156,8 @@ namespace GameEngine.Core
         // separate from the simulation rate: this decides how often a frame is offered to the
         // host, while FixedTimeStep decides how far the simulation moves.
         public int? TargetFrameRate { get; set; } = null;
+
+        public int ParticleCapacity { get; }
 
         public const double DefaultFixedTimeStep = 1.0 / 120.0;
         public const int DefaultMaxCatchUpSteps = 8;
@@ -216,7 +218,15 @@ namespace GameEngine.Core
         }
 
         public Engine(Action? invalidateAction = null, bool audioEnabled = true, IAssetSource? assetSource = null)
+            : this(10000, invalidateAction, audioEnabled, assetSource)
         {
+        }
+
+        public Engine(int particleCapacity, Action? invalidateAction = null, bool audioEnabled = true,
+            IAssetSource? assetSource = null)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(particleCapacity);
+            ParticleCapacity = particleCapacity;
             InvalidateAction = invalidateAction;
             _audioEnabled = audioEnabled;
             AssetSource = assetSource ?? new FileAssetSource();
@@ -226,6 +236,7 @@ namespace GameEngine.Core
         [MemberNotNull(nameof(EntityManager), nameof(InputManager))]
         public void InitializeSystems()
         {
+            Systems.TryGet<ParticleSystem>()?.Dispose();
             if (InputManager is null)
                 InputManager = new InputManager();
             else
@@ -243,6 +254,7 @@ namespace GameEngine.Core
             built.Add(new MovementSystem());
             built.Add(new PhysicsSystem());
             built.Add(new AnimationSystem());
+            built.Add(new ParticleSystem(ParticleCapacity));
             built.Add(new RenderSystem(RenderOptions));
 
             // The audio device belongs to the engine, not to a scene: reopening it on every
@@ -500,8 +512,6 @@ namespace GameEngine.Core
             currentScene = scene;
             scene.Engine = this;
 
-            // Rebuild systems and scene. The replaced container is simply dropped: the audio
-            // system is the only disposable one in it and the engine owns that for its lifetime.
             // Assets are not touched here — they belong to whoever created them, and a snapshot
             // the host is still painting may hold textures from the scene being left.
             InitializeSystems();
