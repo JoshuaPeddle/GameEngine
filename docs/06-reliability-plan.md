@@ -445,6 +445,12 @@ leaving blank.
 
 ### 10. Cross-platform audio (GE-77)
 
+2026-10-26 update: native iOS and Android backends, browser Web Audio, shared voice
+limits, coalescing, volume/mute and preload are implemented. See
+[platform audio](08-platform-audio.md) for the current behavior and validation.
+The inventory and implementation account below describe the earlier boundary
+work. Physical-device acceptance and desktop native distribution remain open.
+
 - [x] Inventory platform capabilities and native packaging requirements before
       choosing a backend. Keep platform-specific integration outside Core.
 - [x] Define a small audio service with an explicit unavailable state, reusable

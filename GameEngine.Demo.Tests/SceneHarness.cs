@@ -20,9 +20,9 @@ public sealed class SceneHarness
         Scene = scene;
     }
 
-    public static SceneHarness Load(Scene scene)
+    public static SceneHarness Load(Scene scene, bool audioEnabled = false)
     {
-        var engine = new Engine(audioEnabled: false);
+        var engine = new Engine(audioEnabled: audioEnabled);
         engine.SizeChanged(800, 600);
         engine.ChangeScene(scene);
 

@@ -21,6 +21,44 @@ public class SceneVoidBastionTests
         return (SceneHarness.Load(scene), scene);
     }
 
+    private sealed class RecordingAudio : SilentAudioBackend
+    {
+        public List<(string, SoundType)> Played { get; } = [];
+        public List<string> Preloaded { get; } = [];
+        public override void Preload(string soundName, string path, SoundType soundType) => Preloaded.Add(soundName);
+        public override bool TryPlay(int voice, string soundName, string path, SoundType soundType, float volume, int priority)
+        {
+            Played.Add((soundName, soundType));
+            return true;
+        }
+    }
+
+    [Test]
+    [NonParallelizable]
+    public void BattlePreloadsAndPlaysMusicAndKillEffectsThroughTheEngine()
+    {
+        var previous = AudioBackends.Factory;
+        var backend = new RecordingAudio();
+        AudioBackends.Factory = () => backend;
+        try
+        {
+            var scene = new SceneVoidBastion();
+            var harness = SceneHarness.Load(scene, audioEnabled: true);
+            using var engine = harness.Engine;
+            scene.Battle.Build(3, BastionTowerKind.Pulse);
+            harness.PressAndRelease(GeKeys.Space, 1);
+            harness.Run(1200);
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.Fault, Is.Null);
+                Assert.That(backend.Preloaded, Does.Contain("Hit").And.Contain("Level1"));
+                Assert.That(backend.Played, Does.Contain(("Level1", SoundType.BGM)));
+                Assert.That(backend.Played, Does.Contain(("Hit", SoundType.SoundEffect)));
+            });
+        }
+        finally { AudioBackends.Factory = previous; }
+    }
+
     [Test]
     public void PlanningWaitsForThePlayerAndRequiresATower()
     {

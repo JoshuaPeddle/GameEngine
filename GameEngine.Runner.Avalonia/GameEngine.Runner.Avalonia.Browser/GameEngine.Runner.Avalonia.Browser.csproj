@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
   <PropertyGroup>
     <TargetFramework>net10.0-browser</TargetFramework>
     <OutputType>Exe</OutputType>
@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\GameEngine.Demo\GameEngine.Demo.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="../../GameEngine.Demo/assets/sounds/**/*.*" Link="wwwroot/audio/sounds/%(RecursiveDir)%(FileName)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <AvaloniaResource Include="../../GameEngine.Demo/assets/**/*.*" Link="Assets/game/%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
 	<AvaloniaResource Include="../../GameEngine.Demo/levels/**/*.*" Link="Assets/game/levels/%(RecursiveDir)$([System.String]::Copy('%(FileName)').Replace('.','_'))%(Extension)" />
     <AvaloniaResource Include="../../GameEngine.Demo/assets.json" Link="Assets/assets.json" />

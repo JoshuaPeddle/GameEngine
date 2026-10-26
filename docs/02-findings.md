@@ -151,7 +151,7 @@ from the stated vision for product gaps, and as usual for code defects.
 | GE-74 | S1 | No user-facing publish path: CI publishes this repo's demos; a user's game has no route to an APK/wasm/exe; platform heads are hardwired to Demo | `.github/workflows/publish.yml`, runner heads | — | in progress |
 | GE-75 | S2 | Runner embeddability undermined by statics: `App.AssetSource`/`App.StartupScene`/`App.FirstFramePresented`, `GameView.Current`; `GameView` always constructs its own engine — one game per process, configured via globals | `App.axaml.cs:15-17`, `GameView.cs:22` | ✅ | fixed |
 | GE-76 | S2 | Level/asset formats not agent-hardened: no JSON schema, no strict property validation, hand-written factory drifts from components and editor; `assets.txt` is positional and bespoke | `ComponentFactory.cs`, `Assets.cs` | ✅ | fixed |
-| GE-77 | S2 | Audio is Windows-only (hand-placed `SDL2_mixer.dll`; ppy.SDL2-CS ships no mixer natives) — "publish everywhere" ships silent games on 5 of 6 platforms | `GameEngine.Core.csproj` | ✅ | **in progress** — Core no longer references a native audio library and missing audio is now diagnosable; no platform beyond Windows has a backend yet |
+| GE-77 | S2 | Audio is Windows-only (hand-placed `SDL2_mixer.dll`; ppy.SDL2-CS ships no mixer natives) — "publish everywhere" ships silent games on 5 of 6 platforms | `GameEngine.Core.csproj` | ✅ | **in progress**: AVFoundation, Android SoundPool/MediaPlayer and browser Web Audio backends implemented with shared mixer and voice policy; physical-device playback acceptance and Linux/macOS mixer distribution remain open (see docs/08-platform-audio.md) |
 | GE-78 | S3 | No agent-facing docs: no AGENTS.md/CLAUDE.md, no machine-checkable component/level schema beyond the README table | repo root | ✅ | fixed |
 | GE-79 | S3 | Editor's Runtime and Level File tabs share no document: inspecting shows live entities, editing edits JSON, neither sees the other; no visual placement or editable inspector | `LevelEditor.axaml` | ✅ | fixed |
 | GE-80 | S3 | `GeKeys` had no arrow keys, so no runner could deliver them; the browser head's key map was a five-entry hand-written list that had already fallen behind | `GeKeys.cs`, browser/WinForms key maps | ✅ | fixed |
@@ -250,3 +250,20 @@ no performance regression or measured leak is claimed by this review.
 | GE-98 | S3 | Save milestones rebuild unrelated map art; content presentation definitions repeat | SceneEmberbrook / VillageProgress | code review | open |
 | GE-99 | S2 | Trimmed browser publish uses reflection for level metadata and view lookup | LevelFile / ViewLocator | publish warnings | fixed |
 | GE-100 | S1 | Browser high-DPI layout dimensions differ from CSS pointer coordinates; clicks miss buttons | browser / GameView | Chromium pointer and reload checks | fixed |
+
+
+## 2026-10-26: GE-77 mobile and browser audio
+
+Added AVFoundation and Android framework backends, registered in their Avalonia heads,
+and Web Audio interop in the browser head. Core now coalesces sound events, limits voices,
+steals by priority, preloads effects and controls master/music/effect gain and mute. SDL
+uses the same voice contract. Void Bastion preloads and plays music and kill effects.
+No new third-party native audio library was added.
+
+The Release solution and both standalone backend targets build with zero warnings. The
+Android head produces a signed Release APK. All 619 .NET tests and five JavaScript state
+tests pass. Browser Release build and static publish pass. iOS head packaging is blocked
+by the installed Xcode/workload version mismatch. Actual mobile and browser playback is
+still unverified, and Linux/macOS mixer distribution is unchanged, so GE-77 remains in
+progress. Formats, lifecycle policy, build details and the device acceptance checks are
+in [platform audio](08-platform-audio.md).

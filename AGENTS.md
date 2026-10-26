@@ -31,7 +31,8 @@ CI builds all of them; a local `dotnet build GameEngine.sln` will fail on any yo
 | `GameEngine.Core` | The engine: ECS, systems, rendering, input, level and asset formats. Published as a NuGet package. No UI framework may enter it. |
 | `GameEngine.Demo` | Sample games, and the first consumer of everything Core exposes |
 | `GameEngine.Runner.Avalonia` | `GameView` plus the Desktop / Android / iOS / Browser heads. Published as a NuGet package. |
-| `GameEngine.Audio.Sdl` | The SDL2_mixer audio backend, and the only place a native audio library is referenced. Published as a NuGet package. |
+| `GameEngine.Audio.Sdl` | The SDL2_mixer desktop audio backend. Published as a NuGet package. |
+| `GameEngine.Audio.Apple` / `GameEngine.Audio.Android` | Native mobile audio through .NET platform bindings. |
 | `GameEngine.Runner.Winforms` | A second host, which exists to keep Core honest about UI independence |
 | `GameEngine.Editor` | Scene and level editor: live Roslyn compile into a collectible ALC, snapshot picking |
 | `templates/` | The `dotnet new gameengine-game` template pack. `templates/game/` is the project a user gets. |

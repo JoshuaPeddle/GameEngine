@@ -1,4 +1,4 @@
-﻿using Android.App;
+using Android.App;
 using Android.Content.PM;
 using Android.Runtime;
 using Avalonia;
@@ -29,6 +29,7 @@ namespace GameEngine.Runner.Avalonia.Android
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
             App.AssetSource = new GameEngine.Core.DelegateAssetSource(LoadFile);
+            Core.Systems.AudioBackends.Factory = () => new Audio.Android.AndroidAudioBackend(this, App.AssetSource);
             App.StartupScene = () => new GameEngine.Demo.SceneMenu();
             App.FirstFramePresented = () => global::Android.Util.Log.Info(
                 "GameEngineSmoke",
@@ -43,9 +44,9 @@ namespace GameEngine.Runner.Avalonia.Android
         private Stream LoadFile(string path)
         {
             if (Core.AssetManifest.IsManifestPath(path))
-                return Assets.Open(Path.GetFileName(path));
+                return (Assets ?? throw new InvalidOperationException("Android assets are unavailable.")).Open(Path.GetFileName(path));
 
-            return Assets.Open("game/" + path);
+            return (Assets ?? throw new InvalidOperationException("Android assets are unavailable.")).Open("game/" + path);
         }
     }
 }

@@ -1,4 +1,7 @@
 import { installKeyboard } from './keyboardInterop.js';
+import { installAudio } from './audioInterop.js';
+
+installAudio();
 
 try {
     const { dotnet } = await import('./_framework/dotnet.js');

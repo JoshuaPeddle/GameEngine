@@ -31,7 +31,7 @@ namespace GameEngine.Runner.Avalonia
             AvaloniaProperty.Register<GameView, IAssetSource?>(nameof(AssetSource));
 
         public static readonly StyledProperty<bool> AudioEnabledProperty =
-            AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: PlatformSupportsAudio());
+            AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: true);
 
         // The engine of the most recently attached view. A convenience for hosts that have no
         // reference to the control — the browser head's JSExport interop, for one.
@@ -195,9 +195,6 @@ namespace GameEngine.Runner.Avalonia
 
             _heldKeys.Clear();
         }
-
-        private static bool PlatformSupportsAudio() =>
-            !OperatingSystem.IsAndroid() && !OperatingSystem.IsBrowser();
 
         private void QueueInvalidate()
         {

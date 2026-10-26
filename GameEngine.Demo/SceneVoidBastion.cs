@@ -52,6 +52,10 @@ public sealed class SceneVoidBastion : Scene
     {
         entities = entityManager;
         audio = audioPlayer;
+        audio?.ConfigureSound("Hit", new SoundPlaybackOptions(maxConcurrentVoices: 3, minimumRetriggerInterval: 0.06));
+        audio?.Preload("Hit");
+        audio?.Preload("Level1", SoundType.BGM);
+        audio?.Play("Level1", SoundType.BGM);
         assets ??= new Assets("assets.json", AssetSource);
         Battle = new BastionBattle();
         SelectedPad = lastKills = 0;
