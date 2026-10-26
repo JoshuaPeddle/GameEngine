@@ -150,11 +150,6 @@ public interface IEmberbrookSaveStore
 
 public sealed class EmberbrookFileSaveStore(string path) : IEmberbrookSaveStore
 {
-    private static readonly JsonSerializerOptions Options = new()
-    {
-        WriteIndented = true, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
-    };
-
     public static IEmberbrookSaveStore Default() => new EmberbrookFileSaveStore(Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GameEngine", "Emberbrook", "save.json"));
 
@@ -167,7 +162,7 @@ public sealed class EmberbrookFileSaveStore(string path) : IEmberbrookSaveStore
         string temporary = fullPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.WriteAllText(temporary, JsonSerializer.Serialize(save, Options));
+            File.WriteAllText(temporary, JsonSerializer.Serialize(save, EmberbrookSaveJson.Default.EmberbrookSave));
             File.Move(temporary, fullPath, true);
         }
         finally
@@ -183,9 +178,13 @@ public sealed class EmberbrookFileSaveStore(string path) : IEmberbrookSaveStore
             ?? throw new InvalidDataException("Save must be an object.");
         if (root["Version"] is not JsonValue version || !version.TryGetValue<int>(out int number) || number != 6)
             throw new InvalidDataException("This adventure uses an older or unsupported save. Start a new game.");
-        var save = root.Deserialize<EmberbrookSave>(Options)
+        var save = root.Deserialize(EmberbrookSaveJson.Default.EmberbrookSave)
             ?? throw new InvalidDataException("Save is empty.");
         save.Validate();
         return save;
     }
 }
+
+[JsonSourceGenerationOptions(WriteIndented = true, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
+[JsonSerializable(typeof(EmberbrookSave))]
+public partial class EmberbrookSaveJson : JsonSerializerContext;

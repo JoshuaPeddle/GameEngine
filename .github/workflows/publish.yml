@@ -89,7 +89,7 @@ jobs:
           dotnet-version: 10.0.x
       - uses: actions/setup-java@v6
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: temurin
       - uses: android-actions/setup-android@v4
 
@@ -104,10 +104,20 @@ jobs:
           mkdir -p out
           find GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.Android/bin/Release -name '*-Signed.apk' -exec cp {} out/ \;
 
+      - name: Verify native library alignment
+        run: |
+          sdkmanager "build-tools;36.0.0" "ndk;27.1.12297006"
+          for apk in out/*-Signed.apk; do
+            python3 tools/check-android-alignment.py "$apk" \
+              --zipalign "$ANDROID_HOME/build-tools/36.0.0/zipalign" \
+              --readelf "$ANDROID_HOME/ndk/27.1.12297006/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf" \
+              > "$apk.alignment.log"
+          done
+
       - uses: actions/upload-artifact@v7
         with:
           name: android
-          path: out/*.apk
+          path: out/*
 
   browser:
     needs: version

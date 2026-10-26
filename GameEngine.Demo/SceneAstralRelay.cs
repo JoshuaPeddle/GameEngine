@@ -59,6 +59,7 @@ public sealed class SceneAstralRelay : Scene
         AudioSystem? audioPlayer,
         Action<Scene?> ResetScene)
     {
+            inputManager.ReleaseGesturesEnabled = true;
         assets ??= new Assets("assets.json", AssetSource);
         resetScene = ResetScene;
         audioSystem = audioPlayer;

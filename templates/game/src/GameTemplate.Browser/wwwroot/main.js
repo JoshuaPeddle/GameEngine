@@ -1,6 +1,8 @@
+import { installHost } from './hostInterop.js';
 import { dotnet } from './_framework/dotnet.js';
 
 const { getAssemblyExports, getConfig, runMain } = await dotnet.create();
 const config = getConfig();
-await getAssemblyExports(config.mainAssemblyName);
+const exports = await getAssemblyExports(config.mainAssemblyName);
+installHost(exports.BrowserHost);
 await runMain(config.mainAssemblyName, []);

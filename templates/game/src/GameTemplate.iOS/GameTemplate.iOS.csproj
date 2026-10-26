@@ -21,4 +21,7 @@
     <BundleResource Include="..\GameTemplate\assets\**\*.*" Link="assets\%(RecursiveDir)%(FileName)%(Extension)" />
     <BundleResource Include="..\GameTemplate\levels\**\*.*" Link="levels\%(RecursiveDir)%(FileName)%(Extension)" />
   </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
+  </ItemGroup>
 </Project>

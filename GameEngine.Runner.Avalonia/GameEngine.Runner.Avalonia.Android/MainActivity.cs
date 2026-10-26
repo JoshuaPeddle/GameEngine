@@ -16,6 +16,39 @@ namespace GameEngine.Runner.Avalonia.Android
         ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
     public class MainActivity : AvaloniaMainActivity
     {
+        protected override void OnCreate(global::Android.OS.Bundle? savedInstanceState)
+        {
+            App.HostServicesFactory = () =>
+            {
+                var backend = new AndroidHostServices(this);
+                return new GameEngine.Core.HostServices(backend, backend);
+            };
+            base.OnCreate(savedInstanceState);
+        }
+
+        protected override void OnResume()
+        {
+            base.OnResume();
+            App.Lifecycle.SetState(GameEngine.Core.HostState.Active);
+        }
+
+        protected override void OnPause()
+        {
+            App.Lifecycle.SetState(GameEngine.Core.HostState.Inactive);
+            base.OnPause();
+        }
+
+        protected override void OnStop()
+        {
+            App.Lifecycle.SetState(GameEngine.Core.HostState.Background);
+            base.OnStop();
+        }
+
+        protected override void OnStart()
+        {
+            base.OnStart();
+            App.Lifecycle.SetState(GameEngine.Core.HostState.Inactive);
+        }
     }
 
     [Application]

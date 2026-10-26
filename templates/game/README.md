@@ -16,7 +16,7 @@ WASD or the arrow keys move the player (swipe on a touch screen); collect the go
 dotnet test tests/GameTemplate.Tests
 ```
 
-The tests boot every scene through a real engine headlessly — no window, no display. This
+The tests boot every scene through a real engine headlessly, with no window or display. This
 is the fastest way to find out whether a change to a scene or a level works.
 
 ## Edit it
@@ -48,3 +48,24 @@ Locally, each head needs its own toolchain:
 
 `dotnet build` at the root builds every head and will fail on any workload you have not
 installed. Build the head you want instead, or install the workloads you need.
+
+
+## Mobile host services
+
+The Android activity, iOS delegate and browser visibility bridge pause the engine when the
+host becomes inactive. Subscribe to Engine.LifecycleChanged to checkpoint a save at Pause
+or Background. Resume is idempotent and preserves a separate game pause.
+
+Pointer events carry ContactId and IsCaptured. Bind Cancel to abandon an interrupted drag.
+Release-to-key gestures default off; set inputManager.ReleaseGesturesEnabled in Initialize
+only when the game wants Space/WASD taps and swipes. Android Back raises Engine.BackRequested;
+mark it handled to dismiss a panel. Otherwise it pauses first and allows platform navigation
+when already paused.
+
+Engine.HostServices exposes KeepAwakeEnabled, HapticsEnabled, capability flags and unavailable
+reasons. Keep-awake is released on pause, background and detachment. Haptics uses Placement,
+Rejection and Reward cues and persists the mobile user toggle in private preferences. Browser
+wake locks depend on browser support and permission. Test both services on physical devices.
+
+The iOS head requires iOS 15.0 and bundles PrivacyInfo.xcprivacy. Review its declarations when
+adding SDKs or changing data use, and inspect the final signed archive before store submission.
