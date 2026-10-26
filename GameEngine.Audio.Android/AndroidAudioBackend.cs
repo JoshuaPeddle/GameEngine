@@ -120,10 +120,11 @@ public sealed class AndroidAudioBackend : IAudioBackend
         }
     }
 
-    private bool RequestFocus()
+    private bool RequestFocus() =>
+        AndroidAudioFocus.Request(ref hasFocus, backgrounded, focusPaused, AcquireFocus, StartMusic);
+
+    private bool AcquireFocus()
     {
-        if (backgrounded || focusPaused) return false;
-        if (hasFocus) return true;
         AudioFocusRequest granted;
         if (OperatingSystem.IsAndroidVersionAtLeast(26))
             granted = manager.RequestAudioFocus(focusRequest!);
@@ -131,8 +132,7 @@ public sealed class AndroidAudioBackend : IAudioBackend
 #pragma warning disable CS0618, CA1422
             granted = manager.RequestAudioFocus(focusListener, global::Android.Media.Stream.Music, AudioFocus.Gain);
 #pragma warning restore CS0618, CA1422
-        hasFocus = granted == AudioFocusRequest.Granted;
-        return hasFocus;
+        return granted == AudioFocusRequest.Granted;
     }
 
     public bool TryPlay(int voice, string soundName, string path, SoundType soundType, float volume, int priority)
@@ -263,10 +263,15 @@ public sealed class AndroidAudioBackend : IAudioBackend
 
     private void ResumeMusic()
     {
-        if (musicRequested && musicReady && RequestFocus())
+        if (musicRequested && musicReady) RequestFocus();
+    }
+
+    private void StartMusic()
+    {
+        if (musicRequested && musicReady)
         {
             music!.SetVolume(musicVolume * duck, musicVolume * duck);
-            music.Start();
+            if (!music.IsPlaying) music.Start();
         }
     }
 

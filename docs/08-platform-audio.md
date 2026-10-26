@@ -58,6 +58,9 @@ Core's mixer values; gain restores them and resumes eligible music. Permanent lo
 the music resume intent. An explicit music play can request focus again. Application
 activity callbacks pause playback and abandon focus on pause, and request focus again on
 resume. Focus denial produces no effects; prepared music waits for a later eligible resume.
+A synchronous focus grant, including one obtained by a later effect request, resumes
+eligible prepared music without waiting for a focus-gain callback. Background and focus
+pause gates still block playback.
 No foreground service or background music permission is added.
 
 The browser registers WebAudioBackend before starting Avalonia. `main.js` installs the
@@ -139,6 +142,8 @@ cover event coalescing, configured burst limits, concurrent and global caps, com
 priority stealing, pending priority order, live cap reduction, retrigger timing, preload reuse, live volumes,
 mute, invalid gain values, stop/reset and failed playback. The demo suite verifies Void
 Bastion's preload, music and kill-effect path without a device.
+The Android focus decision is linked into the Core test project to cover denial followed
+by a synchronous effect grant, already-owned focus and background/focus-pause gates.
 
 Before advertising audible support, run these checks on a physical iPhone and Android
 phone. Listen to music and overlapping effects in Void Bastion, cause a burst of kills,
@@ -179,11 +184,12 @@ dotnet test -c Release --no-build
 node --test scripts/audio-interop.test.mjs
 ```
 
-The complete .NET suite passed: 315 Core, 239 Demo, 57 Editor and 8 Avalonia runner tests,
-619 total with no skips. Five JavaScript state tests passed using Web Audio and DOM test
-doubles. They cover deployment prefixes, cached preload, gesture unlock, stale-effect
-expiry, overlapping voices, gains, completion/replacement, visibility suspension and
-disposal. CI runs these tests and compiles both native backend targets on macOS.
+The complete .NET suite passed after the focus recovery fix: 321 Core, 239 Demo, 57 Editor
+and 8 Avalonia runner tests, 625 total with no skips. Five JavaScript state tests passed
+using Web Audio and DOM test doubles. They cover deployment prefixes, cached preload,
+gesture unlock, stale-effect expiry, overlapping voices, gains, completion/replacement,
+visibility suspension and disposal. CI runs these tests and compiles both native backend
+targets on macOS.
 
 The browser head built in Release with zero warnings. A static Release publish with
 RunAOTCompilation=false and WasmStripILAfterAOT=false completed and included the sound
