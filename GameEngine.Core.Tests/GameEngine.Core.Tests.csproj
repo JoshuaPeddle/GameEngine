@@ -30,5 +30,6 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Compile Include="../GameEngine.Benchmarks/StressFrameWorkload.cs" Link="Integration/StressFrameWorkload.cs" />
   </ItemGroup>
 </Project>

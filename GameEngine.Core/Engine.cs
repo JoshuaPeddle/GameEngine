@@ -237,6 +237,7 @@ namespace GameEngine.Core
         public void InitializeSystems()
         {
             Systems.TryGet<ParticleSystem>()?.Dispose();
+            Systems.TryGet<RenderSystem>()?.Dispose();
             if (InputManager is null)
                 InputManager = new InputManager();
             else

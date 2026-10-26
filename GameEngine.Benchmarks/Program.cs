@@ -6,7 +6,10 @@ using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using SkiaSharp;
 
-BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+if (args.Contains("--stress-allocations"))
+    StressAllocations.Run();
+else
+    BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 
 [MemoryDiagnoser]
 public class EngineBenchmarks
@@ -69,6 +72,7 @@ public class RenderBenchmarks
     [GlobalCleanup]
     public void Cleanup()
     {
+        _renderer.Dispose();
         _surface.Dispose();
         _texture.Dispose();
     }
@@ -547,6 +551,7 @@ public class AtlasBenchmarks
     public void Cleanup()
     {
         _system.Dispose();
+        _renderer.Dispose();
         _surface.Dispose();
         _image.Dispose();
         _texture.Dispose();

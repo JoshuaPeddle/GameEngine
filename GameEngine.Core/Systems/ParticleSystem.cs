@@ -30,6 +30,15 @@ public sealed class ParticleSystem : ISystem, IDisposable
         return emitter;
     }
 
+    public void Emit(ParticleOptions options, in ParticleSpawn particle)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+        particle.Validate();
+        Store.Spawn(options, particle);
+    }
+
     public void RemoveEmitter(ParticleEmitter emitter) => _emitters.Remove(emitter);
 
     public void Update(EntityManager entityManager, double deltaSeconds)

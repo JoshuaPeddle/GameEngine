@@ -3,7 +3,7 @@ using SkiaSharp;
 
 namespace GameEngine.Core.Systems
 {
-    public class RenderSystem : ISystem
+    public class RenderSystem : ISystem, IDisposable
     {
         public readonly RenderOptions options;
 
@@ -61,6 +61,15 @@ namespace GameEngine.Core.Systems
         /// that was built on the engine thread. No EntityManager access occurs.
         /// </summary>
         public void DrawEntitiesToCanvas(SKCanvas canvas, RenderSnapshot snapshot)
+        {
+            lock (_drawLock)
+            {
+                if (_disposed) return;
+                DrawSnapshot(canvas, snapshot);
+            }
+        }
+
+        private void DrawSnapshot(SKCanvas canvas, RenderSnapshot snapshot)
         {
             try
             {
@@ -218,10 +227,11 @@ namespace GameEngine.Core.Systems
                 (frameWidth / 2),
                 (frameHeight / 2));
 
-            if (!_frameImages.TryGetValue(anim.Texture, out var image))
+            var images = anim.Texture.IsImmutable ? _immutableImages : _frameImages;
+            if (!images.TryGetValue(anim.Texture, out var image))
             {
                 image = SKImage.FromBitmap(anim.Texture);
-                _frameImages.Add(anim.Texture, image);
+                images.Add(anim.Texture, image);
             }
             canvas.DrawImage(image, anim.SourceRect, destRect, _animationSampling, _animationPaint);
             canvas.Restore();
@@ -349,6 +359,22 @@ namespace GameEngine.Core.Systems
             options.VirtualHeight = height;
         }
 
+        public void Dispose()
+        {
+            lock (_drawLock)
+            {
+                if (_disposed) return;
+                _disposed = true;
+                foreach (var image in _immutableImages.Values) image.Dispose();
+                _immutableImages.Clear();
+                _textFont.Dispose();
+            }
+            GC.SuppressFinalize(this);
+        }
+
+        private readonly object _drawLock = new();
+        private bool _disposed;
+        private readonly Dictionary<SKBitmap, SKImage> _immutableImages = [];
         private readonly Dictionary<SKBitmap, SKImage> _frameImages = [];
 
         private readonly SKFont _textFont = new(SKTypeface.Default, 24);

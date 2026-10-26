@@ -260,6 +260,32 @@ public class SpriteBatchTests
     }
 
     [Test]
+    public void ImmutableLegacyImagesAreReusedAndRendererDisposalPreservesBorrowedTextures()
+    {
+        var entities = new EntityManager();
+        var entity = entities.CreateEntity("immutable");
+        entity.AddComponent(new CTransform(new Vec2(20, 20)));
+        entity.AddComponent(new CAnimation(new Animation(_bitmap, 1, 0)));
+        entities.Update();
+        var snapshot = new RenderSnapshot();
+        entities.BuildRenderSnapshot(snapshot);
+        using var surface = SKSurface.Create(new SKImageInfo(64, 64));
+        using var renderer = new RenderSystem(new RenderOptions { VirtualWidth = 64, VirtualHeight = 64 });
+        for (int i = 0; i < 1000; i++) renderer.DrawEntitiesToCanvas(surface.Canvas, snapshot);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 120; i++) renderer.DrawEntitiesToCanvas(surface.Canvas, snapshot);
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        renderer.Dispose();
+        renderer.DrawEntitiesToCanvas(surface.Canvas, snapshot);
+        Assert.That(allocated, Is.Zero);
+        Assert.That(_bitmap.Handle, Is.Not.EqualTo(IntPtr.Zero));
+        Assert.That(_image.Handle, Is.Not.EqualTo(IntPtr.Zero));
+        using var result = surface.Snapshot();
+        using var pixels = SKBitmap.FromImage(result);
+        Assert.That(pixels.GetPixel(20, 20), Is.EqualTo(SKColors.Red));
+    }
+
+    [Test]
     public void WarmedLayerSortingAndAtlasDrawingAllocateNothing()
     {
         var entities = new EntityManager();

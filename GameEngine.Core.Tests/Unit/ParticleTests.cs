@@ -150,6 +150,50 @@ public class ParticleTests
     }
 
     [Test]
+    public void DirectEmissionCopiesBirthValuesAndUsesSharedForcesAndEndpoints()
+    {
+        using var system = new ParticleSystem(2);
+        var options = Options with
+        {
+            Life = 100, StartScale = 99, StartColor = SKColors.Blue,
+            EndScale = 0, EndColor = new SKColor(0, 0, 0, 0),
+            Gravity = new Vec2(0, 10), AngularVelocity = 30
+        };
+        system.Emit(options, new ParticleSpawn(new Vec2(3, 4), new Vec2(10, 0), 2,
+            Scale: 2, Color: new SKColor(200, 100, 50, 200), Rotation: 10));
+        system.Update(new EntityManager(), 1);
+        var state = States(system.Store)[0];
+        Assert.That(state.Position, Is.EqualTo(new Vec2(13, 14)));
+        Assert.That(state.Life, Is.EqualTo(2));
+        Assert.That(state.Scale, Is.EqualTo(1));
+        Assert.That(state.Color, Is.EqualTo(new SKColor(100, 50, 25, 100)));
+        Assert.That(state.Rotation, Is.EqualTo(40));
+        Assert.That(state.Region, Is.EqualTo(options.Region));
+        system.Update(new EntityManager(), 1);
+        Assert.That(system.Store.Count, Is.Zero);
+    }
+
+    [Test]
+    public void DirectEmissionUsesOldestFirstRecyclingAndRejectsInvalidBirths()
+    {
+        using var system = new ParticleSystem(1);
+        var options = Options;
+        system.Emit(options, new ParticleSpawn(Vec2.Zero, Vec2.Zero, 1));
+        system.Emit(options, new ParticleSpawn(new Vec2(5, 6), Vec2.Zero, 2));
+        Assert.That(system.Store.Count, Is.EqualTo(1));
+        Assert.That(system.Store.Dropped, Is.EqualTo(1));
+        Assert.That(States(system.Store)[0].Position, Is.EqualTo(new Vec2(5, 6)));
+        Assert.Throws<ArgumentException>(() => system.Emit(options, default));
+        Assert.Throws<ArgumentException>(() => system.Emit(options,
+            new ParticleSpawn(new Vec2(double.NaN, 0), Vec2.Zero, 1)));
+        Assert.Throws<ArgumentException>(() => system.Emit(options with { Drag = -1 },
+            new ParticleSpawn(Vec2.Zero, Vec2.Zero, 1)));
+        system.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => system.Emit(options,
+            new ParticleSpawn(Vec2.Zero, Vec2.Zero, 1)));
+    }
+
+    [Test]
     public void WarmedSimulationAndSnapshotsAllocateNothingPerParticle()
     {
         using var system = new ParticleSystem(1000);

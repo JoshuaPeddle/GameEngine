@@ -48,6 +48,18 @@ public sealed record ParticleOptions
     }
 }
 
+public readonly record struct ParticleSpawn(Vec2 Position, Vec2 Velocity, float Life,
+    float Scale = 1, SKColor? Color = null, float Rotation = 0)
+{
+    internal void Validate()
+    {
+        if (!double.IsFinite(Position.X) || !double.IsFinite(Position.Y)
+            || !double.IsFinite(Velocity.X) || !double.IsFinite(Velocity.Y)
+            || !float.IsFinite(Life) || Life <= 0 || !float.IsFinite(Scale) || !float.IsFinite(Rotation))
+            throw new ArgumentException("Particle spawn must contain finite values and a positive lifetime.");
+    }
+}
+
 public sealed class ParticleEmitter
 {
     private readonly ParticleStore _store;

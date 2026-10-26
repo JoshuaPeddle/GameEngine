@@ -47,6 +47,10 @@ public sealed class ParticleStore : IDisposable
     public long Expired { get; private set; }
 
     internal void Spawn(ParticleOptions options, Vec2 position, Vec2 velocity)
+        => Spawn(options, new ParticleSpawn(position, velocity, options.Life,
+            options.StartScale, options.StartColor, options.Rotation));
+
+    internal void Spawn(ParticleOptions options, in ParticleSpawn particle)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (Count == Capacity)
@@ -56,17 +60,17 @@ public sealed class ParticleStore : IDisposable
         }
         int slot = _free;
         _free = _next[slot];
-        _position[slot] = position;
-        _velocity[slot] = velocity;
+        _position[slot] = particle.Position;
+        _velocity[slot] = particle.Velocity;
         _age[slot] = 0;
-        _rotation[slot] = options.Rotation;
-        _life[slot] = options.Life;
+        _rotation[slot] = particle.Rotation;
+        _life[slot] = particle.Life;
         _gravity[slot] = options.Gravity;
         _angularVelocity[slot] = options.AngularVelocity;
         _drag[slot] = options.Drag;
-        _startScale[slot] = options.StartScale;
+        _startScale[slot] = particle.Scale;
         _endScale[slot] = options.EndScale;
-        _startColor[slot] = options.StartColor;
+        _startColor[slot] = particle.Color ?? options.StartColor;
         _endColor[slot] = options.EndColor;
         _region[slot] = options.Region;
         _options[slot] = options;
