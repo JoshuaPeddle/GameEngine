@@ -31,7 +31,7 @@ namespace GameEngine.Runner.Avalonia
             AvaloniaProperty.Register<GameView, IAssetSource?>(nameof(AssetSource));
 
         public static readonly StyledProperty<bool> AudioEnabledProperty =
-            AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: PlatformSupportsAudio());
+            AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: true);
 
         public static readonly StyledProperty<int> TargetFrameRateProperty =
             AvaloniaProperty.Register<GameView, int>(nameof(TargetFrameRate),
@@ -236,9 +236,6 @@ namespace GameEngine.Runner.Avalonia
 
             _heldKeys.Clear();
         }
-
-        private static bool PlatformSupportsAudio() =>
-            !OperatingSystem.IsAndroid() && !OperatingSystem.IsBrowser();
 
         private void QueueInvalidate()
         {

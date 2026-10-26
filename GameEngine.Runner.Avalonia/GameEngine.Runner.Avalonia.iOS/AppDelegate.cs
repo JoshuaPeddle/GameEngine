@@ -12,6 +12,7 @@ namespace GameEngine.Runner.Avalonia.iOS
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
             App.AssetSource = new Core.FileAssetSource(NSBundle.MainBundle.BundlePath);
+            Core.Systems.AudioBackends.Factory = () => new Audio.Apple.AppleAudioBackend();
             App.StartupScene = () => new Demo.SceneMenu();
             return base.CustomizeAppBuilder(builder);
         }

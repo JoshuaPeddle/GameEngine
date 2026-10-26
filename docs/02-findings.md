@@ -151,7 +151,7 @@ from the stated vision for product gaps, and as usual for code defects.
 | GE-74 | S1 | No user-facing publish path: CI publishes this repo's demos; a user's game has no route to an APK/wasm/exe; platform heads are hardwired to Demo | `.github/workflows/publish.yml`, runner heads | — | in progress |
 | GE-75 | S2 | Runner embeddability undermined by statics: `App.AssetSource`/`App.StartupScene`/`App.FirstFramePresented`, `GameView.Current`; `GameView` always constructs its own engine — one game per process, configured via globals | `App.axaml.cs:15-17`, `GameView.cs:22` | ✅ | fixed |
 | GE-76 | S2 | Level/asset formats not agent-hardened: no JSON schema, no strict property validation, hand-written factory drifts from components and editor; `assets.txt` is positional and bespoke | `ComponentFactory.cs`, `Assets.cs` | ✅ | fixed |
-| GE-77 | S2 | Audio is Windows-only (hand-placed `SDL2_mixer.dll`; ppy.SDL2-CS ships no mixer natives) — "publish everywhere" ships silent games on 5 of 6 platforms | `GameEngine.Core.csproj` | ✅ | **in progress** — Core no longer references a native audio library and missing audio is now diagnosable; no platform beyond Windows has a backend yet |
+| GE-77 | S2 | Audio is Windows-only (hand-placed `SDL2_mixer.dll`; ppy.SDL2-CS ships no mixer natives) — "publish everywhere" ships silent games on 5 of 6 platforms | `GameEngine.Core.csproj` | ✅ | **in progress**: AVFoundation, Android SoundPool/MediaPlayer and browser Web Audio backends implemented with shared mixer and voice policy; physical-device playback acceptance and Linux/macOS mixer distribution remain open (see docs/11-platform-audio.md) |
 | GE-78 | S3 | No agent-facing docs: no AGENTS.md/CLAUDE.md, no machine-checkable component/level schema beyond the README table | repo root | ✅ | fixed |
 | GE-79 | S3 | Editor's Runtime and Level File tabs share no document: inspecting shows live entities, editing edits JSON, neither sees the other; no visual placement or editable inspector | `LevelEditor.axaml` | ✅ | fixed |
 | GE-80 | S3 | `GeKeys` had no arrow keys, so no runner could deliver them; the browser head's key map was a five-entry hand-written list that had already fallen behind | `GeKeys.cs`, browser/WinForms key maps | ✅ | fixed |
@@ -263,3 +263,19 @@ The Note10+ stress harness demonstrated draw submission pressure at the intended
 | GE-103 | S2 | Mobile GameView offers 240 presentation frames per second and does not expose host simulation rates | GameView | code and host rate tests | fixed: configurable rates, Android/iOS 60/60 defaults, preserved desktop and borrowed-engine rates |
 | GE-104 | S2 | Shared sprite textures allocate a managed image wrapper per instance and layer sorting allocates a comparer adapter per snapshot | RenderSystem / RenderSnapshot | before and after MemoryDiagnoser results | fixed: frame-scoped shared images and span sorting |
 | GE-105 | S2 | The engine-batched stress path creates options, an emitter and a seeded RNG per spark respawn; previous allocation benchmarks reuse emitters and omit this cost, while ordinary movement and animation queries box enumerators | ParticleSystem / ParticleStore / MovementSystem / AnimationSystem / StressFrameWorkload | actual GameStress source reproduction and per-thread full-frame allocation tests at 750, 3000 and 8000 particles | fixed: value-type direct births with shared options, indexed queries, lifetime-managed immutable image caching, 0 B/frame batched regression, triple-buffer reuse coverage and external harness migration patch |
+
+## 2026-10-26: GE-77 mobile and browser audio
+
+Added AVFoundation and Android framework backends, registered in their Avalonia heads,
+and Web Audio interop in the browser head. Core now coalesces sound events, limits voices,
+steals by priority, preloads effects and controls master/music/effect gain and mute. SDL
+uses the same voice contract. Void Bastion preloads and plays music and kill effects.
+No new third-party native audio library was added.
+
+The Release solution and both standalone backend targets build with zero warnings. The
+Android head produces a signed Release APK. All 619 .NET tests and five JavaScript state
+tests pass. Browser Release build and static publish pass. iOS head packaging is blocked
+by the installed Xcode/workload version mismatch. Actual mobile and browser playback is
+still unverified, and Linux/macOS mixer distribution is unchanged, so GE-77 remains in
+progress. Formats, lifecycle policy, build details and the device acceptance checks are
+in [platform audio](11-platform-audio.md).

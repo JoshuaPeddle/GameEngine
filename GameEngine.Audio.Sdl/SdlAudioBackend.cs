@@ -12,7 +12,6 @@ namespace GameEngine.Audio.Sdl
     /// </summary>
     public sealed class SdlAudioBackend : IAudioBackend
     {
-        private const int BgmChannel = 0;
         private const int LoopForever = -1;
         private const int SfxChannels = 31;
 
@@ -76,29 +75,35 @@ namespace GameEngine.Audio.Sdl
             }
         }
 
-        public void Play(string soundName, string path, SoundType soundType)
+        public void Preload(string soundName, string path, SoundType soundType)
         {
-            if (!IsAvailable)
-                return;
+            if (IsAvailable)
+                GetOrDecode(soundName, path);
+        }
 
+        public bool TryPlay(int voice, string soundName, string path, SoundType soundType, float volume, int priority)
+        {
+            if (!IsAvailable || voice < 0 || voice > SfxChannels)
+                return false;
             var chunk = GetOrDecode(soundName, path);
             if (chunk == IntPtr.Zero)
-                return;
+                return false;
+            Mix_Volume(voice, (int)(volume * MIX_MAX_VOLUME));
+            return Mix_PlayChannel(voice, chunk, soundType == SoundType.BGM ? LoopForever : 0) >= 0;
+        }
 
-            if (soundType == SoundType.BGM)
-            {
-                Mix_PlayChannel(BgmChannel, chunk, LoopForever);
-                return;
-            }
+        public bool IsPlaying(int voice) => IsAvailable && Mix_Playing(voice) != 0;
 
-            for (int channel = 1; channel <= SfxChannels; channel++)
-            {
-                if (Mix_Playing(channel) == 0)
-                {
-                    Mix_PlayChannel(channel, chunk, 0);
-                    return;
-                }
-            }
+        public void SetVolume(int voice, float volume)
+        {
+            if (IsAvailable)
+                Mix_Volume(voice, (int)(volume * MIX_MAX_VOLUME));
+        }
+
+        public void StopVoice(int voice)
+        {
+            if (IsAvailable)
+                Mix_HaltChannel(voice);
         }
 
         // Decoded once per sound and reused. Freeing a chunk while a channel is still playing

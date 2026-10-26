@@ -64,6 +64,7 @@ internal sealed partial class Program
 {
     private static Task Main(string[] args)
     {
+        AudioBackends.Factory = () => new WebAudioBackend();
         App.InputViewportSize = () => new Vec2(JSHost.GlobalThis.GetPropertyAsDouble("innerWidth"), JSHost.GlobalThis.GetPropertyAsDouble("innerHeight"));
         App.AssetSource = new GameEngine.Core.DelegateAssetSource(LoadFile);
         GameEngine.Demo.SceneEmberbrook.SaveStoreFactory = () => new BrowserSaveStore();
