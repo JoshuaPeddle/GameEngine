@@ -299,3 +299,17 @@ retain their status.
 | GE-112 | S2 | PG-33: games cannot request foreground-only screen keep-awake or diagnose denial | HostServices, native backends, BrowserHost; MobileHostTests and host-interop.test.mjs | capability and transition tests | fixed; physical idle-timer checks pending |
 | GE-113 | S3 | PG-36: no optional haptics capability or user toggle | HostServices and native feedback backends; MobileHostTests | toggles, capability and foreground gates tested | fixed; physical feedback checks pending |
 | GE-114 | S1 | PG-12: delivered Android native libraries have no ELF/ZIP 16 KB validation gate | check-android-alignment.py, build/release workflows, artifact report | signed Debug and Release APKs inspected, all native LOAD segments pass | fixed; 16 KB runtime check pending |
+
+## Opt-in visual effects, October 26, 2026
+
+IDs start at GE-120 to avoid clashes with the integrated work through GE-114.
+See [render effects](12-render-effects.md) for contracts, ownership, benchmark commands and verification limits.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-120 | S2 | Games lack runtime SkSL backgrounds, custom composition-layer shaders and full-screen grading with diagnosable fallback | Effects/RuntimeShader, RenderEffects, RenderSystem | pixel tests for uniforms, compilation failure, source preservation and grading | fixed |
+| GE-121 | S2 | Bright batches and particles lack reduced-resolution opt-in bloom and phone quality controls | RenderEffects, RenderSystem | Off/Low/High spread and resize tests; desktop raster benchmark | fixed; physical GPU cost pending |
+| GE-122 | S3 | Games must implement shake, zoom response and expiring hit-stop independently | CameraEffects, Engine, RenderSystem | deterministic decay, unscaled expiry and real-engine time tests | fixed |
+| GE-123 | S3 | Common trails, gradient beams, shockwave rings, seeded lightning and shaped pooled shatter have no reusable API | EffectGeometry, ParticleEmitter | seeded endpoints and bounded pool saturation tests | fixed |
+| GE-124 | S3 | No reusable deterministic PNG capture path checks real-engine faults and supplied simulation time | SceneCapture | real-engine repeatability, timing, invalid input and fault tests; six consuming-game phone frames | fixed |
+| GE-125 | S2 | Effect intermediates need explicit lifetime, resize and host-context ownership to avoid per-frame surfaces and GPU readbacks | RenderEffects, RenderSystem.SetEffects | resize, replacement and throwing callback checks; GPU-context allocation path inspected | fixed; physical GPU execution pending |

@@ -91,3 +91,13 @@ It warms 1000 frames and measures 600 frames with
 separately. See [GE-105](../docs/08-batched-rendering.md) for results and the
 GameStress migration patch. The Core allocation tests compile this same workload
 and exercise two ticks per paint to reuse all three snapshot buffers.
+
+## Rendering effects
+
+`--effects` measures raster rendering at 1440 by 3040 with a 720 by 1000 virtual
+scene, a procedural animated shader and 300 bright points. It reports baseline,
+shader, Low/High bloom and combined mean/p95 times and managed allocations after
+warmup. `--effects --metal` uses a synchronized macOS Metal surface when a device
+is available. These modes use the actual RenderSystem and RenderEffects path.
+See [render effects](../docs/12-render-effects.md) for quality, ownership and phone
+verification limits. Shader compilation and surface warmup are excluded.
