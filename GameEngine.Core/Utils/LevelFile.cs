@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using System.Text;
@@ -176,7 +176,7 @@ namespace GameEngine.Core.Utils
 
                 // metadata
                 writer.WritePropertyName("metadata");
-                JsonSerializer.Serialize(writer, Metadata, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                JsonSerializer.Serialize(writer, Metadata, LevelMetadataJson.Default.LevelMetadata);
 
                 // entities
                 writer.WritePropertyName("entities");

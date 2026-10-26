@@ -1,4 +1,4 @@
-﻿using GameEngine.Core.Systems;
+using GameEngine.Core.Systems;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics;
@@ -47,6 +47,77 @@ namespace GameEngine.Core
         private volatile bool _isRunning = true;
         private volatile bool _stopped;
         private readonly object _lifecycleLock = new();
+        private readonly object _frameLock = new();
+        private readonly SemaphoreSlim _loopWake = new(0, 1);
+        private volatile HostState _hostState = HostState.Active;
+        private bool _hostAttached = true;
+        public HostServices HostServices { get; }
+        public HostState HostState => _hostState;
+        public event Action<LifecycleEvent>? LifecycleChanged;
+        public event EventHandler<BackRequestEventArgs>? BackRequested;
+
+        private void UpdateHostServices() => HostServices.SetForeground(
+            _hostAttached && _hostState == HostState.Active && _isRunning && !IsFaulted && !_stopped && !IsDisposed);
+
+        private void WakeLoop()
+        {
+            try { _loopWake.Release(); }
+            catch (SemaphoreFullException) { }
+        }
+
+        private void NotifyLifecycle(LifecycleEvent lifecycleEvent)
+        {
+            try { LifecycleChanged?.Invoke(lifecycleEvent); }
+            catch (Exception exception) { Fail("host lifecycle", null, exception); }
+        }
+
+        public void SetHostState(HostState state)
+        {
+            if (!Enum.IsDefined(state)) throw new ArgumentOutOfRangeException(nameof(state));
+            lock (_frameLock)
+            {
+                if (IsDisposed || _stopped || state == _hostState) return;
+                var previous = _hostState;
+                _hostState = state;
+                UpdateHostServices();
+                if (previous == HostState.Active)
+                {
+                    InputManager.CancelAllContacts();
+                    InputManager.ReleaseAllKeys();
+                    InputManager.DispatchPointerEvents();
+                    NotifyLifecycle(LifecycleEvent.Pause);
+                }
+                if (previous == HostState.Background) NotifyLifecycle(LifecycleEvent.Foreground);
+                if (state == HostState.Background) NotifyLifecycle(LifecycleEvent.Background);
+                if (state == HostState.Active) NotifyLifecycle(LifecycleEvent.Resume);
+                lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
+                _accumulator.Reset();
+                WakeLoop();
+            }
+        }
+
+        public void SetHostAttached(bool attached)
+        {
+            lock (_frameLock)
+            {
+                _hostAttached = attached;
+                UpdateHostServices();
+            }
+        }
+
+        public bool RequestBack()
+        {
+            lock (_frameLock)
+            {
+                if (IsDisposed || _stopped) return false;
+                var request = new BackRequestEventArgs();
+                BackRequested?.Invoke(this, request);
+                if (request.Handled) return true;
+                if (!_isRunning) return false;
+                SetRunning(false);
+                return true;
+            }
+        }
         private Thread? _runThread;
         private Task? _browserLoopTask;
         private int _disposeStarted;
@@ -79,6 +150,7 @@ namespace GameEngine.Core
         {
             var fault = new EngineFault(operation, currentScene?.GetType().Name, systemName, exception);
             Volatile.Write(ref _fault, fault);
+            HostServices.SetForeground(false);
             FaultAction?.Invoke(fault);
         }
 
@@ -203,6 +275,7 @@ namespace GameEngine.Core
             }
 
             _postedWork.Enqueue(work);
+            WakeLoop();
             return true;
         }
 
@@ -216,7 +289,13 @@ namespace GameEngine.Core
         }
 
         public Engine(Action? invalidateAction = null, bool audioEnabled = true, IAssetSource? assetSource = null)
+            : this(invalidateAction, audioEnabled, assetSource, new HostServices()) { }
+
+        public Engine(Action? invalidateAction, bool audioEnabled, IAssetSource? assetSource, HostServices hostServices)
         {
+            ArgumentNullException.ThrowIfNull(hostServices);
+            HostServices = hostServices;
+            HostServices.SetForeground(true);
             InvalidateAction = invalidateAction;
             _audioEnabled = audioEnabled;
             AssetSource = assetSource ?? new FileAssetSource();
@@ -275,12 +354,11 @@ namespace GameEngine.Core
                 if (_runThread != null)
                     return Task.CompletedTask;
 
-                // Use dedicated thread with high priority for better frame timing
                 _runThread = new Thread(RunLoop)
                 {
                     Name = "GameEngine-Main",
                     IsBackground = true,
-                    Priority = ThreadPriority.AboveNormal
+                    Priority = ThreadPriority.Normal
                 };
                 _runThread.Start();
 
@@ -300,16 +378,14 @@ namespace GameEngine.Core
                 throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds,
                     "Tick needs a finite, non-negative number of seconds.");
 
-            if (_stopped)
-                return false;
-
-            PumpPendingWork();
-
-            if (_pauseUntilFirstPresent || !_isRunning || IsFaulted)
-                return false;
-
-            Update(deltaSeconds);
-            return true;
+            lock (_frameLock)
+            {
+                if (_stopped || _hostState != HostState.Active) return false;
+                PumpPendingWork();
+                if (_pauseUntilFirstPresent || !_isRunning || IsFaulted) return false;
+                Update(deltaSeconds);
+                return true;
+            }
         }
 
         private void PumpPendingWork()
@@ -325,23 +401,26 @@ namespace GameEngine.Core
         // false only while the engine is paused, which is the run loop's cue to idle.
         private bool AdvanceFrame()
         {
-            PumpPendingWork();
-
-            if (_stopped || !_isRunning || _pauseUntilFirstPresent || IsFaulted)
+            lock (_frameLock)
             {
-                lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
-                _accumulator.Reset();
-                return false;
-            }
+                if (_hostState == HostState.Active) PumpPendingWork();
 
-            int steps = _accumulator.Advance(CalculateDeltaTime());
-            for (int step = 0; step < steps; step++)
-            {
-                if (!Tick(_accumulator.StepSeconds))
-                    break;
-            }
+                if (_stopped || _hostState != HostState.Active || !_isRunning || _pauseUntilFirstPresent || IsFaulted)
+                {
+                    lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
+                    _accumulator.Reset();
+                    return false;
+                }
 
-            return true;
+                int steps = _accumulator.Advance(CalculateDeltaTime());
+                for (int step = 0; step < steps; step++)
+                {
+                    if (!Tick(_accumulator.StepSeconds))
+                        break;
+                }
+
+                return true;
+            }
         }
 
         private async Task StartAsyncLoopBrowser()
@@ -355,7 +434,8 @@ namespace GameEngine.Core
 
                 if (!AdvanceFrame())
                 {
-                    await Task.Delay(1);
+                    await _loopWake.WaitAsync();
+                    ResetFrameClock();
                     continue;
                 }
 
@@ -378,7 +458,8 @@ namespace GameEngine.Core
 
                 if (!AdvanceFrame())
                 {
-                    Thread.Sleep(1);
+                    _loopWake.Wait();
+                    ResetFrameClock();
                     continue;
                 }
 
@@ -389,18 +470,8 @@ namespace GameEngine.Core
                     double elapsedMs = stopwatch.Elapsed.TotalMilliseconds - frameStartMs;
                     double remainingMs = frameDurationMs - elapsedMs;
 
-                    if (remainingMs > 2.0)
-                    {
-                        Thread.Sleep((int)remainingMs - 1);
-                    }
-
-                    int spinCount = 32; 
-                    while ((stopwatch.Elapsed.TotalMilliseconds - frameStartMs) < frameDurationMs)
-                    {
-                        Thread.SpinWait(spinCount); 
-                        spinCount = Math.Min(((int)Math.Floor(spinCount * 1.5)), 1024);
-                        Thread.Yield();
-                    }
+                    if (remainingMs > 0)
+                        _loopWake.Wait(TimeSpan.FromMilliseconds(remainingMs));
                 }
                 else
                 {
@@ -409,16 +480,32 @@ namespace GameEngine.Core
             }
         }
 
+        private void ResetFrameClock()
+        {
+            lock (_frameLock)
+            {
+                lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
+                _accumulator.Reset();
+            }
+        }
+
         public void SetRunning(bool running)
         {
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposeStarted) != 0, this);
-            _isRunning = running;
+            lock (_frameLock)
+            {
+                _isRunning = running;
+                UpdateHostServices();
+                WakeLoop();
+            }
         }
 
         public void Stop()
         {
             _stopped = true;
             _isRunning = false;
+            HostServices.SetForeground(false);
+            WakeLoop();
 
             Thread? runThread;
             lock (_lifecycleLock)
@@ -436,6 +523,7 @@ namespace GameEngine.Core
                 return;
 
             Stop();
+            HostServices.Dispose();
             Systems.Dispose();
             _audioSystem?.Dispose();
             _audioSystem = null;
@@ -490,6 +578,7 @@ namespace GameEngine.Core
             {
                 ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposeStarted) != 0, this);
                 Interlocked.Exchange(ref _pendingScene, scene);
+                WakeLoop();
             }
         }
 
@@ -497,6 +586,7 @@ namespace GameEngine.Core
         private void ApplySceneChange(Scene scene)
         {
             Volatile.Write(ref _fault, null);
+            UpdateHostServices();
             currentScene = scene;
             scene.Engine = this;
 
@@ -570,12 +660,12 @@ namespace GameEngine.Core
         // Runners should call this after finishing a frame to resume post-scene-change
         public void NotifyFirstPresent()
         {
-            if (_pauseUntilFirstPresent)
+            lock (_frameLock)
             {
-                // Reset delta baseline to avoid a large dt spike on resume
-                lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
-                _accumulator.Reset();
+                if (!_pauseUntilFirstPresent) return;
+                ResetFrameClock();
                 _pauseUntilFirstPresent = false;
+                WakeLoop();
             }
         }
     }

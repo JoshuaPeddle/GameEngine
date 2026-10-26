@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -66,10 +66,10 @@ namespace GameEngine.Core.Utils
         {
             var transformData = new Dictionary<string, object>
             {
-                ["position"] = new { x, y },
+                ["position"] = new Dictionary<string, object> { ["x"] = x, ["y"] = y },
                 ["rotation"] = rotation,
                 ["layer"] = layer,
-                ["scale"] = new { x = scaleX, y = scaleY }
+                ["scale"] = new Dictionary<string, object> { ["x"] = scaleX, ["y"] = scaleY }
             };
 
             return AddComponent("CTransform", transformData);
@@ -88,7 +88,7 @@ namespace GameEngine.Core.Utils
         {
             return AddComponent("CCamera", new Dictionary<string, object>
             {
-                ["position"] = new { x, y },
+                ["position"] = new Dictionary<string, object> { ["x"] = x, ["y"] = y },
                 ["zoom"] = zoom
             });
         }
@@ -124,7 +124,7 @@ namespace GameEngine.Core.Utils
         {
             var boundingBoxData = new Dictionary<string, object>
             {
-                ["size"] = new { x = width, y = height },
+                ["size"] = new Dictionary<string, object> { ["x"] = width, ["y"] = height },
                 ["blockVision"] = blockVision,
                 ["blockMovement"] = blockMovement
             };
@@ -139,7 +139,7 @@ namespace GameEngine.Core.Utils
 
         public EntityBuilder AddComponent(string componentType, Dictionary<string, object> componentData)
         {
-            var jsonElement = JsonSerializer.SerializeToElement(componentData);
+            var jsonElement = JsonSerializer.SerializeToElement(componentData, LevelMetadataJson.Default.DictionaryStringObject);
 
             entityData.Components.Add(new ComponentData
             {

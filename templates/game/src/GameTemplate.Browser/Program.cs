@@ -55,6 +55,7 @@ internal sealed partial class Program
 {
     private static Task Main(string[] args)
     {
+        App.HostServicesFactory = () => new HostServices(new BrowserHost());
         App.AssetSource = new DelegateAssetSource(LoadFile);
         App.StartupScene = () => new GameTemplate.MainScene();
 

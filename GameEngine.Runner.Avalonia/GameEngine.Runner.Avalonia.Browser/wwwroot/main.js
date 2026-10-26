@@ -1,3 +1,4 @@
+import { installHost } from './hostInterop.js';
 import { installKeyboard } from './keyboardInterop.js';
 
 try {
@@ -6,6 +7,7 @@ try {
     const config = runtime.getConfig();
     const exports = await runtime.getAssemblyExports(config.mainAssemblyName);
     installKeyboard(exports.KeyboardInterop);
+    installHost(exports.BrowserHost);
     await runtime.runMain(config.mainAssemblyName, [globalThis.location.href]);
     document.getElementById('loading').remove();
 } catch (error) {

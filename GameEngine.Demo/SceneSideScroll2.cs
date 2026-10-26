@@ -1,4 +1,4 @@
-﻿using GameEngine.Core;
+using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using System;
@@ -15,6 +15,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
+            inputManager.ReleaseGesturesEnabled = true;
             assets ??= new Assets("assets.json", AssetSource);
 
             // Input setup

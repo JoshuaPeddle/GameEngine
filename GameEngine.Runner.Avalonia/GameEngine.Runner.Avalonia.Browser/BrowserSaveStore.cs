@@ -18,7 +18,7 @@ internal sealed partial class BrowserSaveStore : IEmberbrookSaveStore
     public void Write(EmberbrookSave save)
     {
         save.Validate();
-        try { SetItem(Key, JsonSerializer.Serialize(save, BrowserSaveJson.Default.EmberbrookSave)); }
+        try { SetItem(Key, JsonSerializer.Serialize(save, EmberbrookSaveJson.Default.EmberbrookSave)); }
         catch (JSException ex) { throw new IOException("Browser storage is unavailable or full. Allow site storage and retry.", ex); }
     }
 
@@ -31,12 +31,8 @@ internal sealed partial class BrowserSaveStore : IEmberbrookSaveStore
         using var document = JsonDocument.Parse(json);
         if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("Version", out var version) || version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out int number) || number != 6)
             throw new InvalidDataException("This adventure uses an older or unsupported save. Start a new game.");
-        var save = JsonSerializer.Deserialize(json, BrowserSaveJson.Default.EmberbrookSave) ?? throw new InvalidDataException("Save is empty.");
+        var save = JsonSerializer.Deserialize(json, EmberbrookSaveJson.Default.EmberbrookSave) ?? throw new InvalidDataException("Save is empty.");
         save.Validate();
         return save;
     }
 }
-
-[JsonSourceGenerationOptions(UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
-[JsonSerializable(typeof(EmberbrookSave))]
-internal partial class BrowserSaveJson : JsonSerializerContext;

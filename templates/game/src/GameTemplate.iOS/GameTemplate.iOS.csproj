@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-ios</TargetFramework>
-    <SupportedOSPlatformVersion>13.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
     <RootNamespace>GameTemplate.iOS</RootNamespace>
     <ApplicationId>com.example.GameTemplate</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
@@ -20,5 +20,8 @@
     <BundleResource Include="..\GameTemplate\assets.json" Link="assets.json" />
     <BundleResource Include="..\GameTemplate\assets\**\*.*" Link="assets\%(RecursiveDir)%(FileName)%(Extension)" />
     <BundleResource Include="..\GameTemplate\levels\**\*.*" Link="levels\%(RecursiveDir)%(FileName)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
   </ItemGroup>
 </Project>

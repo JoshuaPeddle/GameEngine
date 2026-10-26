@@ -6,6 +6,9 @@ previews scenes live.
 
 Targets .NET 10.
 
+Mobile lifecycle, touch, Back, keep-awake, haptics and artifact verification are described in
+[mobile platform support](docs/09-mobile-platforms.md).
+
 ## Start a game
 
 ```bash

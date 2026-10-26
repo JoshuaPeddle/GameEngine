@@ -200,4 +200,114 @@ public class GameViewLifetimeTests
             Assert.That(engine.Systems.TryGet<RenderSystem>(), Is.Null);
         });
     }
+    [AvaloniaTest]
+    public void HostLifecycleReachesAnAttachedEngineAndUnsubscribesOnDetach()
+    {
+        using var engine = new Engine(audioEnabled: false);
+        var lifecycle = new HostLifecycle();
+        var view = new GameView { Engine = engine, Lifecycle = lifecycle };
+        var window = WindowWith(view);
+        try
+        {
+            lifecycle.SetState(HostState.Background);
+            Assert.That(engine.Tick(0), Is.False);
+            lifecycle.SetState(HostState.Active);
+            Assert.That(engine.Tick(0), Is.True);
+            window.Content = null;
+            lifecycle.SetState(HostState.Background);
+            Assert.That(engine.HostState, Is.EqualTo(HostState.Active));
+        }
+        finally { window.Content = null; window.Close(); }
+    }
+
+    [AvaloniaTest]
+    public void ReleaseGesturesAreOptInAndDetachReleasesSyntheticKeys()
+    {
+        using var engine = new Engine(audioEnabled: false);
+        engine.InputManager.AddAction(GeKeys.Space, "tap");
+        var view = new GameView { Engine = engine };
+        var window = WindowWith(view);
+        try
+        {
+            var point = new global::Avalonia.Point(50, 50);
+            window.MouseDown(point, MouseButton.Left);
+            window.MouseUp(point, MouseButton.Left);
+            Assert.That(engine.InputManager.IsActionActive("tap"), Is.False);
+            engine.InputManager.ReleaseGesturesEnabled = true;
+            window.MouseDown(point, MouseButton.Left);
+            window.MouseUp(point, MouseButton.Left);
+            Assert.That(engine.InputManager.IsActionActive("tap"), Is.True);
+            window.Content = null;
+            Assert.That(engine.InputManager.IsActionActive("tap"), Is.False);
+        }
+        finally { window.Content = null; window.Close(); }
+    }
+
+    [AvaloniaTest]
+    public void CaptureLossCancelsAContactAndHoverIsDeliveredWithoutAPress()
+    {
+        using var engine = new Engine(audioEnabled: false);
+        engine.InputManager.VirtualResolution = new Vec2(200, 200);
+        var view = new GameView { Engine = engine };
+        var window = WindowWith(view);
+        try
+        {
+            int moves = 0, cancels = 0;
+            engine.InputManager.BindPointerAction(GameEngine.Core.Pointer.PointerEventType.Move, _ => moves++);
+            engine.InputManager.BindPointerAction(GameEngine.Core.Pointer.PointerEventType.Cancel, _ => cancels++);
+            window.MouseMove(new global::Avalonia.Point(50, 50));
+            window.MouseDown(new global::Avalonia.Point(50, 50), MouseButton.Left);
+            engine.InputManager.DispatchPointerEvents();
+            Assert.That(moves, Is.GreaterThan(0));
+            IPointer? pointer = null;
+            view.PointerPressed += (_, e) => pointer = e.Pointer;
+            window.MouseUp(new global::Avalonia.Point(50, 50), MouseButton.Left);
+            window.MouseDown(new global::Avalonia.Point(50, 50), MouseButton.Left);
+            engine.InputManager.DispatchPointerEvents();
+            pointer!.Capture(window);
+            engine.InputManager.DispatchPointerEvents();
+            Assert.That(cancels, Is.EqualTo(1));
+            Assert.That(engine.InputManager.Contacts, Is.Empty);
+        }
+        finally { window.Content = null; window.Close(); }
+    }
+
+    [AvaloniaTest]
+    public void ThreeTouchContactsKeepTheirOwnCaptureAndGestureOrigins()
+    {
+        using var engine = new Engine(audioEnabled: false);
+        engine.InputManager.VirtualResolution = new Vec2(200, 200);
+        engine.InputManager.ReleaseGesturesEnabled = true;
+        engine.InputManager.AddAction(GeKeys.D, "right");
+        engine.InputManager.AddAction(GeKeys.A, "left");
+        var view = new GameView { Engine = engine };
+        var window = WindowWith(view);
+        using var first = new global::Avalonia.Input.Pointer(100, PointerType.Touch, true);
+        using var second = new global::Avalonia.Input.Pointer(101, PointerType.Touch, false);
+        using var third = new global::Avalonia.Input.Pointer(102, PointerType.Touch, false);
+        try
+        {
+            void Press(IPointer pointer, double x) => view.RaiseEvent(new PointerPressedEventArgs(
+                view, pointer, window, new global::Avalonia.Point(x, 50), 0, new PointerPointProperties(), KeyModifiers.None));
+            void Release(IPointer pointer, double x) => view.RaiseEvent(new PointerReleasedEventArgs(
+                view, pointer, window, new global::Avalonia.Point(x, 50), 0, new PointerPointProperties(), KeyModifiers.None, MouseButton.Left));
+            Press(first, 20);
+            Press(second, 180);
+            Press(third, 100);
+            engine.InputManager.DispatchPointerEvents();
+            Assert.That(engine.InputManager.Contacts.Count, Is.EqualTo(3));
+            Assert.That(first.Captured, Is.SameAs(view));
+            Assert.That(second.Captured, Is.SameAs(view));
+            Release(first, 180);
+            Assert.That(engine.InputManager.IsActionActive("right"), Is.True);
+            Assert.That(engine.InputManager.IsActionActive("left"), Is.False);
+            Release(second, 20);
+            Assert.That(engine.InputManager.IsActionActive("left"), Is.True);
+            third.Capture(window);
+            engine.InputManager.DispatchPointerEvents();
+            Assert.That(engine.InputManager.Contacts, Is.Empty);
+        }
+        finally { window.Content = null; window.Close(); }
+    }
+
 }

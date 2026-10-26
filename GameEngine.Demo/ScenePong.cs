@@ -1,4 +1,4 @@
-﻿using GameEngine.Core;
+using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using SkiaSharp;
@@ -21,6 +21,7 @@ namespace GameEngine.Demo
         private int _wallThickness = 30;
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene?> ResetScene)
         {
+            inputManager.ReleaseGesturesEnabled = true;
             assets ??= new("assets.json", AssetSource);
 
             inputManager.AddAction(GeKeys.W, "Up");

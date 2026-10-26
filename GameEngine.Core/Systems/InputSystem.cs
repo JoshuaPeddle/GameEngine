@@ -1,4 +1,4 @@
-﻿using static GameEngine.Core.Pointer;
+using static GameEngine.Core.Pointer;
 
 namespace GameEngine.Core.Systems
 {
@@ -17,14 +17,18 @@ namespace GameEngine.Core.Systems
             inputManager.DoActions();
         }
 
-        public void KeyDown(GeKeys key)
+        public void KeyDown(GeKeys key) => KeyDown(key, 0);
+
+        public void KeyDown(GeKeys key, long sourceId)
         {
-            inputManager?.HandleKeyPress(key);
+            inputManager?.HandleKeyPress(key, sourceId);
         }
 
-        public void KeyUp(GeKeys key)
+        public void KeyUp(GeKeys key) => KeyUp(key, 0);
+
+        public void KeyUp(GeKeys key, long sourceId)
         {
-            inputManager?.HandleKeyRelease(key);
+            inputManager?.HandleKeyRelease(key, sourceId);
         }
 
         public void PointerPressed(PointerEvent pointerEvent)
@@ -40,6 +44,11 @@ namespace GameEngine.Core.Systems
         public void PointerReleased(PointerEvent pointerEvent)
         {
             inputManager?.HandlePointerEvent(PointerEventType.Release, pointerEvent);
+        }
+
+        public void PointerCancelled(PointerEvent pointerEvent)
+        {
+            inputManager.HandlePointerEvent(PointerEventType.Cancel, pointerEvent);
         }
 
         public void SetRealDimensions(int width, int height)

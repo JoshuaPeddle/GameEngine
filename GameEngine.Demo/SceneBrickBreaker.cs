@@ -1,4 +1,4 @@
-﻿using GameEngine.Core;
+using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using System;

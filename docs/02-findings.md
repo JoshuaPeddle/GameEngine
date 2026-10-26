@@ -240,7 +240,7 @@ no performance regression or measured leak is claimed by this review.
 
 | ID | Sev | Finding | Location | Confirmed | Status |
 |---|---|---|---|---|---|
-| GE-91 | S1 | Pointer releases synthesize keys without scene opt-in; Avalonia hover requires a pressed pointer | GameView / MainView | code + RPG regression history | open |
+| GE-91 | S1 | Pointer releases synthesize keys without scene opt-in; Avalonia hover requires a pressed pointer | GameView / MainView | code + RPG regression history | fixed by GE-107 |
 | GE-92 | S2 | Animation size means entire sheet, forcing frame-count compensation in games | Assets / Animation | code + RPG drawing helper | open |
 | GE-93 | S2 | Game UI has independent visual/hit-test state and manual text layout | SceneEmberbrook panels | observed layout correction | open |
 | GE-94 | S3 | Deferred entity queries lack a convenient construction/group ownership API | EntityManager / scene builders | observed initialization fault | open |
@@ -250,3 +250,24 @@ no performance regression or measured leak is claimed by this review.
 | GE-98 | S3 | Save milestones rebuild unrelated map art; content presentation definitions repeat | SceneEmberbrook / VillageProgress | code review | open |
 | GE-99 | S2 | Trimmed browser publish uses reflection for level metadata and view lookup | LevelFile / ViewLocator | publish warnings | fixed |
 | GE-100 | S1 | Browser high-DPI layout dimensions differ from CSS pointer coordinates; clicks miss buttons | browser / GameView | Chromium pointer and reload checks | fixed |
+
+
+## Mobile platform audit follow-up, October 26, 2026
+
+These entries implement the scoped PG findings in the platform audit. GE-101 through
+GE-104 are reserved for the batched-rendering branch already referenced by that audit.
+See [mobile platform support](09-mobile-platforms.md) for API contracts, verification
+and the remaining physical-device checks. Existing open findings outside this scope
+retain their status.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-105 | S1 | PG-01 and PG-14: mobile/browser lifecycle does not reach games and paused loops poll every millisecond | Engine, HostLifecycle, native delegates, browser host; MobileHostTests | reproduced and regression tested | fixed; native device lifecycle and energy checks pending |
+| GE-106 | S1 | PG-08: a second pointer overwrites the first contact and no capture/cancel identity survives dispatch | Pointer, InputManager, GameView; MultiTouchTests and three-contact headless host test | reproduced and regression tested | fixed |
+| GE-107 | S1 | PG-09: pointer releases synthesize keys without opt-in, drop terminal events under queue pressure and share physical key state | InputManager, Avalonia and WinForms hosts, demo policies; MultiTouchTests, GameViewLifetimeTests, MobileInputPolicyTests | reproduced and regression tested | fixed; also closes GE-91 |
+| GE-108 | S1 | PG-10: Android Back misses the activity lifetime and can replace the whole game view | GameView BackRequested and Android manifests; MobileHostTests | source inspected and policy tested | fixed; predictive gesture/device verification pending |
+| GE-109 | S1 | PG-05: neither iOS head bundles an audited required-reason privacy manifest | demo/template PrivacyInfo.xcprivacy, check-ios-privacy.py | both built simulator app bundles inspected | fixed; final signed archive privacy review pending |
+| GE-110 | S1 | PG-11: level writes, component builders and demo file saves use reflection serialization | generated Core and Emberbrook contexts; MobileSerializationSmoke | Release NativeAOT round trips with JSON reflection disabled | fixed |
+| GE-111 | S2 | PG-33: games cannot request foreground-only screen keep-awake or diagnose denial | HostServices, native backends, BrowserHost; MobileHostTests and host-interop.test.mjs | capability and transition tests | fixed; physical idle-timer checks pending |
+| GE-112 | S3 | PG-36: no optional haptics capability or user toggle | HostServices and native feedback backends; MobileHostTests | toggles, capability and foreground gates tested | fixed; physical feedback checks pending |
+| GE-113 | S1 | PG-12: delivered Android native libraries have no ELF/ZIP 16 KB validation gate | check-android-alignment.py, build/release workflows, artifact report | signed Debug and Release APKs inspected, all native LOAD segments pass | fixed; 16 KB runtime check pending |
