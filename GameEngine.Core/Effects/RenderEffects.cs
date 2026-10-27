@@ -2,7 +2,7 @@ using SkiaSharp;
 
 namespace GameEngine.Core.Effects;
 
-public enum BloomQuality { Off, Low, High }
+public enum BloomQuality { Off = 0, Low = 1, High = 2, Medium = 3 }
 
 public sealed record EffectLayer(Action<SKCanvas, EffectFrame> Draw, bool Bloom = false, RuntimeShader? Shader = null);
 
@@ -29,6 +29,7 @@ public sealed class RenderEffects : IDisposable
     private SKSurface? glow;
     private SKSurface? layerSurface;
     private SKSurface? blurredSurface;
+    private SKSurface? brightLayerSurface;
     private readonly SKPaint paint = new() { IsAntialias = true };
     private readonly SKPaint composite = new() { BlendMode = SKBlendMode.Plus };
     private readonly SKPaint blur = new();
@@ -80,12 +81,13 @@ public sealed class RenderEffects : IDisposable
         int width = Math.Max(1, (int)frame.Resolution.Width), height = Math.Max(1, (int)frame.Resolution.Height);
         if (quality != BloomQuality.Off)
         {
-            int divisor = quality == BloomQuality.Low ? 4 : 2;
+            int divisor = quality switch { BloomQuality.Low => 4, BloomQuality.Medium => 3, _ => 2 };
             Ensure(ref glow, Math.Max(1, width / divisor), Math.Max(1, height / divisor), canvas.Context);
             if (filter is null || allocatedQuality != quality)
             {
                 filter?.Dispose();
-                filter = SKImageFilter.CreateBlur(quality == BloomQuality.Low ? 3 : 5, quality == BloomQuality.Low ? 3 : 5);
+                float sigma = quality switch { BloomQuality.Low => 3, BloomQuality.Medium => 4, _ => 5 };
+                filter = SKImageFilter.CreateBlur(sigma, sigma);
                 blur.ImageFilter = filter;
                 allocatedQuality = quality;
             }
@@ -93,35 +95,24 @@ public sealed class RenderEffects : IDisposable
         }
         foreach (var layer in Layers)
         {
-            if (layer.Shader is null) DrawLayer(layer, canvas, frame);
-            else
-            {
-                Ensure(ref layerSurface, width, height, canvas.Context);
-                layerSurface!.Canvas.Clear(SKColors.Transparent);
-                DrawLayer(layer, layerSurface.Canvas, frame);
-                using var image = layerSurface.Snapshot();
-                using var content = image.ToShader();
-                using var shader = layer.Shader.Create(frame, content);
-                if (shader is null) canvas.DrawImage(image, 0, 0, new SKSamplingOptions(SKFilterMode.Linear));
-                else
-                {
-                    paint.Color = SKColors.White;
-                    paint.Shader = shader;
-                    canvas.DrawRect(SKRect.Create(frame.Resolution), paint);
-                    paint.Shader = null;
-                }
-            }
             if (layer.Bloom && quality != BloomQuality.Off)
             {
-                var target = glow!.Canvas;
+                float scale = quality switch { BloomQuality.Low => .5f, BloomQuality.Medium => .75f, _ => 1 };
+                Ensure(ref brightLayerSurface, Math.Max(1, (int)(width * scale)), Math.Max(1, (int)(height * scale)), canvas.Context);
+                var target = brightLayerSurface!.Canvas;
+                target.Clear(SKColors.Transparent);
                 int saved = target.Save();
                 try
                 {
-                    target.Scale((float)glow.Canvas.DeviceClipBounds.Width / width, (float)glow.Canvas.DeviceClipBounds.Height / height);
-                    DrawLayer(layer, target, frame);
+                    target.Scale((float)target.DeviceClipBounds.Width / width, (float)target.DeviceClipBounds.Height / height);
+                    DrawComposedLayer(layer, target, frame, width, height);
                 }
                 finally { target.RestoreToCount(saved); }
+                using var brightLayer = brightLayerSurface.Snapshot();
+                canvas.DrawImage(brightLayer, SKRect.Create(frame.Resolution), new SKSamplingOptions(SKFilterMode.Linear));
+                glow!.Canvas.DrawImage(brightLayer, new SKRect(0, 0, glow.Canvas.DeviceClipBounds.Width, glow.Canvas.DeviceClipBounds.Height), new SKSamplingOptions(SKFilterMode.Linear));
             }
+            else DrawComposedLayer(layer, canvas, frame, width, height);
         }
         if (quality != BloomQuality.Off)
         {
@@ -145,6 +136,24 @@ public sealed class RenderEffects : IDisposable
         }
         if (Overlay is not null) DrawShader(canvas, Overlay, frame);
     }
+    private void DrawComposedLayer(EffectLayer layer, SKCanvas canvas, in EffectFrame frame, int width, int height)
+    {
+        if (layer.Shader is null) { DrawLayer(layer, canvas, frame); return; }
+        Ensure(ref layerSurface, width, height, canvas.Context);
+        layerSurface!.Canvas.Clear(SKColors.Transparent);
+        DrawLayer(layer, layerSurface.Canvas, frame);
+        using var image = layerSurface.Snapshot();
+        using var content = image.ToShader();
+        using var shader = layer.Shader.Create(frame, content);
+        if (shader is null) canvas.DrawImage(image, 0, 0, new SKSamplingOptions(SKFilterMode.Linear));
+        else
+        {
+            paint.Color = SKColors.White;
+            paint.Shader = shader;
+            canvas.DrawRect(SKRect.Create(frame.Resolution), paint);
+            paint.Shader = null;
+        }
+    }
     private static void DrawLayer(EffectLayer layer, SKCanvas canvas, in EffectFrame frame)
     {
         int saved = canvas.Save();
@@ -159,6 +168,6 @@ public sealed class RenderEffects : IDisposable
     }
     public void Dispose()
     {
-        backgroundSurface?.Dispose(); glow?.Dispose(); blurredSurface?.Dispose(); layerSurface?.Dispose(); filter?.Dispose(); paint.Dispose(); composite.Dispose(); blur.Dispose();
+        backgroundSurface?.Dispose(); glow?.Dispose(); blurredSurface?.Dispose(); brightLayerSurface?.Dispose(); layerSurface?.Dispose(); filter?.Dispose(); paint.Dispose(); composite.Dispose(); blur.Dispose();
     }
 }

@@ -77,6 +77,7 @@ public class EffectsTests
     }
     [TestCase(BloomQuality.Off)]
     [TestCase(BloomQuality.Low)]
+    [TestCase(BloomQuality.Medium)]
     [TestCase(BloomQuality.High)]
     public void BloomSpreadsOnlyOptedInLayersAndHandlesResize(BloomQuality quality)
     {
@@ -89,6 +90,33 @@ public class EffectsTests
             effects.DrawLayers(canvas, new(0, new(size, size), default));
             Assert.That(bitmap.GetPixel(42, 32).Red, quality == BloomQuality.Off ? Is.EqualTo(0) : Is.GreaterThan(0));
         }
+    }
+    [TestCase(BloomQuality.Low)]
+    [TestCase(BloomQuality.Medium)]
+    [TestCase(BloomQuality.High)]
+    public void BloomLayersDrawOnceAndReuseTheirSurfaceWithShaderAppliedToGlow(BloomQuality quality)
+    {
+        using var shader = new RuntimeShader("uniform shader content; half4 main(float2 p) { half4 c=content.eval(p); return half4(0,c.r,0,c.a); }", SKColors.Red);
+        var targets = new List<SKCanvas>();
+        using var effects = new RenderEffects { Bloom = quality, Layers = [new((c, _) =>
+        {
+            targets.Add(c);
+            using var paint = new SKPaint { Color = SKColors.Red };
+            c.DrawCircle(32, 32, 4, paint);
+        }, true, shader)] };
+        foreach (int size in new[] { 64, 64, 96 })
+        {
+            using var bitmap = new SKBitmap(size, size);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.Black);
+            effects.DrawLayers(canvas, new(0, new(size, size), default));
+            Assert.That(bitmap.GetPixel(32, 32).Green, Is.GreaterThan(100));
+            Assert.That(bitmap.GetPixel(42, 32).Green, Is.GreaterThan(0));
+            Assert.That(bitmap.GetPixel(42, 32).Red, Is.EqualTo(0));
+        }
+        Assert.That(targets, Has.Count.EqualTo(3));
+        Assert.That(targets[1], Is.SameAs(targets[0]));
+        Assert.That(targets[2], Is.Not.SameAs(targets[0]));
     }
     [Test]
     public void EffectIntermediatesReuseTheirCanvasUntilDimensionsChange()

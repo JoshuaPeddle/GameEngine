@@ -30,7 +30,7 @@ engine.RenderOptions.Effects = effects;
 
 The order is background, normal scene snapshots, custom layers, bloom, overlay, then full-screen post-process. Custom `EffectLayer` callbacks draw in virtual screen coordinates and may each supply a `RuntimeShader`. These are additional composition layers, independent of numeric ECS sprite layers. Use `content.eval(p)` in a layer shader to sample its rendered image. Backgrounds and overlays can animate procedurally without a source image. An overlay should return premultiplied colour and alpha. Full-screen post-processing also includes the letterbox and optional FPS counter.
 
-Callbacks run on the paint thread. Publish immutable data or synchronize a bounded presentation buffer; do not read the live entity manager from a callback. A bloom-marked callback can run twice, so drawing must not advance state or consume RNG. The renderer restores the host canvas even if a callback throws.
+Callbacks run on the paint thread. Publish immutable data or synchronize a bounded presentation buffer; do not read the live entity manager from a callback. Callbacks must not advance state or consume simulation RNG. Bloom-marked callbacks run once; their composed image supplies both the visible layer and its glow. The renderer restores the host canvas even if a callback throws.
 
 Assign effects before starting, or use `RenderSystem.SetEffects` to replace/detach a running pipeline under its paint lock. The caller owns the pipeline and shaders. Detach before disposing them. `RenderSystem` owns its full-screen intermediate surface. `RenderEffects` owns its layer and bloom surfaces, paints and blur filter; disposing it does not dispose shaders that may be shared by other pipelines.
 
@@ -42,6 +42,7 @@ Bloom collects additive snapshot batches, additive particles and custom layers m
 | --- | --- | --- |
 | Off | No bloom rendering or blur | No per-frame bloom work |
 | Low | Quarter width and height, sigma 3 | 180 by 250 |
+| Medium | One-third width and height, sigma 4 | 240 by 333 |
 | High | Half width and height, sigma 5 | 360 by 500 |
 
 Surfaces are retained across frames and rebuilt when dimensions or GPU context change. A GPU canvas uses the same `GRRecordingContext` for its intermediates, avoiding readback and upload. A raster canvas uses raster surfaces. Off retains already allocated buffers for cheap re-enabling. Dispose the pipeline to release them. Quality is read once per frame so a settings change cannot switch allocation policy halfway through drawing.
@@ -52,13 +53,13 @@ Surfaces are retained across frames and rebuilt when dimensions or GPU context c
 
 `BackgroundLayers` draw after that background and before scene sprites. This supports stars, distant silhouettes, reflections and parallax without passing them through bloom. Canvas state is restored around each callback. These callbacks follow the same paint-thread synchronization rules as foreground layers.
 
-Aurora uses scales `0`, `.25` and `.5` for Off, Low and High. Its 720 by 1520 virtual background therefore shades zero, 68,400 or 273,600 pixels. At 1440 by 3040 output, Low reduces background shader work by a factor of 64 compared with the direct path. This is a pixel-work bound, not a GPU timing claim. Bloom remains independent.
+Aurora uses scales `0`, `.25`, `.375` and `.5` for Off, Low, Medium and High. Its 720 by 1520 virtual background therefore shades zero, 68,400, 153,900 or 273,600 pixels. At 1440 by 3040 output, Low reduces background shader work by a factor of 64 compared with the direct path. This is a pixel-work bound, not a GPU timing claim. Bloom remains independent.
 
 ## Scene resolution cap and retained surfaces (GE-131, GE-132)
 
 `RenderOptions.MaxRenderWidth` is an optional physical-pixel width limit for scene drawing. Zero preserves the direct path. A positive cap draws an oversized scene into a retained surface at that width and proportionate height, then scales it into the original viewport. Host transforms, virtual coordinates, input projection and separate native HUD controls keep their dimensions. The cap uses device dimensions so high-DPI host canvases cannot bypass it. Post-processing remains after the scene composite.
 
-Aurora Low and Off cap the battlefield at 720 physical pixels wide; High permits 1440. Its Avalonia HUD remains at native resolution. Scenes below the limit use the direct path without an intermediate.
+Aurora Low and Off cap the battlefield at 720 physical pixels wide; Medium permits 1080 and High permits 1440. Its Avalonia HUD remains at native resolution. Scenes below the limit use the direct path without an intermediate.
 
 Surface retention compares exact device clip dimensions. Skia's conservative `LocalClipBounds` can expand beyond the allocated surface, which previously made the cache allocate again on every frame. The renderer inverse-maps exact device bounds for its viewport and uses exact bloom dimensions when scaling into the glow surface. Tests verify surface reuse, resize, high-DPI hosts, post-processing, canvas restoration and input coordinates.
 
@@ -76,7 +77,7 @@ The callback overload `SceneCapture.Render(width, height, time, draw)` supplies 
 
 ## Verification and measurements
 
-`EffectsTests` covers compiler diagnostics and fallback pixels, all three uniforms, content grading and fallback, full-screen grading, bloom spread at three qualities and resizing, hit-stop expiry, shake/zoom decay, seeded geometry, pool saturation, canvas restoration, capture faults and repeated real-engine PNG equality. The integrated Release solution builds with zero warnings. All 694 engine tests pass: 373 Core, 249 Demo, 57 Editor and 15 Runner.
+`EffectsTests` covers compiler diagnostics and fallback pixels, all three uniforms, content grading and fallback, full-screen grading, bloom spread at all four qualities and resizing, hit-stop expiry, shake/zoom decay, seeded geometry, pool saturation, canvas restoration, capture faults and repeated real-engine PNG equality. The integrated Release solution builds with zero warnings. All 701 engine tests pass: 380 Core, 249 Demo, 57 Editor and 15 Runner.
 
 Run the reproducible desktop measurement with:
 
@@ -91,3 +92,17 @@ dotnet run --project GameEngine.Benchmarks -c Release -- --effects
 Set `RenderOptions.DrawMeasured` to receive `DrawMeasurement(CpuSeconds, Accelerated)` after each draw. The timer includes resolution-cap rendering and compositing and reports whether the host canvas has a GPU context. It excludes asynchronous GPU completion, the host HUD and frame pacing. The callback runs on the paint thread and must remain short and non-throwing. With no callback, timing is disabled.
 
 Aurora enables sampling only with `TOWER_IDLE_PROFILE=1`, or Android launch extra `--ez profile true`. Its log prints mean and p95 draw and scene-update milliseconds every 300 presentations. Normal launch keeps this instrumentation disabled.
+
+## Intermediate bloom quality (GE-140)
+
+`BloomQuality.Medium` adds one-third-size retained bloom buffers and sigma 4 between Low (one-quarter, sigma 3) and High (one-half, sigma 5). Off, Low and High retain numeric values 0, 1 and 2; Medium is 3. Menu code should order levels explicitly instead of assuming enum numeric order is visual quality order. Bloom spread and resize coverage includes all four levels.
+
+Aurora chooses physical scene caps and atmospheric scales per quality level. The game's opt-in Android benchmark starts an asynchronous GPU timer inside the scene lease, ends it after native HUD submission and collects completed results on later frames. CPU markers include the native HUD. System compositor work is outside these measurements. It is independent of `DrawMeasured`, which continues to report CPU submission only. Quality selection, raw phone CSV paths, measurement boundaries and presentation cadence are documented in the game's verification notes.
+
+## Single-pass bloom layers (GE-141)
+
+Bloom-marked custom layers draw once into a retained source surface, with any layer shader applied before their visible and glow contributions are composited. Source dimensions are half the virtual size at Low, three quarters at Medium, and full size at High. These dimensions are independent of the quarter, third and half-size glow buffers. A shader still receives virtual resolution and coordinates. Unmarked layers keep their direct drawing path. Coverage verifies graded glow pixels, single callback invocation, reuse and resize at all enabled qualities.
+
+## Host GPU instrumentation (GE-142)
+
+`GameView.DrawBoundary` is an optional `Action<SKCanvas, bool>`. It receives `true` before scene rendering and `false` afterward, with the after callback protected by `finally`. Both calls use the scene's existing graphics lease. The canvas is borrowed for the duration of each callback and must not be retained. Observers run on the paint thread, must not throw and must not access live ECS state. With no observer, the host keeps its ordinary drawing path. Aurora uses these boundaries only in its isolated Android benchmark; a real Skia game UI check verifies balanced callbacks.

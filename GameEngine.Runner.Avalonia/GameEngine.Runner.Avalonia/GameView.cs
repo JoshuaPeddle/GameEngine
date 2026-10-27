@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
+using SkiaSharp;
 using GameEngine.Core;
 using GameEngine.Core.Systems;
 using System;
@@ -402,6 +403,8 @@ namespace GameEngine.Runner.Avalonia
             }
         }
 
+        public Action<SKCanvas, bool>? DrawBoundary { get; set; }
+
         public override void Render(DrawingContext context)
         {
             var engine = _gameEngine;
@@ -411,7 +414,7 @@ namespace GameEngine.Runner.Avalonia
             context.Custom(new CustomDrawOp(
                 new Rect(0, 0, Bounds.Width, Bounds.Height),
                 engine,
-                ReportFirstPresent));
+                ReportFirstPresent, DrawBoundary));
         }
 
         private void ReportFirstPresent()
@@ -428,12 +431,14 @@ namespace GameEngine.Runner.Avalonia
         public Rect Bounds { get; set; }
         private readonly Engine _engine;
         private readonly Action _reportFirstPresent;
+        private readonly Action<SKCanvas, bool>? _drawBoundary;
 
-        public CustomDrawOp(Rect bounds, Engine engine, Action reportFirstPresent)
+        public CustomDrawOp(Rect bounds, Engine engine, Action reportFirstPresent, Action<SKCanvas, bool>? drawBoundary)
         {
             Bounds = bounds;
             _engine = engine;
             _reportFirstPresent = reportFirstPresent;
+            _drawBoundary = drawBoundary;
         }
 
         public void Dispose() { }
@@ -455,7 +460,9 @@ namespace GameEngine.Runner.Avalonia
 
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-            renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
+            _drawBoundary?.Invoke(canvas, true);
+            try { renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot()); }
+            finally { _drawBoundary?.Invoke(canvas, false); }
 
             // Resume updates and report that the first visible frame reached the platform surface.
             _reportFirstPresent();

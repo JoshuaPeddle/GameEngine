@@ -343,3 +343,17 @@ Surface allocation checks now use exact device clip dimensions. Viewport dimensi
 | GE-133 | S3 | Hosts cannot distinguish engine draw submission cost from render-thread pacing and GPU completion | `Systems/RenderSystem.cs` | ✅ | **fixed** |
 
 `RenderOptions.DrawMeasured` optionally receives CPU draw seconds and whether the host canvas is GPU-backed. No timing work runs without a callback. This measures scene submission, not GPU completion or the host HUD. The callback runs on the paint thread after canvas restoration. The cap test verifies one measurement per draw and the raster flag.
+
+## Aurora second polish
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-140 | S3 | Effects expose no intermediate quality between quarter-size and half-size bloom buffers | `Effects/RenderEffects.cs` | bloom spread and resize tests at all four levels | fixed |
+| GE-141 | S3 | Bloom callbacks redraw geometry and ignore layer grading in their glow contribution | `Effects/RenderEffects.cs` | single callback, shader colour, resize and reuse tests at Low, Medium and High | fixed |
+| GE-142 | S3 | GPU instrumentation around an Avalonia scene needs extra graphics leases that disturb the measured path | `GameView.cs` | game Skia render check verifies paired callbacks inside the existing lease | fixed |
+
+`BloomQuality.Medium` uses one-third-size retained bloom surfaces and a four-pixel blur sigma. Existing enum values remain Off=0, Low=1 and High=2; Medium=3 preserves numeric persistence compatibility. Consuming games choose their own scene width and atmospheric resolution. Phone measurements and default selection live in the consuming game's `art/style-frames/verification.md`.
+
+Bloom layers now draw once into a retained transparent surface. The composed result supplies both the visible layer and its downsampled glow, including the layer shader. Low renders that source at half virtual dimensions, Medium at three quarters and High at full size. Non-bloom layers and additive sprite batches preserve their existing order and projection.
+
+`GameView.DrawBoundary` optionally receives the borrowed canvas before and after the scene draw, inside the existing Skia lease. Hosts can issue asynchronous GPU timer queries without adding a second rendering control or acquiring more leases. The after callback runs in a finally block. A null observer preserves normal rendering.
