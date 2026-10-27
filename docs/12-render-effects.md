@@ -46,6 +46,22 @@ Bloom collects additive snapshot batches, additive particles and custom layers m
 
 Surfaces are retained across frames and rebuilt when dimensions or GPU context change. A GPU canvas uses the same `GRRecordingContext` for its intermediates, avoiding readback and upload. A raster canvas uses raster surfaces. Off retains already allocated buffers for cheap re-enabling. Dispose the pipeline to release them. Quality is read once per frame so a settings change cannot switch allocation policy halfway through drawing.
 
+## Background quality and atmosphere (GE-130)
+
+`RenderEffects.BackgroundScale` defaults to `1`, preserving the direct shader path. A value between zero and one evaluates the background on a retained surface of that fraction of the virtual width and height, then linearly upscales it. The shader still receives the original virtual `resolution`, time and camera uniforms. `0` paints only the fallback colour. Non-finite values and values outside zero through one are rejected. Intermediates use the host GPU context and are disposed with the effects pipeline.
+
+`BackgroundLayers` draw after that background and before scene sprites. This supports stars, distant silhouettes, reflections and parallax without passing them through bloom. Canvas state is restored around each callback. These callbacks follow the same paint-thread synchronization rules as foreground layers.
+
+Aurora uses scales `0`, `.25` and `.5` for Off, Low and High. Its 720 by 1520 virtual background therefore shades zero, 68,400 or 273,600 pixels. At 1440 by 3040 output, Low reduces background shader work by a factor of 64 compared with the direct path. This is a pixel-work bound, not a GPU timing claim. Bloom remains independent.
+
+## Scene resolution cap and retained surfaces (GE-131, GE-132)
+
+`RenderOptions.MaxRenderWidth` is an optional physical-pixel width limit for scene drawing. Zero preserves the direct path. A positive cap draws an oversized scene into a retained surface at that width and proportionate height, then scales it into the original viewport. Host transforms, virtual coordinates, input projection and separate native HUD controls keep their dimensions. The cap uses device dimensions so high-DPI host canvases cannot bypass it. Post-processing remains after the scene composite.
+
+Aurora Low and Off cap the battlefield at 720 physical pixels wide; High permits 1440. Its Avalonia HUD remains at native resolution. Scenes below the limit use the direct path without an intermediate.
+
+Surface retention compares exact device clip dimensions. Skia's conservative `LocalClipBounds` can expand beyond the allocated surface, which previously made the cache allocate again on every frame. The renderer inverse-maps exact device bounds for its viewport and uses exact bloom dimensions when scaling into the glow surface. Tests verify surface reuse, resize, high-DPI hosts, post-processing, canvas restoration and input coordinates.
+
 ## Camera and geometry
 
 `engine.CameraEffects.Shake(amplitude, seconds)` applies deterministic oscillation with linear decay. Amplitude is in virtual pixels. `ZoomPunch(amount, seconds)` adds a zoom that decays quadratically. `HitStop(seconds, timeScale)` scales system and scene delta time, with a default scale of zero. Its timer and shader time advance in real supplied tick seconds, so a complete freeze expires. Values must be finite and non-negative; hit-stop scale is bounded to zero through one. Effects alter neither saved entity positions nor physics shapes. Screen-to-world conversion applies the inverse shake and zoom.
@@ -69,3 +85,9 @@ dotnet run --project GameEngine.Benchmarks -c Release -- --effects
 ```
 
 `--effects --metal` additionally creates a macOS Metal surface and synchronizes each submit. This automation session could not create a Metal device, so no GPU result is claimed. Raster timings and the expected phone budget are recorded in the consuming game's `art/style-frames/verification.md`. Raster screenshot throughput must not be presented as a GPU frame-rate measurement. Both native desktop launch attempts returned Avalonia RenderTimer error `-6661`; headless rendering passes. Physical-device GPU, thermal and complete-frame measurements remain necessary to verify a 12 ms phone budget.
+
+## Optional draw timing (GE-133)
+
+Set `RenderOptions.DrawMeasured` to receive `DrawMeasurement(CpuSeconds, Accelerated)` after each draw. The timer includes resolution-cap rendering and compositing and reports whether the host canvas has a GPU context. It excludes asynchronous GPU completion, the host HUD and frame pacing. The callback runs on the paint thread and must remain short and non-throwing. With no callback, timing is disabled.
+
+Aurora enables sampling only with `TOWER_IDLE_PROFILE=1`, or Android launch extra `--ez profile true`. Its log prints mean and p95 draw and scene-update milliseconds every 300 presentations. Normal launch keeps this instrumentation disabled.

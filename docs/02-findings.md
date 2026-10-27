@@ -313,3 +313,33 @@ See [render effects](12-render-effects.md) for contracts, ownership, benchmark c
 | GE-123 | S3 | Common trails, gradient beams, shockwave rings, seeded lightning and shaped pooled shatter have no reusable API | EffectGeometry, ParticleEmitter | seeded endpoints and bounded pool saturation tests | fixed |
 | GE-124 | S3 | No reusable deterministic PNG capture path checks real-engine faults and supplied simulation time | SceneCapture | real-engine repeatability, timing, invalid input and fault tests; six consuming-game phone frames | fixed |
 | GE-125 | S2 | Effect intermediates need explicit lifetime, resize and host-context ownership to avoid per-frame surfaces and GPU readbacks | RenderEffects, RenderSystem.SetEffects | resize, replacement and throwing callback checks; GPU-context allocation path inspected | fixed; physical GPU execution pending |
+
+## Aurora mobile rendering
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-130 | S2 | Atmospheric background shaders shade every output pixel even at Low bloom; background decoration cannot run before opaque scene sprites | `Effects/RenderEffects.cs` | ✅ | **fixed** |
+
+GE-130 adds independent `BackgroundScale` and `BackgroundLayers`. Reduced shader surfaces retain virtual coordinates, reuse the host GPU context, and resize with the viewport. Zero uses the fallback colour without running the shader. Background layers always run before scene sprites and never enter bloom. Coordinate, fallback, resize and layer-order pixels are covered by `EffectsTests`.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-131 | S2 | Native-resolution scene blending leaves insufficient phone frame headroom beneath a separate native HUD | `Systems/RenderSystem.cs` | ✅ | **fixed** |
+
+GE-131 adds opt-in `RenderOptions.MaxRenderWidth`, default zero for the existing direct path. A retained scene surface caps drawing resolution while preserving virtual geometry, pointer mapping and host HUD resolution. The final post-process still runs at output resolution. Tests cover resize, bypass, coordinates, canvas restoration and post-processing.
+
+## Effect surface retention
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-132 | S2 | Conservative local clip bounds invalidate retained effect surfaces every frame and distort reduced-buffer scaling | `Effects/RenderEffects.cs`, `Systems/RenderSystem.cs` | ✅ | **fixed** |
+
+Surface allocation checks now use exact device clip dimensions. Viewport dimensions use inverse-mapped device bounds rather than Skia's conservative local clip expansion. A repeated-layer test verifies the same intermediate canvas is retained, followed by replacement on resize. The resolution-cap test also verifies scaled host canvases and input mapping.
+
+## Opt-in draw measurement
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-133 | S3 | Hosts cannot distinguish engine draw submission cost from render-thread pacing and GPU completion | `Systems/RenderSystem.cs` | ✅ | **fixed** |
+
+`RenderOptions.DrawMeasured` optionally receives CPU draw seconds and whether the host canvas is GPU-backed. No timing work runs without a callback. This measures scene submission, not GPU completion or the host HUD. The callback runs on the paint thread after canvas restoration. The cap test verifies one measurement per draw and the raster flag.

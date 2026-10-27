@@ -41,6 +41,26 @@ public class EffectsTests
         });
     }
     [Test]
+    public void ReducedBackgroundPreservesCoordinatesAndOffUsesFallback()
+    {
+        using var shader = new RuntimeShader("uniform float2 resolution; half4 main(float2 p) { return half4(p.x/resolution.x,0,0,1); }", SKColors.Navy);
+        using var effects = new RenderEffects { Background = shader, BackgroundScale = .25f,
+            BackgroundLayers = [new((canvas, _) => { using var paint = new SKPaint { Color = SKColors.Lime }; canvas.DrawRect(0, 0, 4, 4, paint); })] };
+        foreach (int size in new[] { 64, 96, 64 })
+        {
+            using var bitmap = new SKBitmap(size, size);
+            using var canvas = new SKCanvas(bitmap);
+            effects.DrawBackground(canvas, new(0, new(size, size), default));
+            Assert.That(bitmap.GetPixel(size / 2, size / 2).Red, Is.InRange(124, 135));
+            Assert.That(bitmap.GetPixel(1, 1), Is.EqualTo(SKColors.Lime));
+            effects.BackgroundScale = 0;
+            effects.DrawBackground(canvas, new(0, new(size, size), default));
+            Assert.That(bitmap.GetPixel(size / 2, size / 2), Is.EqualTo(SKColors.Navy));
+            effects.BackgroundScale = .25f;
+        }
+        Assert.Throws<ArgumentOutOfRangeException>(() => effects.BackgroundScale = float.NaN);
+    }
+    [Test]
     public void LayerShaderCanGradeItsContentAndFallbackPreservesIt()
     {
         using var shader = new RuntimeShader("uniform shader content; half4 main(float2 p) { half4 c = content.eval(p); return half4(c.g,c.r,c.b,c.a); }", SKColors.Red);
@@ -71,6 +91,54 @@ public class EffectsTests
         }
     }
     [Test]
+    public void EffectIntermediatesReuseTheirCanvasUntilDimensionsChange()
+    {
+        using var shader = new RuntimeShader("uniform shader content; half4 main(float2 p) { return content.eval(p); }", SKColors.Red);
+        var targets = new List<SKCanvas>();
+        using var effects = new RenderEffects { Layers = [new((c, _) => targets.Add(c), Shader: shader)] };
+        using var bitmap = new SKBitmap(96, 96);
+        using var canvas = new SKCanvas(bitmap);
+        for (int i = 0; i < 3; i++) effects.DrawLayers(canvas, new(0, new(64, 64), default));
+        Assert.That(targets[1], Is.SameAs(targets[0]));
+        Assert.That(targets[2], Is.SameAs(targets[0]));
+        effects.DrawLayers(canvas, new(0, new(96, 96), default));
+        Assert.That(targets[3], Is.Not.SameAs(targets[0]));
+    }
+    [Test]
+    public void SceneResolutionCapPreservesVirtualCoordinatesAndCanvasState()
+    {
+        using var shader = new RuntimeShader("uniform float2 resolution; half4 main(float2 p) { return half4(p.x/resolution.x,0,0,1); }", SKColors.Red);
+        using var effects = new RenderEffects { Background = shader };
+        var options = new RenderOptions { VirtualWidth = 64, VirtualHeight = 64, MaxRenderWidth = 32, Effects = effects };
+        var measurements = new List<DrawMeasurement>();
+        options.DrawMeasured = measurements.Add;
+        using var renderer = new RenderSystem(options);
+        foreach (int size in new[] { 64, 128, 16, 64 })
+        {
+            using var bitmap = new SKBitmap(size, size);
+            using var canvas = new SKCanvas(bitmap);
+            int saved = canvas.SaveCount;
+            renderer.DrawEntitiesToCanvas(canvas, RenderSnapshot.Empty);
+            Assert.That(bitmap.GetPixel(size / 2, size / 2).Red, Is.InRange(124, 140), $"Output size {size}");
+            Assert.That(canvas.SaveCount, Is.EqualTo(saved));
+            Assert.That(renderer.TryScreenToWorld(new(size / 2, size / 2), new(size, size), null, out var world), Is.True);
+            Assert.That(world.X, Is.EqualTo(32));
+        }
+        using (var bitmap = new SKBitmap(128, 128))
+        using (var canvas = new SKCanvas(bitmap))
+        {
+            int observed = 0;
+            using var observedEffects = new RenderEffects { BackgroundLayers = [new((c, _) => observed = c.DeviceClipBounds.Width)] };
+            using var scaledRenderer = new RenderSystem(new RenderOptions { VirtualWidth = 64, VirtualHeight = 64, MaxRenderWidth = 32, Effects = observedEffects });
+            canvas.Scale(4);
+            scaledRenderer.DrawEntitiesToCanvas(canvas, RenderSnapshot.Empty);
+            Assert.That(observed, Is.EqualTo(32));
+        }
+        Assert.That(measurements, Has.Count.EqualTo(4));
+        Assert.That(measurements.All(m => m.CpuSeconds >= 0 && !m.Accelerated), Is.True);
+        Assert.Throws<ArgumentOutOfRangeException>(() => options.MaxRenderWidth = -1);
+    }
+    [Test]
     public void FullScreenPostProcessGradesSceneAndFailureKeepsScene()
     {
         using var background = new RuntimeShader("half4 main(float2 p) { return half4(0, 1, 0, 1); }", SKColors.Blue);
@@ -79,7 +147,7 @@ public class EffectsTests
         foreach (var shader in new[] { grade, failed })
         {
             using var effects = new RenderEffects { Background = background, PostProcess = shader };
-            using var renderer = new RenderSystem(new RenderOptions { VirtualWidth = 32, VirtualHeight = 32, Effects = effects });
+            using var renderer = new RenderSystem(new RenderOptions { VirtualWidth = 32, VirtualHeight = 32, MaxRenderWidth = 16, Effects = effects });
             using var bitmap = new SKBitmap(32, 32);
             using var canvas = new SKCanvas(bitmap);
             renderer.DrawEntitiesToCanvas(canvas, RenderSnapshot.Empty);

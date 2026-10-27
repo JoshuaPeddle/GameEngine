@@ -9,6 +9,18 @@ public sealed record EffectLayer(Action<SKCanvas, EffectFrame> Draw, bool Bloom 
 public sealed class RenderEffects : IDisposable
 {
     public RuntimeShader? Background { get; init; }
+    public EffectLayer[] BackgroundLayers { get; init; } = [];
+    private float backgroundScale = 1;
+    public float BackgroundScale
+    {
+        get => backgroundScale;
+        set
+        {
+            if (!float.IsFinite(value) || value < 0 || value > 1) throw new ArgumentOutOfRangeException(nameof(value));
+            backgroundScale = value;
+        }
+    }
+    private SKSurface? backgroundSurface;
     public RuntimeShader? Overlay { get; init; }
     public RuntimeShader? PostProcess { get; init; }
     public EffectLayer[] Layers { get; init; } = [];
@@ -25,7 +37,34 @@ public sealed class RenderEffects : IDisposable
 
     public void DrawBackground(SKCanvas canvas, in EffectFrame frame)
     {
-        if (Background is not null) DrawShader(canvas, Background, frame);
+        float scale = BackgroundScale;
+        if (Background is not null)
+        {
+            if (scale == 0)
+            {
+                paint.Color = Background.Fallback;
+                canvas.DrawRect(SKRect.Create(frame.Resolution), paint);
+            }
+            else if (scale == 1) DrawShader(canvas, Background, frame);
+            else
+            {
+                int width = Math.Max(1, (int)(frame.Resolution.Width * scale));
+                int height = Math.Max(1, (int)(frame.Resolution.Height * scale));
+                Ensure(ref backgroundSurface, width, height, canvas.Context);
+                var target = backgroundSurface!.Canvas;
+                target.Clear(SKColors.Transparent);
+                int saved = target.Save();
+                try
+                {
+                    target.Scale(width / frame.Resolution.Width, height / frame.Resolution.Height);
+                    DrawShader(target, Background, frame);
+                }
+                finally { target.RestoreToCount(saved); }
+                using var image = backgroundSurface.Snapshot();
+                canvas.DrawImage(image, SKRect.Create(frame.Resolution), new SKSamplingOptions(SKFilterMode.Linear));
+            }
+        }
+        foreach (var layer in BackgroundLayers) DrawLayer(layer, canvas, frame);
     }
     private void DrawShader(SKCanvas canvas, RuntimeShader shader, in EffectFrame frame)
     {
@@ -78,7 +117,7 @@ public sealed class RenderEffects : IDisposable
                 int saved = target.Save();
                 try
                 {
-                    target.Scale(glow.Canvas.LocalClipBounds.Width / width, glow.Canvas.LocalClipBounds.Height / height);
+                    target.Scale((float)glow.Canvas.DeviceClipBounds.Width / width, (float)glow.Canvas.DeviceClipBounds.Height / height);
                     DrawLayer(layer, target, frame);
                 }
                 finally { target.RestoreToCount(saved); }
@@ -91,7 +130,7 @@ public sealed class RenderEffects : IDisposable
                 int saved = glow!.Canvas.Save();
                 try
                 {
-                    glow.Canvas.Scale(glow.Canvas.LocalClipBounds.Width / width, glow.Canvas.LocalClipBounds.Height / height);
+                    glow.Canvas.Scale((float)glow.Canvas.DeviceClipBounds.Width / width, (float)glow.Canvas.DeviceClipBounds.Height / height);
                     drawBright(glow.Canvas);
                 }
                 finally { glow.Canvas.RestoreToCount(saved); }
@@ -114,12 +153,12 @@ public sealed class RenderEffects : IDisposable
     }
     private static void Ensure(ref SKSurface? surface, int width, int height, GRRecordingContext? context)
     {
-        if (surface is not null && surface.Canvas.LocalClipBounds.Width == width && surface.Canvas.LocalClipBounds.Height == height && surface.Context?.Handle == context?.Handle) return;
+        if (surface is not null && surface.Canvas.DeviceClipBounds.Width == width && surface.Canvas.DeviceClipBounds.Height == height && surface.Context?.Handle == context?.Handle) return;
         surface?.Dispose();
         surface = (context is null ? SKSurface.Create(new SKImageInfo(width, height)) : SKSurface.Create(context, true, new SKImageInfo(width, height))) ?? throw new InvalidOperationException("Cannot allocate effect surface.");
     }
     public void Dispose()
     {
-        glow?.Dispose(); blurredSurface?.Dispose(); layerSurface?.Dispose(); filter?.Dispose(); paint.Dispose(); composite.Dispose(); blur.Dispose();
+        backgroundSurface?.Dispose(); glow?.Dispose(); blurredSurface?.Dispose(); layerSurface?.Dispose(); filter?.Dispose(); paint.Dispose(); composite.Dispose(); blur.Dispose();
     }
 }
