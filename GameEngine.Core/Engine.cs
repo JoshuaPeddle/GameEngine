@@ -85,7 +85,8 @@ namespace GameEngine.Core
                 {
                     InputManager.CancelAllContacts();
                     InputManager.ReleaseAllKeys();
-                    InputManager.DispatchPointerEvents();
+                    try { InputManager.DispatchPointerEvents(); }
+                    catch (Exception exception) { Fail("host pointer dispatch", nameof(InputSystem), exception); }
                     NotifyLifecycle(LifecycleEvent.Pause);
                 }
                 if (previous == HostState.Background) NotifyLifecycle(LifecycleEvent.Foreground);

@@ -98,6 +98,50 @@ public class MobileHostTests
         engine.Dispose();
     }
 
+    [TestCase(HostState.Inactive, PointerEventType.Press)]
+    [TestCase(HostState.Inactive, PointerEventType.Cancel)]
+    [TestCase(HostState.Background, PointerEventType.Press)]
+    [TestCase(HostState.Background, PointerEventType.Cancel)]
+    public void PointerFailureStillCompletesTheHostTransition(HostState state, PointerEventType failingEvent)
+    {
+        using var engine = new Engine(audioEnabled: false);
+        using var entered = new ManualResetEventSlim(true);
+        using var finish = new ManualResetEventSlim(true);
+        engine.ChangeScene(new BlockingScene(entered, finish));
+        engine.Tick(0);
+        engine.NotifyFirstPresent();
+        var input = engine.InputManager;
+        input.RealResolution = input.VirtualResolution = new Vec2(100, 100);
+        input.AddAction(GeKeys.D, "move");
+        input.HandleKeyPress(GeKeys.D);
+        var failure = new InvalidOperationException("Pointer handler failed.");
+        input.BindPointerAction(failingEvent, _ => throw failure);
+        input.HandlePointerEvent(PointerEventType.Press, new PointerEvent(new Vec2(20, 20), 1));
+        var events = new List<LifecycleEvent>();
+        var faults = new List<EngineFault>();
+        engine.FaultAction = faults.Add;
+        engine.LifecycleChanged += events.Add;
+
+        Assert.DoesNotThrow(() => engine.SetHostState(state));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(engine.HostState, Is.EqualTo(state));
+            Assert.That(events, Is.EqualTo(state == HostState.Background
+                ? new[] { LifecycleEvent.Pause, LifecycleEvent.Background }
+                : new[] { LifecycleEvent.Pause }));
+            Assert.That(faults, Has.Count.EqualTo(1));
+            Assert.That(engine.Fault?.Operation, Is.EqualTo("host pointer dispatch"));
+            Assert.That(engine.Fault?.SystemName, Is.EqualTo(nameof(InputSystem)));
+            Assert.That(engine.Fault?.SceneName, Is.EqualTo(nameof(BlockingScene)));
+            Assert.That(engine.Fault?.Exception, Is.SameAs(failure));
+            Assert.That(input.IsActionActive("move"), Is.False);
+        });
+
+        engine.SetHostState(HostState.Active);
+        Assert.That(engine.Tick(0), Is.False);
+    }
+
     [Test]
     public void BackCanBeHandledOtherwiseItPausesThenAllowsPlatformNavigation()
     {

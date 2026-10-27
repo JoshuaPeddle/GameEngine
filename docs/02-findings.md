@@ -300,6 +300,22 @@ retain their status.
 | GE-113 | S3 | PG-36: no optional haptics capability or user toggle | HostServices and native feedback backends; MobileHostTests | toggles, capability and foreground gates tested | fixed; physical feedback checks pending |
 | GE-114 | S1 | PG-12: delivered Android native libraries have no ELF/ZIP 16 KB validation gate | check-android-alignment.py, build/release workflows, artifact report | signed Debug and Release APKs inspected, all native LOAD segments pass | fixed; 16 KB runtime check pending |
 
+## Integration input review follow-up, October 26, 2026
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-115 | S1 | A queued pointer handler failure escapes host state transitions and skips pause/background checkpoints | Engine.SetHostState; MobileHostTests.PointerFailureStillCompletesTheHostTransition | Press and Cancel handlers reproduced the exception for inactive and background transitions | fixed: record an EngineFault naming the scene, host pointer dispatch and InputSystem, then complete lifecycle notifications |
+| GE-116 | S2 | The generated starter scene advertises swipe movement but does not opt into release gestures | template MainScene; TemplateInputTests and template MainSceneTests | a headless Avalonia touch swipe left the starter player stationary | fixed: opt the starter scene into release gestures; actual touch press/release now moves the player and the template tests assert its policy |
+| GE-117 | S2 | The deduplicated WinForms move handler drops hover events unless a mouse button is held | MainView.OnPointerMoved; WinFormsInputSourceTests | source regression reproduced conditional move forwarding | fixed: forward moves unconditionally; cross-platform syntax regression also verifies one subscription per mouse event; Windows runtime verification pending |
+
+All 688 solution tests pass in Release, along with nine browser JavaScript tests and
+seven template tests. The template tests ran from a temporary copy with its Core package
+reference replaced by a reference to this branch. The lifecycle, touch movement and
+WinForms source regressions were each observed failing before their fixes.
+The Release solution build passes with zero warnings and zero errors. Local verification
+used a writable NuGet HTTP cache, disabled Avalonia build telemetry with
+`-p:UsedAvaloniaProducts=`, and supplied the installed JDK 17 through `JavaSdkDirectory`.
+
 ## Opt-in visual effects, October 26, 2026
 
 IDs start at GE-120 to avoid clashes with the integrated work through GE-114.
