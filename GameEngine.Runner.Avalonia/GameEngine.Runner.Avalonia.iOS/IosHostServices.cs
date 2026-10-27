@@ -53,9 +53,9 @@ internal sealed class IosHostServices : IKeepAwakeBackend, IHapticsBackend
                         .Where(scene => scene.ActivationState == UISceneActivationState.ForegroundActive)
                         .Select(scene => scene.KeyWindow?.RootViewController?.View).FirstOrDefault(view => view != null);
                     if (view == null) return;
-                    impact = UIImpactFeedbackGenerator.GetFeedbackGenerator(UIImpactFeedbackStyle.Medium, view);
+                    impact = UIImpactFeedbackGenerator.GetFeedbackGenerator(UIImpactFeedbackStyle.Light, view);
                 }
-                else impact = new UIImpactFeedbackGenerator(UIImpactFeedbackStyle.Medium);
+                else impact = new UIImpactFeedbackGenerator(UIImpactFeedbackStyle.Light);
                 using (impact)
                 {
                     impact.Prepare();

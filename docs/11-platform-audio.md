@@ -210,3 +210,11 @@ read-only RestoreFallbackFolders source. Android builds explicitly selected the 
 JDK 17 and Android SDK. Avalonia build telemetry was disabled through UsedAvaloniaProducts.
 These are local invocation settings, not project defaults. No commit or device install
 was made.
+
+## Aurora consumer integration (GE-150, GE-151)
+
+`GameEngine.Audio.Android.AndroidHostServices` is a public optional host adapter implementing `IHapticsBackend` and `IKeepAwakeBackend`. Construct it with an activity and supply it to Core's `HostServices`. It checks activity lifetime on UI dispatch; Core supplies foreground, detach, stop and preference gates. Placement uses a light virtual-key cue, while rejection and reward use stronger notification cues. The iOS demo host now uses a light impact for placement and retains notification feedback for rejection and reward.
+
+Android native diagnostics use the `GameEngineAudio` log tag. `BACKEND_STARTED` identifies SoundPool and MediaPlayer startup and the stream limit. `EFFECT_READY` records each successful decode and its measured duration. `EFFECT_STARTED` is emitted only for the first successful native stream per backend. `MUSIC_STARTED` reports the player's playing state and effective gain. Decode and MediaPlayer failures log at error level and remain available through `UnavailableReason`.
+
+Tower Idle generates its own PCM sounds during its build. Its Android asset source encodes the PCM music to AAC/M4A through the framework MediaCodec and MediaMuxer on first use, then caches it by synthesis version. These synthesis and encoding choices belong to the game, while engine playback, voice policy, mixer controls and focus behavior remain shared. The Note10+ consumer checks and their limits are recorded in Tower Idle's README. No physical iPhone check is added by this consumer work.

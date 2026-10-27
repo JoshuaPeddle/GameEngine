@@ -2,11 +2,10 @@ using global::Android.App;
 using global::Android.OS;
 using global::Android.Views;
 using GameEngine.Core;
-using GameEngine.Runner.Avalonia;
 
-namespace GameEngine.Runner.Avalonia.Android;
+namespace GameEngine.Audio.Android;
 
-internal sealed class AndroidHostServices(Activity activity) : IKeepAwakeBackend, IHapticsBackend
+public sealed class AndroidHostServices(Activity activity) : IKeepAwakeBackend, IHapticsBackend
 {
     private volatile bool _active;
     private volatile bool _foreground;
@@ -51,9 +50,9 @@ internal sealed class AndroidHostServices(Activity activity) : IKeepAwakeBackend
         if (!_hapticsSupported) return false;
         activity.RunOnUiThread(() =>
         {
-            if (!_foreground || !Enabled || App.Lifecycle.State != HostState.Active || activity.IsFinishing || activity.IsDestroyed) return;
-            var feedback = FeedbackConstants.VirtualKey;
-            if (System.OperatingSystem.IsAndroidVersionAtLeast(30))
+            if (!_foreground || !Enabled || activity.IsFinishing || activity.IsDestroyed) return;
+            var feedback = cue == HapticCue.Placement ? FeedbackConstants.VirtualKey : FeedbackConstants.LongPress;
+            if (cue != HapticCue.Placement && System.OperatingSystem.IsAndroidVersionAtLeast(30))
                 feedback = cue == HapticCue.Rejection ? FeedbackConstants.Reject : FeedbackConstants.Confirm;
             activity.Window?.DecorView.PerformHapticFeedback(feedback);
         });

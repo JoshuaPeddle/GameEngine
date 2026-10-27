@@ -20,7 +20,7 @@ namespace GameEngine.Runner.Avalonia.Android
         {
             App.HostServicesFactory = () =>
             {
-                var backend = new AndroidHostServices(this);
+                var backend = new Audio.Android.AndroidHostServices(this);
                 return new GameEngine.Core.HostServices(backend, backend);
             };
             base.OnCreate(savedInstanceState);
