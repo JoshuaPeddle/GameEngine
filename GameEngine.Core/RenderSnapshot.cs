@@ -16,7 +16,7 @@ namespace GameEngine.Core;
 /// count exceeds its capacity.
 /// </para>
 /// </summary>
-public sealed class RenderSnapshot
+public sealed partial class RenderSnapshot
 {
     public readonly struct TransformData
     {
@@ -122,6 +122,8 @@ public sealed class RenderSnapshot
         }
     }
 
+    private static readonly Comparison<Entry> CompareLayers = LayerComparer.Instance.Compare;
+
     private Entry[] _entries = [];
     private int _count;
 
@@ -147,6 +149,7 @@ public sealed class RenderSnapshot
             Array.Clear(_entries, 0, _count);
 
         _count = 0;
+        ResetAtlasBatches();
         ActiveCamera = null;
     }
 
@@ -165,6 +168,6 @@ public sealed class RenderSnapshot
     internal void SortByLayer()
     {
         if (_count > 1)
-            Array.Sort(_entries, 0, _count, LayerComparer.Instance);
+            _entries.AsSpan(0, _count).Sort(CompareLayers);
     }
 }

@@ -6,6 +6,9 @@ previews scenes live.
 
 Targets .NET 10.
 
+Mobile lifecycle, touch, Back, keep-awake, haptics and artifact verification are described in
+[mobile platform support](docs/09-mobile-platforms.md).
+
 ## Start a game
 
 ```bash
@@ -345,15 +348,12 @@ so the harness exercises the same path the runners do.
 
 ## Known limitations
 
-- **Audio is Windows-only in practice.** `GameEngine.Core` has no audio
-  integration of its own: it defines `IAudioBackend`, and a host registers one
-  with `AudioBackends.Factory` before constructing an engine. The only backend
-  that ships is `GameEngine.Audio.Sdl`, and `ppy.SDL2-CS` ships SDL2 natives per
-  platform but no `SDL2_mixer` — the only mixer binary in the tree is a Windows
-  x64 DLL. Everywhere else, and on any head that registers no backend at all, the
-  audio service reports itself unavailable through
-  `AudioSystem.UnavailableReason` and the game runs silently rather than
-  failing. Adding a platform means writing an `IAudioBackend`, not changing Core.
+- Audio backends are available for iOS (AVFoundation), Android
+  (SoundPool/MediaPlayer), and the browser (Web Audio with gesture unlock).
+  Mobile playback still needs physical-device acceptance checks. Desktop uses
+  SDL2_mixer; Linux and macOS hosts must supply its native mixer library.
+  See [platform audio](docs/11-platform-audio.md) for registration, lifecycle,
+  mixer controls, formats and validation limits.
 - `Font` entries in the old `assets.txt` format are parsed but ignored; `assets.json` has
   no fonts section at all.
 - Animations support a single horizontal strip only — no grids, no per-frame
@@ -371,7 +371,8 @@ Play [Emberbrook on the web](https://joshuapeddle.com/GameEngine/).
 
 The browser build opens Emberbrook directly; Q returns to the complete demo menu.
 Progress is saved in this browser using local storage. The first visit downloads
-the WebAssembly runtime and game assets. Browser audio is not yet connected.
+the WebAssembly runtime and game assets. Browser audio unlocks after a pointer or
+keyboard gesture.
 
 `.github/workflows/pages.yml` publishes the static client after pushes to
 `master` or `reliability-plan`. GitHub Pages uses GitHub Actions as its source.

@@ -79,3 +79,15 @@ the end-to-end run mattered: the microbenchmark alone would have argued for keep
 session and its absolute numbers are not comparable with these — the same
 `BuildRenderSnapshot` benchmark measures 300 us there and 160 us here on unchanged rendering
 code. Always measure both sides of a comparison in one sitting.
+
+## Full batched frame allocation regression
+
+Run `dotnet run -c Release --project GameEngine.Benchmarks -- --stress-allocations`
+to compare one-shot emitter churn with direct particle births at 750, 3000 and
+8000 particles. Each workload includes 1000 moving batch sprites, live expiration
+and respawning, real engine ticks, pooled snapshot publication and raster drawing.
+It warms 1000 frames and measures 600 frames with
+`GC.GetAllocatedBytesForCurrentThread`, reporting update, snapshot and draw bytes
+separately. See [GE-105](../docs/08-batched-rendering.md) for results and the
+GameStress migration patch. The Core allocation tests compile this same workload
+and exercise two ticks per paint to reuse all three snapshot buffers.

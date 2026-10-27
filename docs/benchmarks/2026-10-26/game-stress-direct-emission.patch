@@ -1,0 +1,59 @@
+--- a/GameStress/StressScene.cs
++++ b/GameStress/StressScene.cs
+@@ -43,6 +43,7 @@
+     private SpriteBatch? actorBatch;
+     private ParticleSystem? engineParticles;
+     private ParticleState[] engineStates = [];
++    private ParticleOptions sparkOptions = null!;
+     private ParticleFrame[] frames = [];
+     public ParticleFrame? Published { get; private set; }
+     public long UpdateEnded { get; private set; }
+@@ -60,6 +61,14 @@
+         actorBatch = settings.EngineBatched && actors.Length > 0
+             ? entities.CreateSpriteBatch(atlas.Image, actors.Length, layer: 1) : null;
+         engineParticles = settings.EngineBatched ? Engine!.Systems.Get<ParticleSystem>() : null;
++        sparkOptions = new ParticleOptions
++        {
++            Texture = atlas.Image,
++            Region = SpriteAtlas.Rect(SpriteAtlas.FadeLevels + 1),
++            Layer = 2,
++            EndScale = settings.Size / 32 * .2f,
++            EndColor = SKColors.White.WithAlpha(0)
++        };
+         engineStates = settings.EngineBatched ? new ParticleState[settings.Particles] : [];
+         var background = entities.CreateEntity("background");
+         background.AddComponent(new CTransform(new Vec2(360, 640)) { Scale = new Vec2(720, 1280) });
+@@ -99,30 +108,11 @@
+ 
+     private void Emit(in Particle p)
+     {
+-        // The engine owns motion, fading, shrinking and expiration. A one-shot emitter
+-        // preserves this harness's independently randomized birth position/velocity/life.
+-        // Initial particles already have an age, so emit their remaining trajectory.
+         float remaining = Math.Clamp(1 - p.Age / p.Life, 0, 1);
+         var color = new SKColor(255, 255, 255, (byte)(remaining * settings.Alpha * 255));
+-        float speed = MathF.Sqrt(p.Vx * p.Vx + p.Vy * p.Vy);
+-        var emitter = engineParticles!.CreateEmitter(new ParticleOptions
+-        {
+-            Texture = atlas.Image,
+-            Region = SpriteAtlas.Rect(SpriteAtlas.FadeLevels + 1),
+-            Layer = 2,
+-            Direction = MathF.Atan2(p.Vy, p.Vx) * 180 / MathF.PI,
+-            Spread = 0,
+-            MinSpeed = speed,
+-            MaxSpeed = speed,
+-            Life = RemainingLife(p),
+-            StartScale = settings.Size / 32 * (.2f + remaining * .8f),
+-            EndScale = settings.Size / 32 * .2f,
+-            StartColor = color,
+-            EndColor = color.WithAlpha(0)
+-        }, seed: 0x5EED);
+-        emitter.Position = new Vec2(p.X, p.Y);
+-        emitter.Burst(1);
+-        engineParticles.RemoveEmitter(emitter);
++        engineParticles!.Emit(sparkOptions, new ParticleSpawn(
++            new Vec2(p.X, p.Y), new Vec2(p.Vx, p.Vy), RemainingLife(p),
++            Scale: settings.Size / 32 * (.2f + remaining * .8f), Color: color));
+     }
+ 
+     private float RemainingLife(in Particle p)

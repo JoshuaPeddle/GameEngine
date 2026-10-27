@@ -12,13 +12,15 @@ namespace GameEngine.Core.Systems
             // Every transform records where it started the step, not just the ones this system
             // moves: the physics sweep reads that to know the path a body took, and an entity
             // a scene repositions directly would otherwise carry a stale start point forever.
-            foreach (var (_, transform) in entityManager.GetEntitiesWithComponents<CTransform>())
-                transform.PreviousPosition = transform.Position;
+            var transforms = entityManager.GetEntitiesWithComponents<CTransform>();
+            for (int i = 0; i < transforms.Count; i++)
+                transforms[i].Item2.PreviousPosition = transforms[i].Item2.Position;
 
             var entities = entityManager.GetEntitiesWithComponents<CMovement, CTransform>();
 
-            foreach (var (entity, movement, transform) in entities)
+            for (int i = 0; i < entities.Count; i++)
             {
+                var (entity, movement, transform) = entities[i];
                 ProcessEntityMovement(entity, movement, transform, deltaSeconds);
             }
         }

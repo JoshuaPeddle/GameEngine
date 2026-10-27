@@ -11,6 +11,7 @@ namespace GameEngine
     {
         private readonly Engine _gameEngine;
         private Point? _pointerStartPosition;
+        private long _nextSyntheticSource;
         private const double SwipeThreshold = 20.0;
         private const int SyntheticKeyHoldMs = 100;
 
@@ -49,9 +50,6 @@ namespace GameEngine
             skglControl1.KeyDown += KeyPressed;
             skglControl1.KeyUp += KeyReleased;
 
-            skglControl1.MouseDown += (sender, args) => Input?.PointerPressed(new PointerPressEvent(new Vec2(args.X, args.Y)));
-            skglControl1.MouseMove += (sender, args) => Input?.PointerMoved(new PointerMoveEvent(new Vec2(args.X, args.Y)));
-            skglControl1.MouseUp += (sender, args) => Input?.PointerReleased(new PointerReleaseEvent(new Vec2(args.X, args.Y)));
 
             _gameEngine.ChangeScene(new SceneMenu());
             _gameEngine.TargetFrameRate = 1000;
@@ -66,10 +64,10 @@ namespace GameEngine
             };
         }
 
-        private async Task ReleaseKeyAfterTapAsync(GeKeys key)
+        private async Task ReleaseKeyAfterTapAsync(GeKeys key, long sourceId)
         {
             await Task.Delay(SyntheticKeyHoldMs);
-            Input?.KeyUp(key);
+            Input?.KeyUp(key, sourceId);
         }
 
         private void OnSizeChanged(object? sender, EventArgs args)
@@ -85,11 +83,8 @@ namespace GameEngine
         }
         private void OnPointerMoved(object? sender, MouseEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
-            {
-                var point = e.Location;
-                Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
-            }
+            var point = e.Location;
+            Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
         }
 
         private void OnPointerReleased(object? sender, MouseEventArgs e)
@@ -106,8 +101,12 @@ namespace GameEngine
                     new Vec2(endPosition.X, endPosition.Y),
                     SwipeThreshold);
 
-                Input?.KeyDown(key);
-                _ = ReleaseKeyAfterTapAsync(key);
+                if (_gameEngine.InputManager.ReleaseGesturesEnabled)
+                {
+                    long sourceId = ++_nextSyntheticSource;
+                    Input?.KeyDown(key, sourceId);
+                    _ = ReleaseKeyAfterTapAsync(key, sourceId);
+                }
 
                 _pointerStartPosition = null;
             }

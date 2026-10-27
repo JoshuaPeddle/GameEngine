@@ -29,6 +29,18 @@ namespace GameEngine.Core
         private readonly Dictionary<Type, object> cachedTuple2Lists = [];
         private readonly Dictionary<string, object> cachedTagLists = [];
 
+        private readonly List<SpriteBatch> _spriteBatches = [];
+
+        public SpriteBatch CreateSpriteBatch(SkiaSharp.SKImage texture, int capacity,
+            int layer = 0, SpriteBlend blend = SpriteBlend.Normal)
+        {
+            var batch = new SpriteBatch(texture, capacity, layer, blend);
+            _spriteBatches.Add(batch);
+            return batch;
+        }
+
+        public bool RemoveSpriteBatch(SpriteBatch batch) => _spriteBatches.Remove(batch);
+
         public EntityManager() { }
 
         public void Update()
@@ -233,6 +245,7 @@ namespace GameEngine.Core
             foreach (var entity in entitiesToAdd)
                 entity.State = EntityState.Detached;
 
+            _spriteBatches.Clear();
             entities.Clear();
             entitiesToAdd.Clear();
             entitiesById.Clear();
@@ -322,7 +335,9 @@ namespace GameEngine.Core
         /// Called on the engine thread after Update() so all deferred adds/removes are applied.
         /// The buffer is reused frame to frame, so this allocates nothing once its backing
         /// array has grown to fit the scene.
-        public void BuildRenderSnapshot(RenderSnapshot buffer)
+        public void BuildRenderSnapshot(RenderSnapshot buffer) => BuildRenderSnapshot(buffer, null);
+
+        public void BuildRenderSnapshot(RenderSnapshot buffer, Systems.ParticleSystem? particles)
         {
             buffer.Reset(entities.Count);
 
@@ -386,6 +401,10 @@ namespace GameEngine.Core
 
             if (anyNonDefaultLayer)
                 buffer.SortByLayer();
+
+            foreach (var batch in _spriteBatches) batch.CopyTo(buffer);
+            particles?.CopyTo(buffer);
+            buffer.SortAtlasBatches();
         }
     }
 }

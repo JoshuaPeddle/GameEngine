@@ -65,6 +65,18 @@ public class MainSceneTests
     }
 
     [Test]
+    public void TheStarterSceneOptsIntoSwipeMovement()
+    {
+        var harness = SceneHarness.Load(new MainScene());
+        try
+        {
+            Assert.That(harness.Engine.Fault, Is.Null);
+            Assert.That(harness.Input.ReleaseGesturesEnabled, Is.True);
+        }
+        finally { harness.Engine.Dispose(); }
+    }
+
+    [Test]
     public void WallsAreSolid()
     {
         var harness = SceneHarness.Load(new MainScene());

@@ -24,11 +24,13 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameEngine.Core\GameEngine.Core.csproj" />
+    <Compile Include="../GameEngine.Audio.Android/AndroidAudioFocus.cs" Link="Platform/AndroidAudioFocus.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\GameEngine.Core\levels\level.schema.json" Link="levels\level.schema.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Compile Include="../GameEngine.Benchmarks/StressFrameWorkload.cs" Link="Integration/StressFrameWorkload.cs" />
   </ItemGroup>
 </Project>

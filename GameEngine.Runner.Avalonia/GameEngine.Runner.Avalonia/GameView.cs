@@ -31,7 +31,19 @@ namespace GameEngine.Runner.Avalonia
             AvaloniaProperty.Register<GameView, IAssetSource?>(nameof(AssetSource));
 
         public static readonly StyledProperty<bool> AudioEnabledProperty =
-            AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: PlatformSupportsAudio());
+            AvaloniaProperty.Register<GameView, bool>(nameof(AudioEnabled), defaultValue: true);
+
+        public static readonly StyledProperty<int> TargetFrameRateProperty =
+            AvaloniaProperty.Register<GameView, int>(nameof(TargetFrameRate),
+                defaultValue: OperatingSystem.IsBrowser() || IsMobile() ? 60 : 240,
+                validate: value => value > 0);
+
+        public static readonly StyledProperty<double> FixedTimeStepProperty =
+            AvaloniaProperty.Register<GameView, double>(nameof(FixedTimeStep),
+                defaultValue: IsMobile() ? 1.0 / 60 : Core.Engine.DefaultFixedTimeStep,
+                validate: value => double.IsFinite(value) && value > 0);
+
+        private static bool IsMobile() => OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
 
         // The engine of the most recently attached view. A convenience for hosts that have no
         // reference to the control — the browser head's JSExport interop, for one.
@@ -41,8 +53,13 @@ namespace GameEngine.Runner.Avalonia
 
         private static readonly Dictionary<Key, GeKeys> KeyMap = BuildKeyMap();
         private readonly HashSet<GeKeys> _heldKeys = new();
+        private readonly Dictionary<long, GeKeys> _syntheticKeys = new();
+        private long _nextSyntheticSource;
 
-        private Point? _pointerStartPosition;
+        private readonly Dictionary<long, (IPointer Pointer, Point Start, Point Last)> _contacts = new();
+        private TopLevel? _topLevel;
+        public HostLifecycle? Lifecycle { get; set; }
+        private HostLifecycle? _attachedLifecycle;
         private const double SwipeThreshold = 20.0;
         private const int SyntheticKeyHoldMs = 100;
 
@@ -66,6 +83,7 @@ namespace GameEngine.Runner.Avalonia
             PointerPressed += OnPointerPressed;
             PointerMoved += OnPointerMoved;
             PointerReleased += OnPointerReleased;
+            PointerCaptureLost += OnPointerCaptureLost;
 
             Loaded += OnSizeChanged;
             SizeChanged += OnSizeChanged;
@@ -95,6 +113,34 @@ namespace GameEngine.Runner.Avalonia
             set => SetValue(AudioEnabledProperty, value);
         }
 
+        public int TargetFrameRate
+        {
+            get => GetValue(TargetFrameRateProperty);
+            set => SetValue(TargetFrameRateProperty, value);
+        }
+
+        public double FixedTimeStep
+        {
+            get => GetValue(FixedTimeStepProperty);
+            set => SetValue(FixedTimeStepProperty, value);
+        }
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (!_ownsEngine || _gameEngine is not { } engine) return;
+            if (change.Property == TargetFrameRateProperty)
+            {
+                int rate = TargetFrameRate;
+                engine.Post(target => target.TargetFrameRate = rate);
+            }
+            else if (change.Property == FixedTimeStepProperty)
+            {
+                double step = FixedTimeStep;
+                engine.Post(target => target.FixedTimeStep = step);
+            }
+        }
+
         // Called instead of Scene when the host wants a fresh scene per view.
         public Func<Scene>? SceneFactory { get; set; }
 
@@ -107,10 +153,17 @@ namespace GameEngine.Runner.Avalonia
 
             if (_started) return;
             _started = true;
+            _attachedLifecycle = Lifecycle ?? App.Lifecycle;
+            _attachedLifecycle.Changed += OnHostStateChanged;
+            engine.SetHostAttached(true);
+            engine.SetHostState(_attachedLifecycle.State);
+            _topLevel = TopLevel.GetTopLevel(this);
+            if (_topLevel != null) _topLevel.BackRequested += OnBackRequested;
 
             if (_ownsEngine)
             {
-                engine.TargetFrameRate = OperatingSystem.IsBrowser() ? 60 : 240;
+                engine.TargetFrameRate = TargetFrameRate;
+                engine.FixedTimeStep = FixedTimeStep;
                 engine.Start();
             }
         }
@@ -122,6 +175,12 @@ namespace GameEngine.Runner.Avalonia
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             ReleaseHeldKeys();
+            CancelContacts();
+            if (_attachedLifecycle != null) _attachedLifecycle.Changed -= OnHostStateChanged;
+            if (_topLevel != null) _topLevel.BackRequested -= OnBackRequested;
+            _attachedLifecycle = null;
+            _topLevel = null;
+            _gameEngine?.SetHostAttached(false);
 
             _syntheticKeyReleases.Cancel();
             _syntheticKeyReleases.Dispose();
@@ -148,7 +207,7 @@ namespace GameEngine.Runner.Avalonia
             else
             {
                 var assetSource = AssetSource ?? App.AssetSource ?? new FileAssetSource();
-                _gameEngine = new Engine(_queueInvalidate, AudioEnabled, assetSource);
+                _gameEngine = new Engine(_queueInvalidate, AudioEnabled, assetSource, App.HostServicesFactory?.Invoke() ?? new HostServices());
                 _ownsEngine = true;
 
                 var scene = Scene ?? SceneFactory?.Invoke() ?? App.StartupScene?.Invoke();
@@ -194,10 +253,9 @@ namespace GameEngine.Runner.Avalonia
                 input?.KeyUp(key);
 
             _heldKeys.Clear();
+            foreach (var key in _syntheticKeys) input?.KeyUp(key.Value, key.Key);
+            _syntheticKeys.Clear();
         }
-
-        private static bool PlatformSupportsAudio() =>
-            !OperatingSystem.IsAndroid() && !OperatingSystem.IsBrowser();
 
         private void QueueInvalidate()
         {
@@ -211,7 +269,7 @@ namespace GameEngine.Runner.Avalonia
             }
         }
 
-        private async Task ReleaseKeyAfterTapAsync(GeKeys key, CancellationToken cancellation)
+        private async Task ReleaseKeyAfterTapAsync(GeKeys key, long sourceId, CancellationToken cancellation)
         {
             try
             {
@@ -222,7 +280,7 @@ namespace GameEngine.Runner.Avalonia
                 return;
             }
 
-            Input?.KeyUp(key);
+            if (_syntheticKeys.Remove(sourceId)) Input?.KeyUp(key, sourceId);
         }
 
         // TryGet rather than Get: the container is empty between an engine's disposal and the
@@ -272,44 +330,75 @@ namespace GameEngine.Runner.Avalonia
             base.OnKeyUp(e);
         }
 
-        private void OnLostFocus(object? sender, RoutedEventArgs e) => ReleaseHeldKeys();
+        private void OnHostStateChanged(HostState state)
+        {
+            if (state != HostState.Active)
+            {
+                ReleaseHeldKeys();
+                CancelContacts();
+            }
+            _gameEngine?.SetHostState(state);
+        }
+
+        private void OnBackRequested(object? sender, RoutedEventArgs e)
+        {
+            e.Handled = _gameEngine?.RequestBack() == true;
+        }
+
+        private void OnLostFocus(object? sender, RoutedEventArgs e)
+        {
+            ReleaseHeldKeys();
+            CancelContacts();
+        }
+
+        private void CancelContacts()
+        {
+            var contacts = new List<(IPointer Pointer, Point Start, Point Last)>(_contacts.Values);
+            _contacts.Clear();
+            foreach (var contact in contacts)
+            {
+                Input?.PointerCancelled(new PointerCancelEvent(new Vec2(contact.Last.X, contact.Last.Y), contact.Pointer.Id, true));
+                contact.Pointer.Capture(null);
+            }
+        }
+
+        private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+        {
+            if (_contacts.Remove(e.Pointer.Id, out var contact))
+                Input?.PointerCancelled(new PointerCancelEvent(new Vec2(contact.Last.X, contact.Last.Y), e.Pointer.Id, true));
+        }
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
+            if (_gameEngine?.HostState != HostState.Active) return;
             Focus();
-
             var point = e.GetPosition(this);
-            _pointerStartPosition = point;
-            Input?.PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y)));
+            _contacts[e.Pointer.Id] = (e.Pointer, point, point);
+            e.Pointer.Capture(this);
+            Input?.PointerPressed(new PointerPressEvent(new Vec2(point.X, point.Y), e.Pointer.Id, true));
         }
 
         private void OnPointerMoved(object? sender, PointerEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
-            {
-                var point = e.GetPosition(this);
-                Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
-            }
+            var point = e.GetPosition(this);
+            bool captured = _contacts.TryGetValue(e.Pointer.Id, out var contact);
+            if (captured) _contacts[e.Pointer.Id] = (e.Pointer, contact.Start, point);
+            Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y), e.Pointer.Id, captured));
         }
 
         private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
+            var point = e.GetPosition(this);
+            bool captured = _contacts.Remove(e.Pointer.Id, out var contact);
+            Input?.PointerReleased(new PointerReleaseEvent(new Vec2(point.X, point.Y), e.Pointer.Id, captured));
+            e.Pointer.Capture(null);
+            if (captured && _gameEngine?.InputManager.ReleaseGesturesEnabled == true)
             {
-                var endPosition = e.GetPosition(this);
-                Input?.PointerReleased(new PointerReleaseEvent(new Vec2(endPosition.X, endPosition.Y)));
-
-                var startPosition = _pointerStartPosition.Value;
-
-                var key = Core.SwipeGesture.Classify(
-                    new Vec2(startPosition.X, startPosition.Y),
-                    new Vec2(endPosition.X, endPosition.Y),
-                    SwipeThreshold);
-
-                Input?.KeyDown(key);
-                _ = ReleaseKeyAfterTapAsync(key, _syntheticKeyReleases.Token);
-
-                _pointerStartPosition = null;
+                var key = Core.SwipeGesture.Classify(new Vec2(contact.Start.X, contact.Start.Y), new Vec2(point.X, point.Y), SwipeThreshold);
+                long sourceId = ++_nextSyntheticSource;
+                _syntheticKeys[sourceId] = key;
+                Input?.KeyDown(key, sourceId);
+                _ = ReleaseKeyAfterTapAsync(key, sourceId, _syntheticKeyReleases.Token);
             }
         }
 

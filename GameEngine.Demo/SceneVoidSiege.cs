@@ -75,6 +75,7 @@ public sealed class SceneVoidSiege : Scene
     public override void Initialize(EntityManager entityManager, InputManager inputManager,
         AudioSystem? audioPlayer, Action<Scene?> ResetScene)
     {
+        inputManager.ReleaseGesturesEnabled = true;
         entities = entityManager;
         assets = new Assets("assets.json", AssetSource);
         audio = audioPlayer;

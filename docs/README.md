@@ -9,13 +9,13 @@ the behavioural claims.
 | Document | What it's for |
 |---|---|
 | [`01-review.md`](01-review.md) | Full narrative review, organised by subsystem. Read this first. |
-| [`02-findings.md`](02-findings.md) | Every finding with a stable ID (`GE-01`…`GE-100`), severity, location, and status. The tracking surface. |
+| [`02-findings.md`](02-findings.md) | Every finding with a stable ID (`GE-01`…`GE-104`), severity, location, and status. The tracking surface. |
 | [`03-action-plan.md`](03-action-plan.md) | Phased, checkboxed work plan. This is what we execute against. |
 | [`04-evidence.md`](04-evidence.md) | The probe harness source and its measured output. Re-runnable. |
 | [`05-vision-review.md`](05-vision-review.md) | 2026-08-30 review against the product vision (editor, publish-everywhere, embeddability, LLM-friendliness, licensing). Findings `GE-67`…`GE-79`. |
 | [`06-reliability-plan.md`](06-reliability-plan.md) | Draft implementation plan from the September 2026 review: content safety, mutation consistency, host lifecycle, rendering, physics, and a complete editing workflow. |
-
 | [`07-emberbrook-engine-review.md`](07-emberbrook-engine-review.md) | Engine ergonomics after building Emberbrook, prioritized improvements, and browser deployment findings. |
+| [`08-batched-rendering.md`](08-batched-rendering.md) | Sprite groups, pooled particles, snapshot ordering, mobile rates and measured benchmarks. |
 
 ## How these fit together
 

@@ -74,6 +74,7 @@ namespace GameEngine.Demo
             AudioSystem? audioPlayer,
             Action<Scene?> ResetScene)
         {
+            inputManager.ReleaseGesturesEnabled = true;
             assets ??= new Assets("assets.json", AssetSource);
             board = new TetrisBoard(_seed);
             resetScene = ResetScene;

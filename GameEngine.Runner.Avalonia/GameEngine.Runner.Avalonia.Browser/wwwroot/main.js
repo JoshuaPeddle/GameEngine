@@ -1,4 +1,8 @@
+import { installHost } from './hostInterop.js';
 import { installKeyboard } from './keyboardInterop.js';
+import { installAudio } from './audioInterop.js';
+
+installAudio();
 
 try {
     const { dotnet } = await import('./_framework/dotnet.js');
@@ -6,6 +10,7 @@ try {
     const config = runtime.getConfig();
     const exports = await runtime.getAssemblyExports(config.mainAssemblyName);
     installKeyboard(exports.KeyboardInterop);
+    installHost(exports.BrowserHost);
     await runtime.runMain(config.mainAssemblyName, [globalThis.location.href]);
     document.getElementById('loading').remove();
 } catch (error) {

@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using GameEngine.Core.Systems;
 using static GameEngine.Core.Pointer;
 
@@ -14,11 +14,16 @@ namespace GameEngine.Core
         private const int MaxQueuedPointerEvents = 256;
 
         private readonly ConcurrentDictionary<GeKeys, string> actionMap = [];
-        private readonly ConcurrentDictionary<GeKeys, byte> heldKeys = [];
+        private readonly ConcurrentDictionary<(GeKeys Key, long SourceId), byte> heldKeys = [];
         private readonly ConcurrentDictionary<string, bool> actionStates = [];
         private readonly ConcurrentDictionary<string, IReadOnlyList<Action<bool>>> actionBindings = [];
         private readonly ConcurrentDictionary<PointerEventType, IReadOnlyList<Action<PointerEvent>>> pointerActionBindings = [];
-        private readonly ConcurrentQueue<(PointerEventType Type, Vec2 RealPosition)> queuedPointerEvents = new();
+        private readonly Queue<(PointerEventType Type, PointerEvent Event)> queuedPointerEvents = new();
+        private readonly object _pointerLock = new();
+        private readonly Dictionary<long, PointerEvent> _incomingContacts = new();
+        private readonly Dictionary<long, PointerEvent> _contacts = new();
+        public IReadOnlyDictionary<long, PointerEvent> Contacts => _contacts;
+        public bool ReleaseGesturesEnabled { get; set; }
 
         private Vec2 _realResolution;
 
@@ -35,7 +40,13 @@ namespace GameEngine.Core
             actionBindings.Clear();
             pointerActionBindings.Clear();
 
-            while (queuedPointerEvents.TryDequeue(out _)) { }
+            lock (_pointerLock)
+            {
+                queuedPointerEvents.Clear();
+                _incomingContacts.Clear();
+            }
+            _contacts.Clear();
+            ReleaseGesturesEnabled = false;
         }
 
         public void AddAction(GeKeys key, string actionName)
@@ -55,7 +66,7 @@ namespace GameEngine.Core
             if (!actionMap.TryRemove(key, out string? actionName))
                 return;
 
-            heldKeys.TryRemove(key, out _);
+            foreach (var held in heldKeys.Keys.Where(held => held.Key == key)) heldKeys.TryRemove(held, out _);
             actionStates[actionName] = IsAnyKeyHeldFor(actionName);
         }
 
@@ -68,7 +79,7 @@ namespace GameEngine.Core
                     continue;
 
                 actionMap.TryRemove(mapping.Key, out _);
-                heldKeys.TryRemove(mapping.Key, out _);
+                foreach (var held in heldKeys.Keys.Where(held => held.Key == mapping.Key)) heldKeys.TryRemove(held, out _);
             }
 
             actionStates.TryRemove(actionName, out _);
@@ -98,20 +109,24 @@ namespace GameEngine.Core
             return extended;
         }
 
-        public void HandleKeyPress(GeKeys key)
+        public void HandleKeyPress(GeKeys key) => HandleKeyPress(key, 0);
+
+        public void HandleKeyPress(GeKeys key, long sourceId)
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
-                heldKeys[key] = 0;
+                heldKeys[(key, sourceId)] = 0;
                 actionStates[actionName] = true;
             }
         }
 
-        public void HandleKeyRelease(GeKeys key)
+        public void HandleKeyRelease(GeKeys key) => HandleKeyRelease(key, 0);
+
+        public void HandleKeyRelease(GeKeys key, long sourceId)
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
-                heldKeys.TryRemove(key, out _);
+                heldKeys.TryRemove((key, sourceId), out _);
                 actionStates[actionName] = IsAnyKeyHeldFor(actionName);
             }
         }
@@ -122,41 +137,73 @@ namespace GameEngine.Core
         {
             foreach (var mapping in actionMap)
             {
-                if (mapping.Value == actionName && heldKeys.ContainsKey(mapping.Key))
+                if (mapping.Value == actionName && heldKeys.Keys.Any(held => held.Key == mapping.Key))
                     return true;
             }
 
             return false;
         }
 
+        public void ReleaseAllKeys()
+        {
+            heldKeys.Clear();
+            foreach (var action in actionStates.Keys) actionStates[action] = false;
+        }
+
         public void HandlePointerEvent(PointerEventType eventType, PointerEvent pointerEvent)
         {
-            if (queuedPointerEvents.Count >= MaxQueuedPointerEvents)
-                return;
+            lock (_pointerLock)
+            {
+                if (eventType == PointerEventType.Move && queuedPointerEvents.Count >= MaxQueuedPointerEvents)
+                    return;
+                var copy = new PointerEvent(pointerEvent.Position, pointerEvent.ContactId, pointerEvent.IsCaptured);
+                if (eventType == PointerEventType.Press || (eventType == PointerEventType.Move && _incomingContacts.ContainsKey(copy.ContactId)))
+                    _incomingContacts[copy.ContactId] = copy;
+                if (eventType is PointerEventType.Release or PointerEventType.Cancel)
+                    _incomingContacts.Remove(copy.ContactId);
+                queuedPointerEvents.Enqueue((eventType, copy));
+            }
+        }
 
-            queuedPointerEvents.Enqueue((eventType, pointerEvent.Position));
+        public void CancelAllContacts()
+        {
+            lock (_pointerLock)
+            {
+                foreach (var contact in _incomingContacts.Values)
+                    queuedPointerEvents.Enqueue((PointerEventType.Cancel, contact));
+                _incomingContacts.Clear();
+            }
         }
 
         public void DispatchPointerEvents()
         {
-            while (queuedPointerEvents.TryDequeue(out var queued))
+            while (true)
             {
-                if (!TryMapToVirtual(queued.RealPosition, out Vec2 virtualPosition))
-                    continue;
-
-                if (!pointerActionBindings.TryGetValue(queued.Type, out var actions))
-                    continue;
-
-                var remappedEvent = new PointerEvent(virtualPosition);
-                for (int i = 0; i < actions.Count; i++)
-                    actions[i](remappedEvent);
+                (PointerEventType Type, PointerEvent Event) queued;
+                lock (_pointerLock)
+                {
+                    if (!queuedPointerEvents.TryDequeue(out queued)) break;
+                }
+                var source = queued.Event;
+                var transform = ViewportTransform.Create(_realResolution, VirtualResolution, ScalingStrategy);
+                bool mapped = transform.TryToVirtual(source.Position, out var position);
+                bool terminal = queued.Type is PointerEventType.Release or PointerEventType.Cancel;
+                bool active = _contacts.TryGetValue(source.ContactId, out var previous);
+                if (!mapped)
+                {
+                    if (!terminal && (!active || !source.IsCaptured)) continue;
+                    position = transform.IsValid
+                        ? new Vec2((source.Position.X - transform.OffsetX) / transform.ScaleX, (source.Position.Y - transform.OffsetY) / transform.ScaleY)
+                        : previous?.Position ?? Vec2.Zero;
+                }
+                var remapped = new PointerEvent(position, source.ContactId, source.IsCaptured);
+                if (queued.Type == PointerEventType.Press || (queued.Type == PointerEventType.Move && active))
+                    _contacts[source.ContactId] = remapped;
+                if (terminal) _contacts.Remove(source.ContactId);
+                if (!pointerActionBindings.TryGetValue(queued.Type, out var actions)) continue;
+                for (int i = 0; i < actions.Count; i++) actions[i](remapped);
             }
         }
-
-        private bool TryMapToVirtual(Vec2 realPosition, out Vec2 virtualPosition) =>
-            ViewportTransform
-                .Create(_realResolution, VirtualResolution, ScalingStrategy)
-                .TryToVirtual(realPosition, out virtualPosition);
 
         public void DoActions()
         {

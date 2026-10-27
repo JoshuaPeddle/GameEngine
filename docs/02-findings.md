@@ -151,7 +151,7 @@ from the stated vision for product gaps, and as usual for code defects.
 | GE-74 | S1 | No user-facing publish path: CI publishes this repo's demos; a user's game has no route to an APK/wasm/exe; platform heads are hardwired to Demo | `.github/workflows/publish.yml`, runner heads | — | in progress |
 | GE-75 | S2 | Runner embeddability undermined by statics: `App.AssetSource`/`App.StartupScene`/`App.FirstFramePresented`, `GameView.Current`; `GameView` always constructs its own engine — one game per process, configured via globals | `App.axaml.cs:15-17`, `GameView.cs:22` | ✅ | fixed |
 | GE-76 | S2 | Level/asset formats not agent-hardened: no JSON schema, no strict property validation, hand-written factory drifts from components and editor; `assets.txt` is positional and bespoke | `ComponentFactory.cs`, `Assets.cs` | ✅ | fixed |
-| GE-77 | S2 | Audio is Windows-only (hand-placed `SDL2_mixer.dll`; ppy.SDL2-CS ships no mixer natives) — "publish everywhere" ships silent games on 5 of 6 platforms | `GameEngine.Core.csproj` | ✅ | **in progress** — Core no longer references a native audio library and missing audio is now diagnosable; no platform beyond Windows has a backend yet |
+| GE-77 | S2 | Audio is Windows-only (hand-placed `SDL2_mixer.dll`; ppy.SDL2-CS ships no mixer natives) — "publish everywhere" ships silent games on 5 of 6 platforms | `GameEngine.Core.csproj` | ✅ | **in progress**: AVFoundation, Android SoundPool/MediaPlayer and browser Web Audio backends implemented with shared mixer and voice policy; physical-device playback acceptance and Linux/macOS mixer distribution remain open (see docs/11-platform-audio.md) |
 | GE-78 | S3 | No agent-facing docs: no AGENTS.md/CLAUDE.md, no machine-checkable component/level schema beyond the README table | repo root | ✅ | fixed |
 | GE-79 | S3 | Editor's Runtime and Level File tabs share no document: inspecting shows live entities, editing edits JSON, neither sees the other; no visual placement or editable inspector | `LevelEditor.axaml` | ✅ | fixed |
 | GE-80 | S3 | `GeKeys` had no arrow keys, so no runner could deliver them; the browser head's key map was a five-entry hand-written list that had already fallen behind | `GeKeys.cs`, browser/WinForms key maps | ✅ | fixed |
@@ -240,7 +240,7 @@ no performance regression or measured leak is claimed by this review.
 
 | ID | Sev | Finding | Location | Confirmed | Status |
 |---|---|---|---|---|---|
-| GE-91 | S1 | Pointer releases synthesize keys without scene opt-in; Avalonia hover requires a pressed pointer | GameView / MainView | code + RPG regression history | open |
+| GE-91 | S1 | Pointer releases synthesize keys without scene opt-in; Avalonia hover requires a pressed pointer | GameView / MainView | code + RPG regression history | fixed by GE-107 |
 | GE-92 | S2 | Animation size means entire sheet, forcing frame-count compensation in games | Assets / Animation | code + RPG drawing helper | open |
 | GE-93 | S2 | Game UI has independent visual/hit-test state and manual text layout | SceneEmberbrook panels | observed layout correction | open |
 | GE-94 | S3 | Deferred entity queries lack a convenient construction/group ownership API | EntityManager / scene builders | observed initialization fault | open |
@@ -250,3 +250,68 @@ no performance regression or measured leak is claimed by this review.
 | GE-98 | S3 | Save milestones rebuild unrelated map art; content presentation definitions repeat | SceneEmberbrook / VillageProgress | code review | open |
 | GE-99 | S2 | Trimmed browser publish uses reflection for level metadata and view lookup | LevelFile / ViewLocator | publish warnings | fixed |
 | GE-100 | S1 | Browser high-DPI layout dimensions differ from CSS pointer coordinates; clicks miss buttons | browser / GameView | Chromium pointer and reload checks | fixed |
+
+
+## Batched rendering review, October 26, 2026
+
+The Note10+ stress harness demonstrated draw submission pressure at the intended mobile density. See [batched rendering](08-batched-rendering.md) for the engine API, ordering contract, measurements and verification limits.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-101 | S1 | Many gameplay sprites require individual canvas transforms and bitmap submissions | RenderSystem / EntityManager / RenderSnapshot | Note10+ stress results and raster benchmarks | fixed: opt-in sprite groups with atlas submissions and layer-aware snapshot copies |
+| GE-102 | S1 | Cosmetic particles require entity churn or game-local pools with no shared bounded emitter API | ParticleSystem / ParticleStore / ParticleEmitter | stress harness and Core lifecycle, capacity and seed tests | fixed: pooled arrays, reusable snapshots, bounded oldest-first recycling and counters |
+| GE-103 | S2 | Mobile GameView offers 240 presentation frames per second and does not expose host simulation rates | GameView | code and host rate tests | fixed: configurable rates, Android/iOS 60/60 defaults, preserved desktop and borrowed-engine rates |
+| GE-104 | S2 | Shared sprite textures allocate a managed image wrapper per instance and layer sorting allocates a comparer adapter per snapshot | RenderSystem / RenderSnapshot | before and after MemoryDiagnoser results | fixed: frame-scoped shared images and span sorting |
+| GE-105 | S2 | The engine-batched stress path creates options, an emitter and a seeded RNG per spark respawn; previous allocation benchmarks reuse emitters and omit this cost, while ordinary movement and animation queries box enumerators | ParticleSystem / ParticleStore / MovementSystem / AnimationSystem / StressFrameWorkload | actual GameStress source reproduction and per-thread full-frame allocation tests at 750, 3000 and 8000 particles | fixed: value-type direct births with shared options, indexed queries, lifetime-managed immutable image caching, 0 B/frame batched regression, triple-buffer reuse coverage and external harness migration patch |
+
+## 2026-10-26: GE-77 mobile and browser audio
+
+Added AVFoundation and Android framework backends, registered in their Avalonia heads,
+and Web Audio interop in the browser head. Core now coalesces sound events, limits voices,
+steals by priority, preloads effects and controls master/music/effect gain and mute. SDL
+uses the same voice contract. Void Bastion preloads and plays music and kill effects.
+No new third-party native audio library was added.
+
+The Release solution and both standalone backend targets build with zero warnings. The
+Android head produces a signed Release APK. All 619 .NET tests and five JavaScript state
+tests pass. Browser Release build and static publish pass. iOS head packaging is blocked
+by the installed Xcode/workload version mismatch. Actual mobile and browser playback is
+still unverified, and Linux/macOS mixer distribution is unchanged, so GE-77 remains in
+progress. Formats, lifecycle policy, build details and the device acceptance checks are
+in [platform audio](11-platform-audio.md).
+
+## Mobile platform audit follow-up, October 26, 2026
+
+These entries implement the scoped PG findings in the platform audit. GE-101 through
+GE-104 are reserved for the batched-rendering branch already referenced by that audit.
+See [mobile platform support](09-mobile-platforms.md) for API contracts, verification
+and the remaining physical-device checks. Existing open findings outside this scope
+retain their status.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-106 | S1 | PG-01 and PG-14: mobile/browser lifecycle does not reach games and paused loops poll every millisecond | Engine, HostLifecycle, native delegates, browser host; MobileHostTests | reproduced and regression tested | fixed; native device lifecycle and energy checks pending |
+| GE-107 | S1 | PG-08: a second pointer overwrites the first contact and no capture/cancel identity survives dispatch | Pointer, InputManager, GameView; MultiTouchTests and three-contact headless host test | reproduced and regression tested | fixed |
+| GE-108 | S1 | PG-09: pointer releases synthesize keys without opt-in, drop terminal events under queue pressure and share physical key state | InputManager, Avalonia and WinForms hosts, demo policies; MultiTouchTests, GameViewLifetimeTests, MobileInputPolicyTests | reproduced and regression tested | fixed; also closes GE-91 |
+| GE-109 | S1 | PG-10: Android Back misses the activity lifetime and can replace the whole game view | GameView BackRequested and Android manifests; MobileHostTests | source inspected and policy tested | fixed; predictive gesture/device verification pending |
+| GE-110 | S1 | PG-05: neither iOS head bundles an audited required-reason privacy manifest | demo/template PrivacyInfo.xcprivacy, check-ios-privacy.py | both built simulator app bundles inspected | fixed; final signed archive privacy review pending |
+| GE-111 | S1 | PG-11: level writes, component builders and demo file saves use reflection serialization | generated Core and Emberbrook contexts; MobileSerializationSmoke | Release NativeAOT round trips with JSON reflection disabled | fixed |
+| GE-112 | S2 | PG-33: games cannot request foreground-only screen keep-awake or diagnose denial | HostServices, native backends, BrowserHost; MobileHostTests and host-interop.test.mjs | capability and transition tests | fixed; physical idle-timer checks pending |
+| GE-113 | S3 | PG-36: no optional haptics capability or user toggle | HostServices and native feedback backends; MobileHostTests | toggles, capability and foreground gates tested | fixed; physical feedback checks pending |
+| GE-114 | S1 | PG-12: delivered Android native libraries have no ELF/ZIP 16 KB validation gate | check-android-alignment.py, build/release workflows, artifact report | signed Debug and Release APKs inspected, all native LOAD segments pass | fixed; 16 KB runtime check pending |
+
+## Integration input review follow-up, October 26, 2026
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-115 | S1 | A queued pointer handler failure escapes host state transitions and skips pause/background checkpoints | Engine.SetHostState; MobileHostTests.PointerFailureStillCompletesTheHostTransition | Press and Cancel handlers reproduced the exception for inactive and background transitions | fixed: record an EngineFault naming the scene, host pointer dispatch and InputSystem, then complete lifecycle notifications |
+| GE-116 | S2 | The generated starter scene advertises swipe movement but does not opt into release gestures | template MainScene; TemplateInputTests and template MainSceneTests | a headless Avalonia touch swipe left the starter player stationary | fixed: opt the starter scene into release gestures; actual touch press/release now moves the player and the template tests assert its policy |
+| GE-117 | S2 | The deduplicated WinForms move handler drops hover events unless a mouse button is held | MainView.OnPointerMoved; WinFormsInputSourceTests | source regression reproduced conditional move forwarding | fixed: forward moves unconditionally; cross-platform syntax regression also verifies one subscription per mouse event; Windows runtime verification pending |
+
+All 688 solution tests pass in Release, along with nine browser JavaScript tests and
+seven template tests. The template tests ran from a temporary copy with its Core package
+reference replaced by a reference to this branch. The lifecycle, touch movement and
+WinForms source regressions were each observed failing before their fixes.
+The Release solution build passes with zero warnings and zero errors. Local verification
+used a writable NuGet HTTP cache, disabled Avalonia build telemetry with
+`-p:UsedAvaloniaProducts=`, and supplied the installed JDK 17 through `JavaSdkDirectory`.

@@ -7,9 +7,9 @@ namespace GameEngine.Core.Systems
         public void Update(EntityManager entityManager, double deltaSeconds)
         {
             var entities = entityManager.GetEntitiesWithComponent<CAnimation>();
-            foreach (var entity in entities)
+            for (int i = 0; i < entities.Count; i++)
             {
-                var animation = entity.GetComponent<CAnimation>();
+                var animation = entities[i].GetComponent<CAnimation>();
                 animation.Update(deltaSeconds);
             }
         }

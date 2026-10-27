@@ -1,4 +1,4 @@
-﻿using GameEngine.Core;
+using GameEngine.Core;
 using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using System;
@@ -23,6 +23,7 @@ namespace GameEngine.Demo
         private readonly List<(string, Lazy<Scene>)> scenes =
         [
             ("Emberbrook RPG", new Lazy<Scene>(() => new SceneEmberbrook())),
+            ("Batched rendering", new Lazy<Scene>(() => new SceneBatchedRendering())),
             ("Void Bastion", new Lazy<Scene>(() => new SceneVoidBastion())),
             ("Void Siege", new Lazy<Scene>(() => new SceneVoidSiege())),
             ("Void Salvage", new Lazy<Scene>(() => new SceneVoidSalvage())),
@@ -45,6 +46,7 @@ namespace GameEngine.Demo
 
         public override void Initialize(EntityManager entityManager, InputManager inputManager, AudioSystem? audioPlayer, Action<Scene> ResetScene)
         {
+            inputManager.ReleaseGesturesEnabled = true;
             inputManager.AddAction(GeKeys.W, "Up");
             inputManager.AddAction(GeKeys.S, "Down");
             inputManager.AddAction(GeKeys.Space, "Go");

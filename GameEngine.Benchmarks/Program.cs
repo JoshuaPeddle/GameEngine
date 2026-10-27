@@ -6,7 +6,10 @@ using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using SkiaSharp;
 
-BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+if (args.Contains("--stress-allocations"))
+    StressAllocations.Run();
+else
+    BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 
 [MemoryDiagnoser]
 public class EngineBenchmarks
@@ -69,6 +72,7 @@ public class RenderBenchmarks
     [GlobalCleanup]
     public void Cleanup()
     {
+        _renderer.Dispose();
         _surface.Dispose();
         _texture.Dispose();
     }
@@ -463,5 +467,93 @@ public class EntityChurnBenchmarks
             if (entity.TryGetComponent<CGravity>(out _)) hits++;
         }
         return hits;
+    }
+}
+
+[MemoryDiagnoser]
+public class AtlasBenchmarks
+{
+    [Params(1000, 5000, 10000)]
+    public int Count { get; set; }
+
+    private SKBitmap _texture = null!;
+    private SKImage _image = null!;
+    private SKSurface _surface = null!;
+    private EntityManager _entities = null!;
+    private RenderSnapshot _stock = null!;
+    private RenderSnapshot _batch = null!;
+    private RenderSnapshot _particles = null!;
+    private RenderSystem _renderer = null!;
+    private ParticleSystem _system = null!;
+    private readonly EntityManager _particleEntities = new();
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _texture = SceneFactory.CreateTexture();
+        _texture.SetImmutable();
+        _image = SKImage.FromBitmap(_texture);
+        _entities = new EntityManager();
+        var group = _entities.CreateSpriteBatch(_image, Count);
+        var stockEntities = new EntityManager();
+        var animation = new Animation(_texture, 1, 0);
+        for (int i = 0; i < Count; i++)
+        {
+            var position = new Vec2(16 + i % 100 * 15, 16 + i / 100 * 15);
+            group.Add(new SpriteInstance(position, new SKRect(0, 0, 32, 32), 0.25f, i % 360));
+            var entity = stockEntities.CreateEntity("sprite");
+            entity.AddComponent(new CTransform(position) { Scale = new Vec2(0.25, 0.25), Rotation = i % 360 });
+            entity.AddComponent(new CAnimation(animation));
+        }
+        stockEntities.Update();
+        _stock = new RenderSnapshot();
+        stockEntities.BuildRenderSnapshot(_stock);
+        _batch = new RenderSnapshot();
+        _entities.BuildRenderSnapshot(_batch);
+        _system = new ParticleSystem(Count);
+        var emitter = _system.CreateEmitter(new ParticleOptions
+        {
+            Texture = _image, Region = new SKRect(0, 0, 32, 32), Life = 1,
+            StartScale = 0.25f, EndScale = 0.25f, StartColor = SKColors.White, EndColor = SKColors.White,
+            Shape = ParticleShape.Radius, Radius = 600, MaxSpeed = 100, Blend = SpriteBlend.Additive
+        }, 123);
+        emitter.Position = new Vec2(800, 800);
+        emitter.Burst(Count);
+        emitter.Rate = Count;
+        _particles = new RenderSnapshot();
+        _particleEntities.BuildRenderSnapshot(_particles, _system);
+        _surface = SKSurface.Create(new SKImageInfo(1600, 1600));
+        _renderer = new RenderSystem(new RenderOptions
+        {
+            VirtualWidth = 1600, VirtualHeight = 1600, DrawBoundingBoxes = false
+        });
+    }
+
+    [Benchmark(Baseline = true)]
+    public void StockDraw() => _renderer.DrawEntitiesToCanvas(_surface.Canvas, _stock);
+
+    [Benchmark]
+    public void BatchDraw() => _renderer.DrawEntitiesToCanvas(_surface.Canvas, _batch);
+
+    [Benchmark]
+    public void BatchSnapshot() => _entities.BuildRenderSnapshot(_batch);
+
+    [Benchmark]
+    public void ParticleStep() => _system.Update(_entities, 1.0 / 60);
+
+    [Benchmark]
+    public void ParticleSnapshot() => _particleEntities.BuildRenderSnapshot(_particles, _system);
+
+    [Benchmark]
+    public void ParticleDraw() => _renderer.DrawEntitiesToCanvas(_surface.Canvas, _particles);
+
+    [GlobalCleanup]
+    public void Cleanup()
+    {
+        _system.Dispose();
+        _renderer.Dispose();
+        _surface.Dispose();
+        _image.Dispose();
+        _texture.Dispose();
     }
 }
