@@ -32,5 +32,6 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Content Include="../GameEngine.Runner.Winforms/MainView.cs" Link="RunnerSources/MainView.cs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

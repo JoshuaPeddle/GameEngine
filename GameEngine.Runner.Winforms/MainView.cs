@@ -83,11 +83,8 @@ namespace GameEngine
         }
         private void OnPointerMoved(object? sender, MouseEventArgs e)
         {
-            if (_pointerStartPosition.HasValue)
-            {
-                var point = e.Location;
-                Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
-            }
+            var point = e.Location;
+            Input?.PointerMoved(new PointerMoveEvent(new Vec2(point.X, point.Y)));
         }
 
         private void OnPointerReleased(object? sender, MouseEventArgs e)
