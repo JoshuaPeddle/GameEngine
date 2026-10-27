@@ -380,3 +380,10 @@ keyboard gesture.
 The workflow uses the interpreted WebAssembly build for a shorter deployment
 cycle. Release packaging retains its existing AOT configuration. All asset URLs
 are relative, so the client works under a repository path as well as a domain root.
+
+## Opt-in visual effects
+
+Runtime SkSL backgrounds, composition-layer shaders, full-screen colour grading,
+reduced-resolution bloom, camera response, geometric effects and deterministic PNG
+capture are documented in [render effects](docs/12-render-effects.md). All effects
+are optional; the ordinary batched renderer keeps its existing default path.

@@ -1,3 +1,4 @@
+using GameEngine.Core.Effects;
 using GameEngine.Core.Systems;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -559,8 +560,13 @@ namespace GameEngine.Core
             GC.SuppressFinalize(this);
         }
 
+        public CameraEffects CameraEffects { get; } = new();
+
         private void Update(double deltaSeconds)
         {
+            double realSeconds = deltaSeconds;
+            deltaSeconds = CameraEffects.Advance(realSeconds);
+            Systems.Get<RenderSystem>().AdvanceEffects(realSeconds, CameraEffects.State);
             var systems = Systems.Systems;
             for (int i = 0; i < systems.Count; i++)
             {

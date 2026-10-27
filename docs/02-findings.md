@@ -315,3 +315,61 @@ WinForms source regressions were each observed failing before their fixes.
 The Release solution build passes with zero warnings and zero errors. Local verification
 used a writable NuGet HTTP cache, disabled Avalonia build telemetry with
 `-p:UsedAvaloniaProducts=`, and supplied the installed JDK 17 through `JavaSdkDirectory`.
+
+## Opt-in visual effects, October 26, 2026
+
+IDs start at GE-120 to avoid clashes with the integrated work through GE-114.
+See [render effects](12-render-effects.md) for contracts, ownership, benchmark commands and verification limits.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-120 | S2 | Games lack runtime SkSL backgrounds, custom composition-layer shaders and full-screen grading with diagnosable fallback | Effects/RuntimeShader, RenderEffects, RenderSystem | pixel tests for uniforms, compilation failure, source preservation and grading | fixed |
+| GE-121 | S2 | Bright batches and particles lack reduced-resolution opt-in bloom and phone quality controls | RenderEffects, RenderSystem | Off/Low/High spread and resize tests; desktop raster benchmark | fixed; physical GPU cost pending |
+| GE-122 | S3 | Games must implement shake, zoom response and expiring hit-stop independently | CameraEffects, Engine, RenderSystem | deterministic decay, unscaled expiry and real-engine time tests | fixed |
+| GE-123 | S3 | Common trails, gradient beams, shockwave rings, seeded lightning and shaped pooled shatter have no reusable API | EffectGeometry, ParticleEmitter | seeded endpoints and bounded pool saturation tests | fixed |
+| GE-124 | S3 | No reusable deterministic PNG capture path checks real-engine faults and supplied simulation time | SceneCapture | real-engine repeatability, timing, invalid input and fault tests; six consuming-game phone frames | fixed |
+| GE-125 | S2 | Effect intermediates need explicit lifetime, resize and host-context ownership to avoid per-frame surfaces and GPU readbacks | RenderEffects, RenderSystem.SetEffects | resize, replacement and throwing callback checks; GPU-context allocation path inspected | fixed; physical GPU execution pending |
+
+## Aurora mobile rendering
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-130 | S2 | Atmospheric background shaders shade every output pixel even at Low bloom; background decoration cannot run before opaque scene sprites | `Effects/RenderEffects.cs` | ✅ | **fixed** |
+
+GE-130 adds independent `BackgroundScale` and `BackgroundLayers`. Reduced shader surfaces retain virtual coordinates, reuse the host GPU context, and resize with the viewport. Zero uses the fallback colour without running the shader. Background layers always run before scene sprites and never enter bloom. Coordinate, fallback, resize and layer-order pixels are covered by `EffectsTests`.
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-131 | S2 | Native-resolution scene blending leaves insufficient phone frame headroom beneath a separate native HUD | `Systems/RenderSystem.cs` | ✅ | **fixed** |
+
+GE-131 adds opt-in `RenderOptions.MaxRenderWidth`, default zero for the existing direct path. A retained scene surface caps drawing resolution while preserving virtual geometry, pointer mapping and host HUD resolution. The final post-process still runs at output resolution. Tests cover resize, bypass, coordinates, canvas restoration and post-processing.
+
+## Effect surface retention
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-132 | S2 | Conservative local clip bounds invalidate retained effect surfaces every frame and distort reduced-buffer scaling | `Effects/RenderEffects.cs`, `Systems/RenderSystem.cs` | ✅ | **fixed** |
+
+Surface allocation checks now use exact device clip dimensions. Viewport dimensions use inverse-mapped device bounds rather than Skia's conservative local clip expansion. A repeated-layer test verifies the same intermediate canvas is retained, followed by replacement on resize. The resolution-cap test also verifies scaled host canvases and input mapping.
+
+## Opt-in draw measurement
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-133 | S3 | Hosts cannot distinguish engine draw submission cost from render-thread pacing and GPU completion | `Systems/RenderSystem.cs` | ✅ | **fixed** |
+
+`RenderOptions.DrawMeasured` optionally receives CPU draw seconds and whether the host canvas is GPU-backed. No timing work runs without a callback. This measures scene submission, not GPU completion or the host HUD. The callback runs on the paint thread after canvas restoration. The cap test verifies one measurement per draw and the raster flag.
+
+## Aurora second polish
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-140 | S3 | Effects expose no intermediate quality between quarter-size and half-size bloom buffers | `Effects/RenderEffects.cs` | bloom spread and resize tests at all four levels | fixed |
+| GE-141 | S3 | Bloom callbacks redraw geometry and ignore layer grading in their glow contribution | `Effects/RenderEffects.cs` | single callback, shader colour, resize and reuse tests at Low, Medium and High | fixed |
+| GE-142 | S3 | GPU instrumentation around an Avalonia scene needs extra graphics leases that disturb the measured path | `GameView.cs` | game Skia render check verifies paired callbacks inside the existing lease | fixed |
+
+`BloomQuality.Medium` uses one-third-size retained bloom surfaces and a four-pixel blur sigma. Existing enum values remain Off=0, Low=1 and High=2; Medium=3 preserves numeric persistence compatibility. Consuming games choose their own scene width and atmospheric resolution. Phone measurements and default selection live in the consuming game's `art/style-frames/verification.md`.
+
+Bloom layers now draw once into a retained transparent surface. The composed result supplies both the visible layer and its downsampled glow, including the layer shader. Low renders that source at half virtual dimensions, Medium at three quarters and High at full size. Non-bloom layers and additive sprite batches preserve their existing order and projection.
+
+`GameView.DrawBoundary` optionally receives the borrowed canvas before and after the scene draw, inside the existing Skia lease. Hosts can issue asynchronous GPU timer queries without adding a second rendering control or acquiring more leases. The after callback runs in a finally block. A null observer preserves normal rendering.

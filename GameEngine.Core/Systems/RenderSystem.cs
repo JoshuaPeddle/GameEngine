@@ -1,5 +1,7 @@
-﻿using GameEngine.Core.Components;
+using GameEngine.Core.Components;
 using SkiaSharp;
+using System.Diagnostics;
+using GameEngine.Core.Effects;
 
 namespace GameEngine.Core.Systems
 {
@@ -12,13 +14,29 @@ namespace GameEngine.Core.Systems
         private int _fpsSampleCount;
         private double _fpsSampleSum;
         private double _fps;
+        private float effectTime;
+        private CameraEffectState cameraEffect = new(default, 1);
+        public void AdvanceEffects(double seconds, CameraEffectState state)
+        {
+            lock (_drawLock) { effectTime += (float)seconds; cameraEffect = state; }
+        }
 
         public RenderSystem(RenderOptions options)
         {
             this.options = options;
+            drawBright = DrawBrightBatches;
         }
 
         public double Fps => _fps;
+        public RenderEffects? SetEffects(RenderEffects? effects)
+        {
+            lock (_drawLock)
+            {
+                var previous = options.Effects;
+                options.Effects = effects;
+                return previous;
+            }
+        }
 
         public void Update(EntityManager entityManager, double deltaSeconds)
         {
@@ -65,23 +83,110 @@ namespace GameEngine.Core.Systems
             lock (_drawLock)
             {
                 if (_disposed) return;
-                DrawSnapshot(canvas, snapshot);
+                var measured = options.DrawMeasured;
+                long began = measured is null ? 0 : Stopwatch.GetTimestamp();
+                int saved = canvas.Save();
+                try
+                {
+                    if (options.Effects?.PostProcess is { } postProcess)
+                    {
+                        var bounds = LocalViewport(canvas);
+                        int width = Math.Max(1, (int)bounds.Width), height = Math.Max(1, (int)bounds.Height);
+                        if (postSurface is null || postSurface.Canvas.DeviceClipBounds.Width != width || postSurface.Canvas.DeviceClipBounds.Height != height || postSurface.Context?.Handle != canvas.Context?.Handle)
+                        {
+                            postSurface?.Dispose();
+                            postSurface = canvas.Context is { } context ? SKSurface.Create(context, true, new SKImageInfo(width, height)) : SKSurface.Create(new SKImageInfo(width, height));
+                        }
+                        DrawResolutionLimited(postSurface!.Canvas, snapshot);
+                        using var image = postSurface.Snapshot();
+                        using var content = image.ToShader();
+                        using var shader = postProcess.Create(new EffectFrame(effectTime, new SKSize(width, height), snapshot.ActiveCamera is { } cam ? new SKPoint((float)cam.Position.X, (float)cam.Position.Y) : default), content);
+                        if (shader is null) canvas.DrawImage(image, 0, 0, _animationSampling);
+                        else
+                        {
+                            using var paint = new SKPaint { Shader = shader };
+                            canvas.DrawRect(0, 0, width, height, paint);
+                        }
+                    }
+                    else DrawResolutionLimited(canvas, snapshot);
+                }
+                finally
+                {
+                    canvas.RestoreToCount(saved);
+                    measured?.Invoke(new(Stopwatch.GetElapsedTime(began).TotalSeconds, canvas.Context is not null));
+                }
             }
         }
 
-        private void DrawSnapshot(SKCanvas canvas, RenderSnapshot snapshot)
+        private static SKRect LocalViewport(SKCanvas canvas)
         {
+            var device = canvas.DeviceClipBounds;
+            var rect = new SKRect(device.Left, device.Top, device.Right, device.Bottom);
+            return canvas.TotalMatrix.TryInvert(out var inverse) ? inverse.MapRect(rect) : canvas.LocalClipBounds;
+        }
+        private SKSurface? sceneSurface;
+        private void DrawResolutionLimited(SKCanvas canvas, RenderSnapshot snapshot)
+        {
+            var bounds = LocalViewport(canvas);
+            var deviceBounds = canvas.DeviceClipBounds;
+            int cap = options.MaxRenderWidth;
+            if (cap == 0 || deviceBounds.Width <= cap)
+            {
+                DrawSnapshot(canvas, snapshot);
+                return;
+            }
+            int height = Math.Max(1, (int)Math.Round((double)deviceBounds.Height * cap / deviceBounds.Width));
+            if (sceneSurface is null || sceneSurface.Canvas.DeviceClipBounds.Width != cap || sceneSurface.Canvas.DeviceClipBounds.Height != height || sceneSurface.Context?.Handle != canvas.Context?.Handle)
+            {
+                sceneSurface?.Dispose();
+                var info = new SKImageInfo(cap, height);
+                sceneSurface = (canvas.Context is { } context ? SKSurface.Create(context, true, info) : SKSurface.Create(info))
+                    ?? throw new InvalidOperationException("Cannot allocate scene surface.");
+            }
+            DrawSnapshot(sceneSurface.Canvas, snapshot);
+            using var image = sceneSurface.Snapshot();
+            canvas.DrawImage(image, bounds, _animationSampling);
+        }
+
+        private readonly Action<SKCanvas> drawBright;
+        private RenderSnapshot drawingSnapshot = RenderSnapshot.Empty;
+        private void DrawBrightBatches(SKCanvas canvas)
+        {
+            int saved = canvas.Save();
             try
             {
-                canvas.Clear(SKColors.White);
+                if (drawingSnapshot.ActiveCamera is { } camera)
+                {
+                    canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
+                    canvas.Scale(camera.Zoom);
+                    canvas.Translate(-(float)camera.Position.X, -(float)camera.Position.Y);
+                }
+                foreach (var batch in drawingSnapshot.AtlasBatches)
+                    if (batch.Blend == SpriteBlend.Additive) DrawAtlasBatch(canvas, batch);
+            }
+            finally { canvas.RestoreToCount(saved); }
+        }
+        private void DrawSnapshot(SKCanvas canvas, RenderSnapshot snapshot)
+        {
+            int saved = canvas.Save();
+            try
+            {
+                canvas.Clear(options.Effects?.Background?.Fallback ?? SKColors.White);
 
-                var canvasBounds = canvas.LocalClipBounds;
+                var canvasBounds = LocalViewport(canvas);
                 var viewport = ViewportFor(new Vec2(canvasBounds.Width, canvasBounds.Height));
 
                 canvas.Save();
                 canvas.Translate((float)viewport.OffsetX, (float)viewport.OffsetY);
                 canvas.Scale((float)viewport.ScaleX, (float)viewport.ScaleY);
+                canvas.ClipRect(new SKRect(0, 0, options.VirtualWidth, options.VirtualHeight));
+                var effectFrame = new EffectFrame(effectTime, new SKSize(options.VirtualWidth, options.VirtualHeight), snapshot.ActiveCamera is { } active ? new SKPoint((float)active.Position.X, (float)active.Position.Y) : default);
+                options.Effects?.DrawBackground(canvas, effectFrame);
+                canvas.Translate(options.VirtualWidth / 2 + cameraEffect.Offset.X, options.VirtualHeight / 2 + cameraEffect.Offset.Y);
+                canvas.Scale(cameraEffect.Zoom);
+                canvas.Translate(-options.VirtualWidth / 2, -options.VirtualHeight / 2);
 
+                canvas.Save();
                 if (snapshot.ActiveCamera is { } camera)
                 {
                     canvas.Translate(options.VirtualWidth / 2, options.VirtualHeight / 2);
@@ -96,6 +201,10 @@ namespace GameEngine.Core.Systems
                 }
 
                 canvas.Restore();
+                drawingSnapshot = snapshot;
+                options.Effects?.DrawLayers(canvas, effectFrame, drawBright);
+                drawingSnapshot = RenderSnapshot.Empty;
+                canvas.Restore();
 
                 if (options.DrawFps)
                 {
@@ -104,6 +213,8 @@ namespace GameEngine.Core.Systems
             }
             finally
             {
+                canvas.RestoreToCount(saved);
+                drawingSnapshot = RenderSnapshot.Empty;
                 foreach (var image in _frameImages.Values) image.Dispose();
                 _frameImages.Clear();
             }
@@ -288,6 +399,9 @@ namespace GameEngine.Core.Systems
             if (!ViewportFor(realResolution).TryToVirtual(screenPoint, out var virtualPoint))
                 return false;
 
+            virtualPoint = new Vec2((virtualPoint.X - options.VirtualWidth / 2 - cameraEffect.Offset.X) / cameraEffect.Zoom + options.VirtualWidth / 2,
+                (virtualPoint.Y - options.VirtualHeight / 2 - cameraEffect.Offset.Y) / cameraEffect.Zoom + options.VirtualHeight / 2);
+
             if (camera is not { } active || active.Zoom == 0)
             {
                 worldPoint = virtualPoint;
@@ -368,10 +482,13 @@ namespace GameEngine.Core.Systems
                 foreach (var image in _immutableImages.Values) image.Dispose();
                 _immutableImages.Clear();
                 _textFont.Dispose();
+                sceneSurface?.Dispose();
+                postSurface?.Dispose();
             }
             GC.SuppressFinalize(this);
         }
 
+        private SKSurface? postSurface;
         private readonly object _drawLock = new();
         private bool _disposed;
         private readonly Dictionary<SKBitmap, SKImage> _immutableImages = [];
@@ -409,8 +526,22 @@ namespace GameEngine.Core.Systems
         private readonly static SKFont _fpsFont = new(SKTypeface.Default, 24);
     }
 
+    public readonly record struct DrawMeasurement(double CpuSeconds, bool Accelerated);
+
     public class RenderOptions
     {
+        private int maxRenderWidth;
+        public int MaxRenderWidth
+        {
+            get => maxRenderWidth;
+            set
+            {
+                ArgumentOutOfRangeException.ThrowIfNegative(value);
+                maxRenderWidth = value;
+            }
+        }
+        public Action<DrawMeasurement>? DrawMeasured { get; set; }
+        public RenderEffects? Effects { get; set; }
         public static RenderOptions Default => new();
         public float VirtualWidth { get; set; } = 1600;
         public float VirtualHeight { get; set; } = 1600;

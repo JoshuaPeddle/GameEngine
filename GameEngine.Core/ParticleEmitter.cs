@@ -89,6 +89,12 @@ public sealed class ParticleEmitter
 
     public bool Enabled { get; set; } = true;
 
+    public void Spawn(in ParticleSpawn particle)
+    {
+        particle.Validate();
+        _store.Spawn(Options, particle);
+    }
+
     public void Burst(int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);

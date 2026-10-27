@@ -6,7 +6,9 @@ using GameEngine.Core.Components;
 using GameEngine.Core.Systems;
 using SkiaSharp;
 
-if (args.Contains("--stress-allocations"))
+if (args.Contains("--effects"))
+    EffectsBenchmark.Run(args.Contains("--metal"));
+else if (args.Contains("--stress-allocations"))
     StressAllocations.Run();
 else
     BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
