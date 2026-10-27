@@ -28,5 +28,9 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Compile Include="../templates/game/src/GameTemplate/MainScene.cs" Link="Template/MainScene.cs" />
+    <Content Include="../templates/game/src/GameTemplate/assets.json" Link="Template/assets.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../templates/game/src/GameTemplate/assets/**" Link="Template/assets/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../templates/game/src/GameTemplate/levels/**" Link="Template/levels/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

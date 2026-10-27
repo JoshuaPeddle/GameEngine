@@ -24,6 +24,7 @@ public class MainScene : Scene
         Action<Scene> resetScene)
     {
         assets ??= new Assets(AssetManifest.DefaultFileName, AssetSource);
+        input.ReleaseGesturesEnabled = true;
 
         // A swipe is classified as W/A/S/D, so binding both means touch input works too.
         input.AddAction(GeKeys.W, "Up");
