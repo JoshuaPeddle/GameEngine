@@ -373,3 +373,14 @@ Surface allocation checks now use exact device clip dimensions. Viewport dimensi
 Bloom layers now draw once into a retained transparent surface. The composed result supplies both the visible layer and its downsampled glow, including the layer shader. Low renders that source at half virtual dimensions, Medium at three quarters and High at full size. Non-bloom layers and additive sprite batches preserve their existing order and projection.
 
 `GameView.DrawBoundary` optionally receives the borrowed canvas before and after the scene draw, inside the existing Skia lease. Hosts can issue asynchronous GPU timer queries without adding a second rendering control or acquiring more leases. The after callback runs in a finally block. A null observer preserves normal rendering.
+
+## Aurora game feel and sound
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-150 | S3 | Android host haptics are private to the demo application, and placement uses the same cue as stronger notifications | `GameEngine.Audio.Android/AndroidHostServices.cs`, iOS host services | Aurora builds against the shared adapter; Core host tests cover foreground and preference gates | fixed |
+| GE-151 | S3 | Device smoke checks cannot distinguish native audio initialization, sample decode and actual playback | `GameEngine.Audio.Android/AndroidAudioBackend.cs` | Note10+ startup, sample readiness and music playback logs | fixed |
+
+The public Android host adapter lives beside the native audio backend and has no dependency on the demo application's lifecycle singleton. `HostServices` supplies its foreground gate. Placement uses virtual-key feedback on Android and light impact on iOS; reward and rejection retain stronger notification cues. The adapter checks activity lifetime and the user's preference before dispatching feedback on the UI thread.
+
+The Android audio backend logs startup, decoded sample duration, first successful effect playback, music starts and native decode or player errors under `GameEngineAudio`. Effects report their first successful stream once per backend, so combat does not produce a log line per shot. These diagnostics establish native playback state, not a listener's judgment of the sound mix.

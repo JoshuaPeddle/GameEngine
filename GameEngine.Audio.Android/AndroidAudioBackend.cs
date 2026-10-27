@@ -59,6 +59,7 @@ public sealed class AndroidAudioBackend : IAudioBackend
     private float musicVolume = 1;
     private float duck = 1;
     private string? error;
+    private bool effectStartedReported;
     private static double Now => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
 
     public AndroidAudioBackend(Application application, IAssetSource source, int maxStreams = 16)
@@ -80,6 +81,7 @@ public sealed class AndroidAudioBackend : IAudioBackend
         Directory.CreateDirectory(cacheDirectory);
         lifecycle = new Lifecycle(this);
         application.RegisterActivityLifecycleCallbacks(lifecycle);
+        global::Android.Util.Log.Info("GameEngineAudio", $"BACKEND_STARTED SoundPool/MediaPlayer streams={maxStreams}");
     }
 
     public string Name => "Android SoundPool/MediaPlayer";
@@ -163,7 +165,7 @@ public sealed class AndroidAudioBackend : IAudioBackend
                 {
                     lock (gate)
                     {
-                        if (music == player) { musicRequested = false; musicReady = false; error = $"MediaPlayer failed: {args.What}/{args.Extra}"; }
+                        if (music == player) { musicRequested = false; musicReady = false; error = $"MediaPlayer failed: {args.What}/{args.Extra}"; global::Android.Util.Log.Error("GameEngineAudio", error); }
                         args.Handled = true;
                     }
                 };
@@ -186,6 +188,11 @@ public sealed class AndroidAudioBackend : IAudioBackend
     {
         voice.Stream = pool.Play(voice.Sample.Id, voice.Volume * duck, voice.Volume * duck, Math.Max(0, voice.Priority), 0, 1);
         voice.Ends = voice.Stream == 0 ? 0 : Now + voice.Sample.Duration;
+        if (voice.Stream != 0 && !effectStartedReported)
+        {
+            effectStartedReported = true;
+            global::Android.Util.Log.Info("GameEngineAudio", $"EFFECT_STARTED stream={voice.Stream} gain={voice.Volume * duck:F3}");
+        }
     }
 
     private void OnLoadComplete(object? sender, SoundPool.LoadCompleteEventArgs args)
@@ -197,7 +204,8 @@ public sealed class AndroidAudioBackend : IAudioBackend
             if (sample == null) return;
             sample.Ready = args.Status == 0;
             sample.Failed = args.Status != 0;
-            if (sample.Failed) error = $"SoundPool could not decode sample {args.SampleId}: {args.Status}";
+            if (sample.Failed) { error = $"SoundPool could not decode sample {args.SampleId}: {args.Status}"; global::Android.Util.Log.Error("GameEngineAudio", error); }
+            else global::Android.Util.Log.Info("GameEngineAudio", $"EFFECT_READY sample={args.SampleId} duration={sample.Duration:F3}");
             foreach (var voice in voices.Values.Where(value => value.Sample == sample && value.Stream == 0))
                 if (sample.Ready && !backgrounded && !focusPaused && Now - voice.Requested <= 0.25)
                     StartVoice(voice);
@@ -271,7 +279,11 @@ public sealed class AndroidAudioBackend : IAudioBackend
         if (musicRequested && musicReady)
         {
             music!.SetVolume(musicVolume * duck, musicVolume * duck);
-            if (!music.IsPlaying) music.Start();
+            if (!music.IsPlaying)
+            {
+                music.Start();
+                global::Android.Util.Log.Info("GameEngineAudio", $"MUSIC_STARTED playing={music.IsPlaying} gain={musicVolume * duck:F3}");
+            }
         }
     }
 
