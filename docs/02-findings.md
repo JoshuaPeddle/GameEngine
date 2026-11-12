@@ -389,4 +389,4 @@ The Android audio backend logs startup, decoded sample duration, first successfu
 
 | ID | Sev | Finding | Location | Confirmed | Status |
 |---|---|---|---|---|---|
-| GE-160 | S3 | Every game must reinvent themed menus, typography, drawn surfaces, accessible controls and feedback | Avalonia game HUDs | Tower Idle GamePage and phone captures | in progress |
+| GE-160 | S3 | Every game must reinvent themed menus, typography, drawn surfaces, accessible controls and feedback | Avalonia game HUDs | Tower Idle GamePage and phone captures; 56 UI tests, gallery captures, idle and repaint measurements in [13-ui-kit.md](13-ui-kit.md) | fixed |
