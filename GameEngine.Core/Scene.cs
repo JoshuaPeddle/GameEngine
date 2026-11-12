@@ -1,9 +1,16 @@
-﻿using GameEngine.Core.Systems;
+using GameEngine.Core.Systems;
+using System.Diagnostics.CodeAnalysis;
 
 namespace GameEngine.Core
 {
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
     public abstract class Scene
     {
+        private bool? hasCustomUpdate;
+        public virtual FrameActivity FrameActivity =>
+            (hasCustomUpdate ??= GetType().GetMethod(nameof(Update), [typeof(EntityManager), typeof(SystemContainer), typeof(double)])?.DeclaringType != typeof(Scene))
+                ? FrameActivity.Active : FrameActivity.Idle;
+
         public Engine? Engine { get; internal set; }
 
         protected IAssetSource AssetSource => Engine?.AssetSource

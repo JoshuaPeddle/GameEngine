@@ -10,6 +10,8 @@ namespace GameTemplate;
 // The walls and pickups come from levels/level1.json; the player is built here in code.
 public class MainScene : Scene
 {
+    public override FrameActivity FrameActivity => FrameActivity.Idle;
+
     public override int VirtualWidth => 960;
     public override int VirtualHeight => 540;
 

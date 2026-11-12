@@ -17,6 +17,7 @@ the behavioural claims.
 | [`07-emberbrook-engine-review.md`](07-emberbrook-engine-review.md) | Engine ergonomics after building Emberbrook, prioritized improvements, and browser deployment findings. |
 | [`08-batched-rendering.md`](08-batched-rendering.md) | Sprite groups, pooled particles, snapshot ordering, mobile rates and measured benchmarks. |
 | [`13-ui-kit.md`](13-ui-kit.md) | The Avalonia game UI kit, themes, adoption guide, gallery captures, idle and repaint measurements, and package verification. |
+| [`14-frame-pacing.md`](14-frame-pacing.md) | Demand-driven activity policy, battery cap, static caching, measured costs and Tower Idle adoption. |
 
 ## How these fit together
 

@@ -1,6 +1,6 @@
 namespace GameEngine.Core.Systems;
 
-public sealed class ParticleSystem : ISystem, IDisposable
+public sealed class ParticleSystem : ISystem, IFrameActivitySource, IDisposable
 {
     private readonly List<ParticleEmitter> _emitters = [];
     private ParticleStore? _store;
@@ -11,6 +11,9 @@ public sealed class ParticleSystem : ISystem, IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(capacity);
         Capacity = capacity;
     }
+
+    public FrameActivity FrameActivity => (_store?.Count ?? 0) > 0 || _emitters.Exists(emitter => emitter.Enabled && emitter.Rate > 0)
+        ? FrameActivity.Active : FrameActivity.Idle;
 
     public int Capacity { get; }
     public ParticleStore Store => _store ??= CreateStore();

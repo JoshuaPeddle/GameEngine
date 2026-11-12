@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace GameEngine.Core
 {
-    public class Engine : IDisposable
+    public partial class Engine : IDisposable
     {
         private Action? _invalidateAction;
 
@@ -64,6 +64,7 @@ namespace GameEngine.Core
         {
             try { _loopWake.Release(); }
             catch (SemaphoreFullException) { }
+            catch (ObjectDisposedException) { }
         }
 
         private void NotifyLifecycle(LifecycleEvent lifecycleEvent)
@@ -80,6 +81,8 @@ namespace GameEngine.Core
                 if (IsDisposed || _stopped || state == _hostState) return;
                 var previous = _hostState;
                 _hostState = state;
+                _suspendedPresentation = true;
+                RequestFrame();
                 UpdateHostServices();
                 if (previous == HostState.Active)
                 {
@@ -226,10 +229,17 @@ namespace GameEngine.Core
             return grown;
         }
 
-        // Optional presentation frame limiter (null = unlimited). Presentation pacing is
-        // separate from the simulation rate: this decides how often a frame is offered to the
-        // host, while FixedTimeStep decides how far the simulation moves.
-        public int? TargetFrameRate { get; set; } = null;
+        private int? targetFrameRate;
+        public int? TargetFrameRate
+        {
+            get => targetFrameRate;
+            set
+            {
+                if (value.HasValue) ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value.Value);
+                targetFrameRate = value;
+                RequestFrame();
+            }
+        }
 
         public int ParticleCapacity { get; }
 
@@ -279,7 +289,7 @@ namespace GameEngine.Core
             }
 
             _postedWork.Enqueue(work);
-            WakeLoop();
+            RequestFrame();
             return true;
         }
 
@@ -315,6 +325,8 @@ namespace GameEngine.Core
             ArgumentNullException.ThrowIfNull(hostServices);
             ParticleCapacity = particleCapacity;
             HostServices = hostServices;
+            FramePolicy = new FramePolicy(RequestFrame);
+            CameraEffects.Activity = RequestFrame;
             HostServices.SetForeground(true);
             InvalidateAction = invalidateAction;
             _audioEnabled = audioEnabled;
@@ -328,7 +340,7 @@ namespace GameEngine.Core
             Systems.TryGet<ParticleSystem>()?.Dispose();
             Systems.TryGet<RenderSystem>()?.Dispose();
             if (InputManager is null)
-                InputManager = new InputManager();
+                InputManager = new InputManager { Activity = RequestFrame };
             else
                 InputManager.Reset();
 
@@ -360,9 +372,6 @@ namespace GameEngine.Core
             Volatile.Write(ref _systems, built);
         }
 
-        // Start the loop without a forced 1ms delay.
-        // Desktop/Mobile: a dedicated long-running thread for precise pacing.
-        // Browser: async loop with Task.Delay/Yield to avoid blocking the single UI thread.
         public Task Start()
         {
             lock (_lifecycleLock)
@@ -420,86 +429,32 @@ namespace GameEngine.Core
             DrainPostedWork();
         }
 
-        // Pumps pending work and then advances the simulation by whole fixed steps. Returns
-        // false only while the engine is paused, which is the run loop's cue to idle.
-        private bool AdvanceFrame()
-        {
-            lock (_frameLock)
-            {
-                if (_hostState == HostState.Active) PumpPendingWork();
-
-                if (_stopped || _hostState != HostState.Active || !_isRunning || _pauseUntilFirstPresent || IsFaulted)
-                {
-                    lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
-                    _accumulator.Reset();
-                    return false;
-                }
-
-                int steps = _accumulator.Advance(CalculateDeltaTime());
-                for (int step = 0; step < steps; step++)
-                {
-                    if (!Tick(_accumulator.StepSeconds))
-                        break;
-                }
-
-                return true;
-            }
-        }
-
         private async Task StartAsyncLoopBrowser()
         {
             stopwatch.Start();
-            lastUpdateTime = 0;
-
+            lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
             while (!_stopped)
             {
-                await Task.Delay(1);
-
-                if (!AdvanceFrame())
-                {
-                    await _loopWake.WaitAsync();
-                    ResetFrameClock();
-                    continue;
-                }
-
-                InvalidateAction?.Invoke();
+                lock (_frameLock) Present(CalculateDeltaTime());
+                var delay = NextFrameDelay;
+                if (delay != Timeout.InfiniteTimeSpan)
+                    delay = TimeSpan.FromSeconds(Math.Max(.001, delay.TotalSeconds - (stopwatch.Elapsed.TotalSeconds - lastUpdateTime)));
+                await _loopWake.WaitAsync(delay);
             }
         }
 
         private void RunLoop()
         {
             stopwatch.Start();
-            lastUpdateTime = 0;
-
+            lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
             while (!_stopped)
             {
-                double frameDurationMs = TargetFrameRate.HasValue
-                    ? 1000.0 / TargetFrameRate.Value
-                    : 0.0;
-
-                double frameStartMs = stopwatch.Elapsed.TotalMilliseconds;
-
-                if (!AdvanceFrame())
-                {
-                    _loopWake.Wait();
-                    ResetFrameClock();
-                    continue;
-                }
-
-                InvalidateAction?.Invoke();
-
-                if (TargetFrameRate.HasValue)
-                {
-                    double elapsedMs = stopwatch.Elapsed.TotalMilliseconds - frameStartMs;
-                    double remainingMs = frameDurationMs - elapsedMs;
-
-                    if (remainingMs > 0)
-                        _loopWake.Wait(TimeSpan.FromMilliseconds(remainingMs));
-                }
-                else
-                {
-                    Thread.Yield();
-                }
+                lock (_frameLock) Present(CalculateDeltaTime());
+                var delay = NextFrameDelay;
+                if (delay != Timeout.InfiniteTimeSpan)
+                    delay = TimeSpan.FromSeconds(Math.Max(.001, delay.TotalSeconds - (stopwatch.Elapsed.TotalSeconds - lastUpdateTime)));
+                _loopWake.AvailableWaitHandle.WaitOne(delay);
+                _loopWake.Wait(0);
             }
         }
 
@@ -509,6 +464,7 @@ namespace GameEngine.Core
             {
                 lastUpdateTime = stopwatch.Elapsed.TotalSeconds;
                 _accumulator.Reset();
+                _presentationElapsed = 0;
             }
         }
 
@@ -518,6 +474,8 @@ namespace GameEngine.Core
             lock (_frameLock)
             {
                 _isRunning = running;
+                _suspendedPresentation = true;
+                RequestFrame();
                 UpdateHostServices();
                 WakeLoop();
             }
@@ -546,6 +504,7 @@ namespace GameEngine.Core
                 return;
 
             Stop();
+            if (!OperatingSystem.IsBrowser()) _loopWake.Dispose();
             HostServices.Dispose();
             Systems.Dispose();
             _audioSystem?.Dispose();
@@ -595,7 +554,7 @@ namespace GameEngine.Core
 
             // Snapshot all renderable state. The UI thread reads only from this snapshot,
             // avoiding cross-thread mutation.
-            PublishRenderSnapshot();
+            if (!_presenting) PublishRenderSnapshot();
         }
 
         // Queue the scene change; it will be applied on the engine thread
@@ -606,7 +565,7 @@ namespace GameEngine.Core
             {
                 ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposeStarted) != 0, this);
                 Interlocked.Exchange(ref _pendingScene, scene);
-                WakeLoop();
+                RequestFrame();
             }
         }
 
@@ -681,6 +640,7 @@ namespace GameEngine.Core
             // Platform layout events can arrive during that rebuild, so recording the
             // dimensions must not depend on a transient InputSystem lookup.
             InputManager.RealResolution = new Vec2(width, height);
+            RequestFrame();
         }
 
         // Runners should call this after finishing a frame to resume post-scene-change
@@ -691,7 +651,8 @@ namespace GameEngine.Core
                 if (!_pauseUntilFirstPresent) return;
                 ResetFrameClock();
                 _pauseUntilFirstPresent = false;
-                WakeLoop();
+                _suspendedPresentation = true;
+                RequestFrame();
             }
         }
     }

@@ -1,0 +1,10 @@
+scene,cpu_ms_per_wall_second,frames_per_second,ticks_per_second
+Idle,0.205,0.000,0.000
+Ambient,36.063,15.275,119.544
+Active,178.121,60.193,119.721
+stage,mean_us,managed_bytes_per_operation
+tick_including_snapshot,41.990,0.000
+snapshot,21.595,0.000
+draw_including_acquire,148.502,0.000
+two_steps_and_draw,454.157,0.000
+paced_frame,494.223,0.000

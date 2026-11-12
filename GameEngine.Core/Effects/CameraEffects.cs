@@ -6,6 +6,7 @@ public readonly record struct CameraEffectState(SKPoint Offset, float Zoom);
 
 public sealed class CameraEffects
 {
+    internal Action? Activity { get; set; }
     private double time;
     private double shakeEnd, shakeDuration;
     private float shakeAmplitude;
@@ -13,22 +14,26 @@ public sealed class CameraEffects
     private float punch;
     private double stopRemaining;
     private double scale = 1;
+    public bool IsActive => time < shakeEnd || time < punchEnd || stopRemaining > 0;
     public CameraEffectState State { get; private set; } = new(default, 1);
     public void Shake(float amplitude, double duration)
     {
         Validate(duration); Validate(amplitude);
         shakeAmplitude = amplitude; shakeDuration = duration; shakeEnd = time + duration;
+        Activity?.Invoke();
     }
     public void ZoomPunch(float amount, double duration)
     {
         Validate(duration); Validate(amount);
         punch = amount; punchDuration = duration; punchEnd = time + duration;
+        Activity?.Invoke();
     }
     public void HitStop(double duration, double timeScale = 0)
     {
         Validate(duration);
         if (!double.IsFinite(timeScale) || timeScale < 0 || timeScale > 1) throw new ArgumentOutOfRangeException(nameof(timeScale));
         stopRemaining = duration; scale = timeScale;
+        Activity?.Invoke();
     }
     public double Advance(double realSeconds)
     {
