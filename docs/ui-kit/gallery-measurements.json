@@ -9,15 +9,15 @@
   "Results": [
     {
       "Theme": "Night coast",
-      "MeanMs": 3.794196666666666,
-      "P95Ms": 3.841,
-      "ManagedBytesPerRepaint": 75544
+      "MeanMs": 3.6197875,
+      "P95Ms": 3.8181,
+      "ManagedBytesPerRepaint": 81967
     },
     {
       "Theme": "Daybreak",
-      "MeanMs": 3.6646491666666674,
-      "P95Ms": 3.6959,
-      "ManagedBytesPerRepaint": 75544
+      "MeanMs": 3.569730833333333,
+      "P95Ms": 3.6017,
+      "ManagedBytesPerRepaint": 81944
     }
   ]
 }

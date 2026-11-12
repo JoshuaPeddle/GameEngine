@@ -83,6 +83,10 @@ public class GameItemCard : GamePanel
     public double Balance { get => GetValue(BalanceProperty); set => SetValue(BalanceProperty, value); }
     public bool Locked { get => GetValue(LockedProperty); set => SetValue(LockedProperty, value); }
     public GameIconKind Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
+    public static readonly StyledProperty<GameIconSource?> IconSourceProperty = AvaloniaProperty.Register<GameItemCard, GameIconSource?>(nameof(IconSource));
+    public static readonly StyledProperty<IBrush?> IconForegroundProperty = AvaloniaProperty.Register<GameItemCard, IBrush?>(nameof(IconForeground));
+    public GameIconSource? IconSource { get => GetValue(IconSourceProperty); set => SetValue(IconSourceProperty, value); }
+    public IBrush? IconForeground { get => GetValue(IconForegroundProperty); set => SetValue(IconForegroundProperty, value); }
     public bool CanAfford => !Locked && Balance >= Cost;
     public GameButton ActionButton { get; } = new() { Icon = GameIconKind.Coin };
     public event EventHandler? PurchaseRequested;
@@ -92,6 +96,8 @@ public class GameItemCard : GamePanel
     {
         var icon = new GameIcon { Width = 32, Height = 32 };
         icon.Bind(GameIcon.KindProperty, new Binding(nameof(Icon)) { Source = this });
+        icon.Bind(GameIcon.SourceProperty, new Binding(nameof(IconSource)) { Source = this });
+        icon.Bind(GameIcon.ForegroundProperty, new Binding(nameof(IconForeground)) { Source = this });
         var title = new GameLabel { Role = GameTextRole.Title };
         title.Bind(TextBlock.TextProperty, new Binding(nameof(Title)) { Source = this });
         var description = new GameLabel { Ink = GameInk.Muted };

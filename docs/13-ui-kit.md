@@ -49,7 +49,7 @@ Oxanium Medium and SemiBold supply titles, buttons and counters. Atkinson Hyperl
 | `GameScreen`, `GameScrollViewer` | Safe-area root and vertical scrolling without a global control theme |
 | `GameIcon` | Menu, pause, play, speed, settings, sound, close, back, upgrade, coin, lock, check, info, trophy, research and prestige |
 
-Surfaces use cached 240 by 240 Skia tiles at 3x scale and nine-patch drawing, preserving corners as a panel grows. The cache key includes the immutable theme, surface kind, interaction state and ornaments. Its capacity is 64 tiles; eviction and `SurfaceCache.Clear()` dispose retained native images. Keep theme records stable instead of creating a new theme every frame. The sixteen icons are vector paths; the kit requires no raster artwork.
+Surfaces use cached 240 by 240 Skia tiles at 3x scale and nine-patch drawing, preserving corners as a panel grows. The cache key includes the immutable theme, surface kind, interaction state and ornaments. Its capacity is 64 tiles; eviction and `SurfaceCache.Clear()` dispose retained native images. Keep theme records stable instead of creating a new theme every frame. The sixteen built-in icons and game-defined icon sources are vector paths; the kit requires no raster artwork.
 
 ## Using it in a game
 
@@ -91,6 +91,21 @@ Interactive targets are at least 48 dp. Give icon-only buttons an `AutomationPro
 
 For Tower Idle, replace `GamePage`'s local text/button/card helpers with these controls, wrap its overlay stack in `GameScreen`, and map `ArtDirection` colours to a stable theme. Replace direct counter string updates with `ResourceCounter.Value`, map workshop/research rows to cards, and use `GameSheet` for menu panels. Preserve `GameHost`'s command, save and lifecycle rules. Connect its sound/haptic and accessibility settings to the inherited hooks. This engine change does not modify Tower Idle.
 
+## Game-defined vector icons
+
+`GameIconSource.FromPath(path, viewport: 24)` parses and retains an immutable vector source once. Store sources in static fields or a game-owned catalog and reuse them. The viewport is a square in the path's coordinate units; use 64 for existing 64-unit game artwork. Invalid paths and nonpositive or nonfinite viewports fail at creation. Sources own their private parsed geometry, require no registration or disposal, and leave no global cache entries behind.
+
+Set `GameIcon.Source` or `IconSource` on `GameItemCard`, `GameItemRow`, `GameButton`, `GameBadge` and `ResourceCounter`. A source takes precedence over the existing enum. Clearing it restores the enum; no existing enum property or call site changes. Badges also accept an optional built-in `Icon`. Cards and rows expose `IconForeground` for game-specific tints, while standalone icons use `Foreground`. Button icons follow primary, disabled and normal button ink, and badge icons follow their semantic ink.
+
+```csharp
+static readonly GameIconSource Beacon = GameIconSource.FromPath(
+    "M8 21L10 8H14L16 21Z M8 5H16V8H8Z M7 5L12 1 17 5");
+var beacon = new GameItemCard { Title = "Beacon lens", IconSource = Beacon };
+var travel = new GameButton { Content = "Sail", IconSource = Beacon };
+```
+
+Both built-in and custom icons use the same rounded vector strokes, theme `Stroke` and restrained `Glow`. Rendering centres the square viewport within the available bounds and remains vector at every display density. No path parsing or raster cache generation occurs during painting. The gallery's Prism relay uses a game-defined prism path. Buttons also accept control content for icon tiles; strings retain their normal themed text template. `CustomIconTests` verifies all hosts, fallback, tint, theme response, density rendering, reuse and invalid input.
+
 ## Gallery and reproduction
 
 Launch the interactive gallery with:
@@ -123,20 +138,20 @@ The complete-gallery measurement forces 120 raster repaints after 20 warmup pain
 
 | Theme | Mean repaint | p95 repaint | Managed bytes per repaint |
 | --- | --- | --- | --- |
-| Night coast | 3.794 ms | 3.841 ms | 75,544 |
-| Daybreak | 3.665 ms | 3.696 ms | 75,544 |
+| Night coast | 3.620 ms | 3.818 ms | 81,967 |
+| Daybreak | 3.570 ms | 3.602 ms | 81,944 |
 
 These numbers include Avalonia's immediate bitmap-render path and text/control drawing. No new surface tiles are generated during warm repainting. This is the cost of requesting a repaint, not the cost of leaving a menu idle.
 
 The focused `--ui` surface benchmark on 2026-11-12 draws one panel, three rows and four buttons at the same pixel size, with 60 warmup draws and 300 measured draws. Night coast averaged 3.428 ms (p95 3.498 ms), Daybreak 3.438 ms (p95 3.495 ms). Both allocated zero managed bytes per warm draw and generated zero new tiles. Cold first draws were 28.410 ms and 5.878 ms respectively, including first-use work. One million calls to an inactive tween's guard took 0.936 ms with zero managed allocation; production controls do not poll that guard while idle.
 
-For actual idle observation, `SettledGallerySchedulesNoAnimationTicks` opens a real headless gallery with normal motion enabled. It visits workshop, settings, library and an open sheet in each theme, waits 700 ms for transitions to settle, then measures a 1-second asynchronous idle interval with the dispatcher alive. It does not call `RenderTargetBitmap.Render`, force frames, or run the engine loop during the interval. [`idle-measurements.json`](ui-kit/idle-measurements.json) records wall time, whole-test-host process CPU time, active kit animation timers and animation tick deltas for all eight observations. Every observation had **zero active animation timers and zero animation ticks**. Process CPU ranged from 3.426 to 25.683 ms per approximately 1002 ms, or 0.34% to 2.56% of one core. This includes Avalonia, the test runner and runtime work and is not an isolated kit CPU estimate. The zero-tick result is asserted; noisy CPU percentages are reported without a performance threshold.
+For actual idle observation, `SettledGallerySchedulesNoAnimationTicks` opens a real headless gallery with normal motion enabled. It visits workshop, settings, library and an open sheet in each theme, waits 700 ms for transitions to settle, then measures a 1-second asynchronous idle interval with the dispatcher alive. It does not call `RenderTargetBitmap.Render`, force frames, or run the engine loop during the interval. [`idle-measurements.json`](ui-kit/idle-measurements.json) records wall time, whole-test-host process CPU time, active kit animation timers and animation tick deltas for all eight observations. Every observation had **zero active animation timers and zero animation ticks**. Process CPU ranged from 5.466 to 19.363 ms per approximately 1002 ms, or 0.55% to 1.93% of one core. This includes Avalonia, the test runner and runtime work and is not an isolated kit CPU estimate. The zero-tick result is asserted; noisy CPU percentages are reported without a performance threshold.
 
 Motion drivers stop their timers on completion, reduced-motion changes and detach. Cooldowns have no internal timer. A visible toast uses one expiry timer until dismissed. The game and host may still request their own frames independently.
 
 ## Build, tests and packaging
 
-Verification on 2026-11-12 used `dotnet build GameEngine.sln -c Release` with zero warnings and zero errors, followed by `dotnet test -c Release --no-build`. All 766 tests passed with no skips: 384 Core, 308 Demo, 58 Editor and 16 Runner. The Demo suite includes 56 UI tests. The solution's existing Any CPU configuration does not build the iOS head or Apple audio backend. The installed Android and browser workloads built successfully; Android used a temporary Temurin JDK 21 because the application's bundled JDK 25 is unsupported by the installed Android workload.
+Verification on 2026-11-12 used `dotnet build GameEngine.sln -c Release` with zero warnings and zero errors, followed by `dotnet test -c Release --no-build`. All 795 tests passed: 409 Core, 312 Demo, 58 Editor and 16 Runner. The Demo suite includes 60 UI tests. The opt-in frame-offer profiling fixture remains explicit and is not part of the normal suite. The solution's existing Any CPU configuration does not build the iOS head or Apple audio backend. The installed Android and browser workloads built successfully; Android used a temporary Temurin JDK 21 because the application's bundled JDK 25 is unsupported by the installed Android workload.
 
 The managed sandbox required temporary writable .NET/NuGet caches and `-p:UsedAvaloniaProducts=` to skip Avalonia's build telemetry, which otherwise writes outside the workspace. These are verification-environment settings, not repository changes. Android SDK and Java SDK paths were supplied explicitly.
 

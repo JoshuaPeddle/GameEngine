@@ -20,7 +20,8 @@ public sealed class UiGalleryView : UserControl
     private readonly GameScrollViewer scroll = new();
     private readonly StackPanel pages = new() { Spacing = 12 };
     private readonly ResourceCounter wallet = new() { Label = "SALVAGE" };
-    private readonly GameItemCard upgrade = new() { Title = "Prism relay", Description = "Split the light. Each pulse finds a second target.", Cost = 2400, Icon = GameIconKind.Prestige };
+    private static readonly GameIconSource RelayIcon = GameIconSource.FromPath("M12 2L21 7V17L12 22 3 17V7Z M3 7L12 12 21 7 M12 12V22 M7 5L17 19");
+    private readonly GameItemCard upgrade = new() { Title = "Prism relay", Description = "Split the light. Each pulse finds a second target.", Cost = 2400, IconSource = RelayIcon };
     private readonly GameCooldown cooldown = new() { Maximum = 30 };
     private readonly GameLabel rank = Label("PRISM RELAY / RANK 03", GameTextRole.Caption, GameInk.Accent);
     private readonly GameToast toast = new() { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(20, 80, 20, 0) };
