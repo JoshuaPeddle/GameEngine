@@ -115,8 +115,8 @@ internal sealed class ButtonSkin
         owner.MinHeight = 48; owner.MinWidth = 48;
         owner.HorizontalContentAlignment = HorizontalAlignment.Center;
         owner.VerticalContentAlignment = VerticalAlignment.Center;
-        owner.ContentTemplate = new FuncDataTemplate<string>((text, _) => new TextBlock
-        { Text = text, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center });
+        owner.DataTemplates.Add(new FuncDataTemplate<string>((text, _) => new TextBlock
+        { Text = text, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center }));
         motion = new MotionDriver(owner, value =>
         {
             scale = value;

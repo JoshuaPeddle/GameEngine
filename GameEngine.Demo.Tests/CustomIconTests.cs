@@ -67,6 +67,24 @@ public sealed class CustomIconTests
     }
 
     [AvaloniaTest]
+    public void ButtonCanHostAnIconTileWithoutStringifyingItsControls()
+    {
+        var title = new GameLabel { Text = "Workshop" };
+        var content = new StackPanel { Children = { new GameIcon { Source = Source }, title } };
+        var button = new GameButton { Content = content };
+        var window = new Window { Content = button, Width = 160, Height = 160 };
+        window.Show(); window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
+        try
+        {
+            Assert.That(button.GetVisualDescendants(), Does.Contain(title));
+            Assert.That(title.Bounds.Width, Is.GreaterThan(0));
+            button.Content = "Return to island"; window.UpdateLayout();
+            Assert.That(button.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Return to island"), Is.True);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTest]
     public void InvalidPathAndViewportFailAtCreation()
     {
         Assert.Throws<ArgumentException>(() => GameIconSource.FromPath(""));
