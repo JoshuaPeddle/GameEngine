@@ -71,10 +71,18 @@ namespace GameEngine.Runner.Avalonia
         private Action? _previousInvalidateAction;
         private CancellationTokenSource _syntheticKeyReleases = new();
         private readonly Action _queueInvalidate;
+        private readonly Action _reportFirstPresent;
+        private readonly Action _invalidateVisual;
 
         public GameView()
         {
             _queueInvalidate = QueueInvalidate;
+            _reportFirstPresent = ReportFirstPresent;
+            _invalidateVisual = () =>
+            {
+                Interlocked.Exchange(ref _invalidationsPending, 0);
+                InvalidateVisual();
+            };
 
             IsHitTestVisible = true;
             Focusable = true;
@@ -216,6 +224,7 @@ namespace GameEngine.Runner.Avalonia
                     _gameEngine.ChangeScene(scene);
             }
 
+            _gameEngine.RequestFrame();
             Current = _gameEngine;
             return _gameEngine;
         }
@@ -262,11 +271,7 @@ namespace GameEngine.Runner.Avalonia
         {
             if (Interlocked.Exchange(ref _invalidationsPending, 1) == 0)
             {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    _invalidationsPending = 0;
-                    InvalidateVisual();
-                }, DispatcherPriority.Render);
+                Dispatcher.UIThread.Post(_invalidateVisual, DispatcherPriority.Render);
             }
         }
 
@@ -414,7 +419,7 @@ namespace GameEngine.Runner.Avalonia
             context.Custom(new CustomDrawOp(
                 new Rect(0, 0, Bounds.Width, Bounds.Height),
                 engine,
-                ReportFirstPresent, DrawBoundary));
+                _reportFirstPresent, DrawBoundary));
         }
 
         private void ReportFirstPresent()

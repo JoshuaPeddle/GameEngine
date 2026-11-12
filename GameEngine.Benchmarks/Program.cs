@@ -8,6 +8,8 @@ using SkiaSharp;
 
 if (args.Contains("--ui"))
     UiBenchmark.Run();
+else if (args.Contains("--frame-pacing"))
+    FramePacingBenchmark.Run();
 else if (args.Contains("--effects"))
     EffectsBenchmark.Run(args.Contains("--metal"));
 else if (args.Contains("--stress-allocations"))

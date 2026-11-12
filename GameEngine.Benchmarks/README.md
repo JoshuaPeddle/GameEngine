@@ -101,3 +101,12 @@ warmup. `--effects --metal` uses a synchronized macOS Metal surface when a devic
 is available. These modes use the actual RenderSystem and RenderEffects path.
 See [render effects](../docs/12-render-effects.md) for quality, ownership and phone
 verification limits. Shader compilation and surface warmup are excluded.
+
+## Frame pacing
+
+`dotnet run -c Release --project GameEngine.Benchmarks -- --frame-pacing` measures actual live
+idle, ambient and busy loops, reporting process CPU milliseconds per wall second, frames and
+simulation ticks. It also measures snapshot, draw and complete-frame time and managed allocation.
+`python3 tools/benchmark-frame-pacing-baseline.py --ref 833cddd` runs the same workload against
+the original implementation in a temporary archive. Run each separately on the same quiet machine.
+See [the measurement protocol and retained results](../docs/14-frame-pacing.md).

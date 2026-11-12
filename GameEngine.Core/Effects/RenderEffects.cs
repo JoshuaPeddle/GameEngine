@@ -8,6 +8,7 @@ public sealed record EffectLayer(Action<SKCanvas, EffectFrame> Draw, bool Bloom 
 
 public sealed class RenderEffects : IDisposable
 {
+    public FrameActivity FrameActivity { get; set; } = FrameActivity.Active;
     public RuntimeShader? Background { get; init; }
     public EffectLayer[] BackgroundLayers { get; init; } = [];
     private float backgroundScale = 1;
@@ -36,7 +37,55 @@ public sealed class RenderEffects : IDisposable
     private SKImageFilter? filter;
     private BloomQuality allocatedQuality;
 
+    private bool cacheBackground;
+    public bool CacheBackground
+    {
+        get => cacheBackground;
+        set
+        {
+            if (cacheBackground == value) return;
+            cacheBackground = value;
+            InvalidateBackground();
+        }
+    }
+    private int backgroundVersion;
+    private int cachedBackgroundVersion = -1;
+    private SKSurface? cachedBackgroundSurface;
+    private SKImage? cachedBackground;
+    private SKPoint cachedCamera;
+    private SKSize cachedResolution;
+    private float cachedScale;
+
+    public void InvalidateBackground() => Interlocked.Increment(ref backgroundVersion);
+
     public void DrawBackground(SKCanvas canvas, in EffectFrame frame)
+    {
+        if (!CacheBackground)
+        {
+            DrawBackgroundCore(canvas, frame);
+            return;
+        }
+        int version = Volatile.Read(ref backgroundVersion);
+        int width = Math.Max(1, (int)Math.Ceiling(frame.Resolution.Width));
+        int height = Math.Max(1, (int)Math.Ceiling(frame.Resolution.Height));
+        bool contextChanged = cachedBackgroundSurface?.Context?.Handle != canvas.Context?.Handle;
+        if (cachedBackground is null || contextChanged || cachedResolution != frame.Resolution || cachedCamera != frame.Camera || cachedScale != BackgroundScale || cachedBackgroundVersion != version)
+        {
+            cachedBackground?.Dispose();
+            cachedBackground = null;
+            Ensure(ref cachedBackgroundSurface, width, height, canvas.Context);
+            cachedBackgroundSurface!.Canvas.Clear(SKColors.Transparent);
+            DrawBackgroundCore(cachedBackgroundSurface.Canvas, frame);
+            cachedBackground = cachedBackgroundSurface.Snapshot();
+            cachedBackgroundVersion = version;
+            cachedResolution = frame.Resolution;
+            cachedCamera = frame.Camera;
+            cachedScale = BackgroundScale;
+        }
+        canvas.DrawImage(cachedBackground, 0, 0, new SKSamplingOptions(SKFilterMode.Linear));
+    }
+
+    private void DrawBackgroundCore(SKCanvas canvas, in EffectFrame frame)
     {
         float scale = BackgroundScale;
         if (Background is not null)
@@ -168,6 +217,6 @@ public sealed class RenderEffects : IDisposable
     }
     public void Dispose()
     {
-        backgroundSurface?.Dispose(); glow?.Dispose(); blurredSurface?.Dispose(); brightLayerSurface?.Dispose(); layerSurface?.Dispose(); filter?.Dispose(); paint.Dispose(); composite.Dispose(); blur.Dispose();
+        cachedBackground?.Dispose(); cachedBackgroundSurface?.Dispose(); backgroundSurface?.Dispose(); glow?.Dispose(); blurredSurface?.Dispose(); brightLayerSurface?.Dispose(); layerSurface?.Dispose(); filter?.Dispose(); paint.Dispose(); composite.Dispose(); blur.Dispose();
     }
 }

@@ -69,3 +69,18 @@ wake locks depend on browser support and permission. Test both services on physi
 
 The iOS head requires iOS 15.0 and bundles PrivacyInfo.xcprivacy. Review its declarations when
 adding SDKs or changing data use, and inspect the final signed archive before store submission.
+
+## Frame pacing
+
+The starter scene declares `FrameActivity.Idle` because its custom update only responds to
+collisions. The engine automatically stays Active for held input, movement, sprite animation,
+particles and camera effects. Once quiet it offers 15 fps briefly, then sleeps until input or
+`Engine.Post` wakes it. Add timers or transitions by returning `FrameActivity.Active` while they
+run; return `FrameActivity.Ambient` for continuous subtle motion. Unmodified custom scenes default
+to Active so their update logic keeps running.
+
+`engine.FramePolicy.MaxFrameRate = 30` caps presentation for a battery saver setting while
+preserving fixed simulation steps. Use `engine.Post(e => e.FramePolicy.MaxFrameRate = 30)` from
+UI code. `FramePolicy.Activity = FrameActivity.Idle` explicitly freezes a board behind a modal;
+assign `null` to restore automatic detection. `engine.RequestFrame()` requests a fresh snapshot
+and paint, respecting the cap. Direct `Engine.Tick` remains deterministic and ignores pacing.

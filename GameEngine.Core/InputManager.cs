@@ -6,6 +6,14 @@ namespace GameEngine.Core
 {
     public class InputManager
     {
+        internal Action? Activity { get; init; }
+        internal bool HasActivity
+        {
+            get
+            {
+                lock (_pointerLock) return !heldKeys.IsEmpty || !pendingPresses.IsEmpty || queuedPointerEvents.Count > 0 || _incomingContacts.Count > 0;
+            }
+        }
         public ActionMapper ActionMapper { get; }
         public Vec2 RealResolution { get => _realResolution;  set => _realResolution = value; }
         public Vec2 VirtualResolution { get; set; }
@@ -13,6 +21,7 @@ namespace GameEngine.Core
 
         private const int MaxQueuedPointerEvents = 256;
 
+        private readonly ConcurrentDictionary<GeKeys, byte> pendingPresses = [];
         private readonly ConcurrentDictionary<GeKeys, string> actionMap = [];
         private readonly ConcurrentDictionary<(GeKeys Key, long SourceId), byte> heldKeys = [];
         private readonly ConcurrentDictionary<string, bool> actionStates = [];
@@ -34,6 +43,7 @@ namespace GameEngine.Core
 
         public void Reset()
         {
+            pendingPresses.Clear();
             actionMap.Clear();
             heldKeys.Clear();
             actionStates.Clear();
@@ -66,6 +76,7 @@ namespace GameEngine.Core
             if (!actionMap.TryRemove(key, out string? actionName))
                 return;
 
+            pendingPresses.TryRemove(key, out _);
             foreach (var held in heldKeys.Keys.Where(held => held.Key == key)) heldKeys.TryRemove(held, out _);
             actionStates[actionName] = IsAnyKeyHeldFor(actionName);
         }
@@ -79,6 +90,7 @@ namespace GameEngine.Core
                     continue;
 
                 actionMap.TryRemove(mapping.Key, out _);
+                pendingPresses.TryRemove(mapping.Key, out _);
                 foreach (var held in heldKeys.Keys.Where(held => held.Key == mapping.Key)) heldKeys.TryRemove(held, out _);
             }
 
@@ -115,8 +127,10 @@ namespace GameEngine.Core
         {
             if (actionMap.TryGetValue(key, out string? actionName))
             {
+                if (actionBindings.ContainsKey(actionName) && !IsActionActive(actionName)) pendingPresses[key] = 0;
                 heldKeys[(key, sourceId)] = 0;
                 actionStates[actionName] = true;
+                Activity?.Invoke();
             }
         }
 
@@ -128,6 +142,7 @@ namespace GameEngine.Core
             {
                 heldKeys.TryRemove((key, sourceId), out _);
                 actionStates[actionName] = IsAnyKeyHeldFor(actionName);
+                Activity?.Invoke();
             }
         }
 
@@ -147,6 +162,7 @@ namespace GameEngine.Core
         public void ReleaseAllKeys()
         {
             heldKeys.Clear();
+            pendingPresses.Clear();
             foreach (var action in actionStates.Keys) actionStates[action] = false;
         }
 
@@ -162,6 +178,7 @@ namespace GameEngine.Core
                 if (eventType is PointerEventType.Release or PointerEventType.Cancel)
                     _incomingContacts.Remove(copy.ContactId);
                 queuedPointerEvents.Enqueue((eventType, copy));
+                Activity?.Invoke();
             }
         }
 
@@ -210,6 +227,9 @@ namespace GameEngine.Core
             foreach (var binding in actionBindings)
             {
                 bool isActive = actionStates.TryGetValue(binding.Key, out bool state) && state;
+                if (!pendingPresses.IsEmpty)
+                    foreach (var pending in pendingPresses)
+                        if (actionMap.TryGetValue(pending.Key, out var name) && name == binding.Key && pendingPresses.TryRemove(pending.Key, out _)) isActive = true;
                 var actions = binding.Value;
 
                 for (int i = 0; i < actions.Count; i++)

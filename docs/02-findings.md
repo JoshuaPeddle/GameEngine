@@ -390,3 +390,10 @@ The Android audio backend logs startup, decoded sample duration, first successfu
 | ID | Sev | Finding | Location | Confirmed | Status |
 |---|---|---|---|---|---|
 | GE-160 | S3 | Every game must reinvent themed menus, typography, drawn surfaces, accessible controls and feedback | Avalonia game HUDs | Tower Idle GamePage and phone captures; 56 UI tests, gallery captures, idle and repaint measurements in [13-ui-kit.md](13-ui-kit.md) | fixed |
+
+## Demand-driven frame pacing
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-161 | S2 | Settled foreground games keep simulating and invalidating, and the browser loop ignores the presentation cap | `Engine.cs`, `Engine.Pacing.cs` | deterministic pacing tests and live-loop CPU benchmark | fixed |
+| GE-162 | S3 | Static effect backgrounds rasterize again on every draw, and live catch-up copies snapshots for each step | `RenderEffects.cs`, `Engine.cs`, `GameView.cs` | retained-background pixel tests and frame-stage profiles | fixed |

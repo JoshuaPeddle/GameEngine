@@ -77,6 +77,22 @@ public class MainSceneTests
     }
 
     [Test]
+    public void TheStarterSceneSleepsUntilInputWakesIt()
+    {
+        var harness = SceneHarness.Load(new MainScene());
+        using var engine = harness.Engine;
+        engine.Present(0);
+        for (int i = 0; i < 180; i++) engine.Present(1.0 / 60);
+        Assert.That(engine.CurrentFrameActivity, Is.EqualTo(FrameActivity.Idle));
+        Assert.That(engine.Present(60), Is.False);
+        var player = harness.Require("player").GetComponent<CTransform>();
+        double before = player.Position.X;
+        harness.Input.HandleKeyPress(GeKeys.D);
+        Assert.That(engine.Present(60), Is.True);
+        Assert.That(player.Position.X, Is.GreaterThan(before));
+    }
+
+    [Test]
     public void WallsAreSolid()
     {
         var harness = SceneHarness.Load(new MainScene());

@@ -195,6 +195,13 @@ whatever thread you call it from, rendering hands out immutable snapshots, and i
 queue. The headless test harness embeds it that way, so embedding is a tested path rather
 than a claim.
 
+Live hosts use demand-driven frame pacing. Static scenes settle through 15 fps Ambient to Idle;
+input and posted work wake them. Scenes with custom updates stay Active unless they declare their
+activity. Set `engine.FramePolicy.MaxFrameRate = 30` for a battery saver cap, or declare an Idle
+board behind a modal through `FramePolicy.Activity`. Fixed simulation steps and direct `Tick`
+remain unchanged. See [frame pacing](docs/14-frame-pacing.md) for the API, detection rules,
+static-background caching, measurements and Tower Idle adoption steps.
+
 For Avalonia, `GameView` is a plain control you can hand everything to, so several games
 can run side by side in one process:
 
