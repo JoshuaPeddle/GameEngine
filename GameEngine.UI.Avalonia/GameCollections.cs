@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Layout;
+using Avalonia.Input;
 using Avalonia.Media;
 
 namespace GameEngine.UI.Avalonia;
@@ -15,11 +16,11 @@ public sealed class GameTab : TabItem
     private readonly GameLabel label = new() { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
     public GameTab()
     {
-        MinWidth = 48; MinHeight = 48;
+        MinWidth = 48; MinHeight = 48; Focusable = true;
         Template = new FuncControlTemplate<GameTab>((owner, _) =>
         {
             label.Bind(TextBlock.TextProperty, new Binding(nameof(Header)) { Source = owner });
-            return new Grid { Children = { surface, new Border { Padding = new Thickness(12, 10), Child = label } } };
+            return new Grid { Background = Brushes.Transparent, Children = { surface, new Border { Padding = new Thickness(12, 10), Child = label } } };
         });
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -43,17 +44,30 @@ public sealed class GameTabs : TabControl
         Template = new FuncControlTemplate<GameTabs>((owner, scope) =>
         {
             var headers = new ItemsPresenter { Name = "PART_ItemsPresenter" };
+            headers.Bind(ItemsPresenter.ItemsPanelProperty, new Binding(nameof(ItemsPanel)) { Source = owner });
             scope.Register(headers.Name, headers);
-            var content = new ContentPresenter { Name = "PART_SelectedContentHost", Margin = new Thickness(0, 12, 0, 0) };
+            var content = new ContentPresenter { Name = "PART_SelectedContentHost" };
             scope.Register(content.Name, content);
             content.Bind(ContentPresenter.ContentProperty, new Binding(nameof(SelectedContent)) { Source = owner });
             return new StackPanel { Children = { headers, content } };
         });
         SelectionChanged += (_, _) => GameUi.GetFeedback(this)?.Invoke(GameFeedback.Activate);
+        KeyDown += (_, e) =>
+        {
+            if (e.Source is not GameTab || Items.Count == 0) return;
+            int next = e.Key switch
+            {
+                Key.Right => (SelectedIndex + 1) % Items.Count,
+                Key.Left => (SelectedIndex + Items.Count - 1) % Items.Count,
+                Key.Home => 0, Key.End => Items.Count - 1, _ => -1
+            };
+            if (next < 0 || Items[next] is not GameTab tab || !tab.IsEffectivelyEnabled) return;
+            SelectedIndex = next; tab.Focus(); e.Handled = true;
+        };
     }
 }
 
-public sealed class GameItemCard : GamePanel
+public class GameItemCard : GamePanel
 {
     public static readonly StyledProperty<string> TitleProperty = AvaloniaProperty.Register<GameItemCard, string>(nameof(Title), "Upgrade");
     public static readonly StyledProperty<string> DescriptionProperty = AvaloniaProperty.Register<GameItemCard, string>(nameof(Description), "");
@@ -73,7 +87,8 @@ public sealed class GameItemCard : GamePanel
     public GameButton ActionButton { get; } = new() { Icon = GameIconKind.Coin };
     public event EventHandler? PurchaseRequested;
     private readonly GameLabel status = new() { Role = GameTextRole.Caption, Ink = GameInk.Muted };
-    public GameItemCard()
+    public GameItemCard() : this(false) { }
+    protected GameItemCard(bool compact)
     {
         var icon = new GameIcon { Width = 32, Height = 32 };
         icon.Bind(GameIcon.KindProperty, new Binding(nameof(Icon)) { Source = this });
@@ -85,7 +100,8 @@ public sealed class GameItemCard : GamePanel
         heading.Children.Add(new GamePanel { Kind = SurfaceKind.Raised, Padding = new Thickness(12), Content = icon });
         var words = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { title, status } };
         Grid.SetColumn(words, 1); heading.Children.Add(words);
-        Content = new StackPanel { Spacing = 12, Children = { heading, description, ActionButton } };
+        Content = compact ? new StackPanel { Spacing = 8, Children = { heading, ActionButton } }
+            : new StackPanel { Spacing = 12, Children = { heading, description, ActionButton } };
         ActionButton.Click += (_, _) => { if (CanAfford) PurchaseRequested?.Invoke(this, EventArgs.Empty); };
         Refresh();
     }
@@ -103,4 +119,9 @@ public sealed class GameItemCard : GamePanel
         status.Text = Locked ? "RESEARCH REQUIRED" : CanAfford ? "READY TO INSTALL" : $"NEED {ResourceCounter.Format(Cost - Balance)} MORE";
         status.Ink = CanAfford ? GameInk.Accent : GameInk.Danger;
     }
+}
+
+public sealed class GameItemRow : GameItemCard
+{
+    public GameItemRow() : base(true) { }
 }

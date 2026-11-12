@@ -45,7 +45,7 @@ public class GamePanel : ContentControl
     public SurfaceKind Kind { get => GetValue(KindProperty); set => SetValue(KindProperty, value); }
     public GamePanel()
     {
-        Padding = new Thickness(GameUi.GetTheme(this).Space.Medium);
+        SetValue(PaddingProperty, new Thickness(GameUi.GetTheme(this).Space.Medium), BindingPriority.Style);
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
         Template = new FuncControlTemplate<GamePanel>((owner, scope) =>
         {
@@ -62,7 +62,7 @@ public class GamePanel : ContentControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == GameUi.ThemeProperty) SetCurrentValue(PaddingProperty, new Thickness(GameUi.GetTheme(this).Space.Medium));
+        if (change.Property == GameUi.ThemeProperty) SetValue(PaddingProperty, new Thickness(GameUi.GetTheme(this).Space.Medium), BindingPriority.Style);
     }
 }
 
@@ -104,6 +104,7 @@ internal sealed class ButtonSkin
     private GameSurface? surface;
     private GameIcon? glyph;
     private Grid? body;
+    private Grid? row;
     private double scale = 1;
     public bool IsAnimating => motion.IsActive;
     public ButtonSkin(Button owner, Func<SurfaceKind> kind, Func<GameIconKind?> icon)
@@ -112,6 +113,8 @@ internal sealed class ButtonSkin
         owner.MinHeight = 48; owner.MinWidth = 48;
         owner.HorizontalContentAlignment = HorizontalAlignment.Center;
         owner.VerticalContentAlignment = VerticalAlignment.Center;
+        owner.ContentTemplate = new FuncDataTemplate<string>((text, _) => new TextBlock
+        { Text = text, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center });
         motion = new MotionDriver(owner, value =>
         {
             scale = value;
@@ -125,11 +128,13 @@ internal sealed class ButtonSkin
             scope.Register(presenter.Name, presenter);
             presenter.Bind(ContentPresenter.ContentProperty, new Binding(nameof(Button.Content)) { Source = owner });
             presenter.Bind(ContentPresenter.ContentTemplateProperty, new Binding(nameof(Button.ContentTemplate)) { Source = owner });
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Center,
+            row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 10,
                 VerticalAlignment = VerticalAlignment.Center, Children = { glyph, presenter } };
+            Grid.SetColumn(presenter, 1);
+            presenter.HorizontalContentAlignment = HorizontalAlignment.Center;
             var inset = new Border { Child = row };
             inset.Bind(Border.PaddingProperty, new Binding(nameof(Button.Padding)) { Source = owner });
-            body = new Grid { RenderTransformOrigin = RelativePoint.Center, Children = { surface, inset } };
+            body = new Grid { Background = Brushes.Transparent, RenderTransformOrigin = RelativePoint.Center, Children = { surface, inset } };
             Refresh();
             return body;
         });
@@ -138,7 +143,7 @@ internal sealed class ButtonSkin
             if (e.Property == Button.IsPressedProperty) motion.Start(scale, owner.IsPressed ? .96 : 1, GameUi.GetTheme(owner).Motion.Press);
             if (e.Property == GameUi.ThemeProperty || e.Property == GameUi.TextScaleProperty || e.Property == InputElement.IsPointerOverProperty ||
                 e.Property == InputElement.IsEffectivelyEnabledProperty || e.Property == Button.IsPressedProperty || e.Property == InputElement.IsFocusedProperty ||
-                e.Property == GameButton.KindProperty || e.Property == GameButton.IconProperty || e.Property == ToggleButton.IsCheckedProperty) Refresh();
+                e.Property == GameButton.KindProperty || e.Property == GameButton.IconProperty || e.Property == ToggleButton.IsCheckedProperty || e.Property == ContentControl.ContentProperty) Refresh();
         };
         Refresh();
     }
@@ -147,7 +152,7 @@ internal sealed class ButtonSkin
         var theme = GameUi.GetTheme(owner); var p = theme.Palette;
         owner.FontFamily = theme.DisplayFont; owner.FontSize = theme.Type.Body * GameUi.GetTextScale(owner);
         owner.FontWeight = FontWeight.SemiBold;
-        owner.Padding = new Thickness(theme.Space.Medium, theme.Space.Small + 4);
+        owner.SetValue(TemplatedControl.PaddingProperty, new Thickness(theme.Space.Medium, theme.Space.Small + 4), BindingPriority.Style);
         var enabled = owner.IsEffectivelyEnabled;
         owner.Foreground = GameUi.Brush(!enabled ? p.Muted : kind() == SurfaceKind.Primary ? p.OnAccent : p.Ink);
         if (surface is null || glyph is null) return;
@@ -155,5 +160,10 @@ internal sealed class ButtonSkin
         surface.State = !enabled ? SurfaceState.Disabled : owner.IsPressed ? SurfaceState.Pressed : owner.IsFocused ? SurfaceState.Focused : owner.IsPointerOver ? SurfaceState.Hover : SurfaceState.Normal;
         glyph.IsVisible = icon().HasValue; glyph.Kind = icon() ?? GameIconKind.Play;
         glyph.Foreground = owner.Foreground;
+        if (row is not null)
+        {
+            row.HorizontalAlignment = owner.Content is null ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+            row.ColumnSpacing = icon().HasValue && owner.Content is not null ? 10 : 0;
+        }
     }
 }

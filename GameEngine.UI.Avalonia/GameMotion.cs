@@ -43,6 +43,10 @@ public sealed class GameTween
 
 internal sealed class MotionDriver
 {
+    private static int activeTimers;
+    private static long ticks;
+    internal static int ActiveTimers => Volatile.Read(ref activeTimers);
+    internal static long Ticks => Interlocked.Read(ref ticks);
     private readonly Control owner;
     private readonly Action<double> apply;
     private readonly DispatcherTimer timer;
@@ -58,11 +62,12 @@ internal sealed class MotionDriver
         timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1d / 60) };
         timer.Tick += (_, _) =>
         {
+            Interlocked.Increment(ref ticks);
             long now = Stopwatch.GetTimestamp();
             tween.Advance(Stopwatch.GetElapsedTime(last, now).TotalSeconds);
             last = now;
             apply(tween.Value);
-            if (!tween.IsActive) { timer.Stop(); Completed?.Invoke(); }
+            if (!tween.IsActive) { StopTimer(); Completed?.Invoke(); }
         };
         owner.DetachedFromVisualTree += (_, _) => Finish();
         owner.PropertyChanged += (_, e) =>
@@ -73,17 +78,28 @@ internal sealed class MotionDriver
 
     public void Start(double from, double to, double seconds)
     {
-        timer.Stop();
+        StopTimer();
         tween.Start(from, to, seconds, GameUi.GetReducedMotion(owner) || TopLevel.GetTopLevel(owner) is null,
             GameUi.GetTheme(owner).Motion.Easing);
         apply(tween.Value);
-        if (tween.IsActive) { last = Stopwatch.GetTimestamp(); timer.Start(); }
+        if (tween.IsActive) { last = Stopwatch.GetTimestamp(); timer.Start(); Interlocked.Increment(ref activeTimers); }
         else Completed?.Invoke();
     }
 
     public void Finish()
     {
         if (!tween.IsActive) return;
-        timer.Stop(); tween.Finish(); apply(tween.Value); Completed?.Invoke();
+        StopTimer(); tween.Finish(); apply(tween.Value); Completed?.Invoke();
     }
+    private void StopTimer()
+    {
+        if (!timer.IsEnabled) return;
+        timer.Stop(); Interlocked.Decrement(ref activeTimers);
+    }
+}
+
+public static class GameUiDiagnostics
+{
+    public static int ActiveAnimationTimers => MotionDriver.ActiveTimers;
+    public static long AnimationTicks => MotionDriver.Ticks;
 }

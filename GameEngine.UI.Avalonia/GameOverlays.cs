@@ -2,7 +2,11 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
+using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Input.GestureRecognizers;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -14,7 +18,7 @@ public sealed class GameScreen : Border
     public static readonly StyledProperty<Thickness> SafeInsetsProperty = AvaloniaProperty.Register<GameScreen, Thickness>(nameof(SafeInsets));
     public Thickness SafeInsets { get => GetValue(SafeInsetsProperty); set => SetValue(SafeInsetsProperty, value); }
     private IInsetsManager? insets;
-    public GameScreen() => Apply();
+    public GameScreen() { CacheMode = new BitmapCache(); Apply(); }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -39,7 +43,26 @@ public sealed class GameScreen : Border
         var native = insets?.SafeAreaPadding ?? default;
         Padding = new Thickness(Math.Max(native.Left, SafeInsets.Left), Math.Max(native.Top, SafeInsets.Top),
             Math.Max(native.Right, SafeInsets.Right), Math.Max(native.Bottom, SafeInsets.Bottom));
-        Background = GameUi.Brush(GameUi.GetTheme(this).Palette.Background);
+        SetValue(BackgroundProperty, GameUi.Brush(GameUi.GetTheme(this).Palette.Background), BindingPriority.Style);
+    }
+}
+
+public sealed class GameScrollViewer : ScrollViewer
+{
+    public GameScrollViewer()
+    {
+        HorizontalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
+        Template = new FuncControlTemplate<GameScrollViewer>((_, scope) =>
+        {
+            var presenter = new ScrollContentPresenter { Name = "PART_ContentPresenter", Background = Brushes.Transparent };
+            scope.Register(presenter.Name, presenter);
+            var gesture = new ScrollGestureRecognizer { CanVerticallyScroll = true, CanHorizontallyScroll = false };
+            gesture.Bind(ScrollGestureRecognizer.OffsetProperty, new Binding(nameof(ScrollContentPresenter.Offset)) { Source = presenter });
+            gesture.Bind(ScrollGestureRecognizer.ExtentProperty, new Binding(nameof(ScrollContentPresenter.Extent)) { Source = presenter });
+            gesture.Bind(ScrollGestureRecognizer.ViewportProperty, new Binding(nameof(ScrollContentPresenter.Viewport)) { Source = presenter });
+            presenter.GestureRecognizers.Add(gesture);
+            return presenter;
+        });
     }
 }
 
@@ -66,7 +89,7 @@ public sealed class GameSheet : Grid
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 8 };
         header.Children.Add(heading); Grid.SetColumn(close, 1); header.Children.Add(close);
         var contents = new StackPanel { Spacing = 20, Children = { header, body } };
-        panel.Content = new ScrollViewer { Content = contents, HorizontalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        panel.Content = new GameScrollViewer { Content = contents };
         Children.Add(scrim); Children.Add(panel);
         motion = new MotionDriver(this, progress =>
         {

@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../GameEngine.Core/GameEngine.Core.csproj" />
+    <ProjectReference Include="../GameEngine.UI.Avalonia/GameEngine.UI.Avalonia.csproj" />
   </ItemGroup>
 </Project>

@@ -64,6 +64,7 @@ jobs:
           for project in \
             GameEngine.Core/GameEngine.Core.csproj \
             GameEngine.Audio.Sdl/GameEngine.Audio.Sdl.csproj \
+            GameEngine.UI.Avalonia/GameEngine.UI.Avalonia.csproj \
             GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia/GameEngine.Runner.Avalonia.csproj \
             templates/GameEngine.Templates.csproj
           do

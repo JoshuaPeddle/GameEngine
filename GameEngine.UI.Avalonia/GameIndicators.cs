@@ -21,6 +21,7 @@ public sealed class ResourceCounter : GamePanel
     private readonly GameLabel number = new() { Role = GameTextRole.Title };
     private readonly GameLabel label = new() { Role = GameTextRole.Caption, Ink = GameInk.Muted };
     private readonly MotionDriver roll;
+    private double rollFrom, rollTo;
     public bool HasActiveMotion => roll.IsActive;
     public string DisplayText => number.Text ?? "";
     public ResourceCounter()
@@ -29,7 +30,12 @@ public sealed class ResourceCounter : GamePanel
         row.Children.Add(new GameIcon { Kind = GameIconKind.Coin, VerticalAlignment = VerticalAlignment.Center });
         var stack = new StackPanel { Children = { label, number } }; Grid.SetColumn(stack, 1); row.Children.Add(stack);
         Content = row;
-        roll = new MotionDriver(this, v => number.Text = Format(v));
+        roll = new MotionDriver(this, v =>
+        {
+            number.Text = Format(v);
+            double remaining = rollTo == rollFrom ? 0 : Math.Abs((rollTo - v) / (rollTo - rollFrom));
+            number.RenderTransform = new TranslateTransform(0, -4 * remaining);
+        });
         label.Text = Label; number.Text = Format(Value);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -37,7 +43,8 @@ public sealed class ResourceCounter : GamePanel
         base.OnPropertyChanged(change);
         if (change.Property == ValueProperty && roll is not null)
         {
-            roll.Start(roll.Value, Value, GameUi.GetTheme(this).Motion.Counter);
+            rollFrom = roll.Value; rollTo = Value;
+            roll.Start(rollFrom, rollTo, GameUi.GetTheme(this).Motion.Counter);
             AutomationProperties.SetName(this, $"{Label}: {Value.ToString(CultureInfo.InvariantCulture)}");
         }
         if (change.Property == LabelProperty) label.Text = Label;
@@ -157,10 +164,17 @@ public sealed class GameSlider : Slider
         {
             var meter = new MeterFill { Margin = new Thickness(12, 0) };
             var thumb = new Thumb { Width = 28, Height = 36, Template = new FuncControlTemplate<Thumb>((_, _) =>
-                new GameSurface { Kind = SurfaceKind.Primary }) };
+                new Grid { Background = Brushes.Transparent, Children = { new GameSurface { Kind = SurfaceKind.Primary } } }) };
             var track = new Track { Name = "PART_Track", Thumb = thumb, Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center, Height = 48 };
             scope.Register(track.Name, track);
+            foreach (string name in new[] { "PART_DecreaseButton", "PART_IncreaseButton" })
+            {
+                var hit = new Button { Name = name, Focusable = false,
+                    Template = new FuncControlTemplate<Button>((_, _) => new Border { Background = Brushes.Transparent }) };
+                scope.Register(name, hit);
+                if (name == "PART_DecreaseButton") track.DecreaseButton = hit; else track.IncreaseButton = hit;
+            }
             track.Bind(Track.MinimumProperty, new Binding(nameof(Minimum)) { Source = owner });
             track.Bind(Track.MaximumProperty, new Binding(nameof(Maximum)) { Source = owner });
             track.Bind(Track.ValueProperty, new Binding(nameof(Value)) { Source = owner, Mode = BindingMode.TwoWay });

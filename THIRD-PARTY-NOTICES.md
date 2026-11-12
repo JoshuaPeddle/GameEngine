@@ -11,7 +11,7 @@ NuGet package's `licenses/` directory and beside the fonts in this repository.
 
 | Face | Use | Copyright | Source and licence |
 |---|---|---|---|
-| Oxanium | Display titles, buttons and tabular counters | 2019 The Oxanium Project Authors | [Google Fonts source](https://github.com/google/fonts/tree/main/ofl/oxanium), [OFL](GameEngine.UI.Avalonia/Fonts/Oxanium-OFL.txt) |
+| Oxanium Medium and SemiBold | Display titles, buttons and tabular counters | 2019 The Oxanium Project Authors | [Upstream static fonts](https://github.com/sevmeyer/oxanium/tree/master/fonts/ttf), [OFL](GameEngine.UI.Avalonia/Fonts/Oxanium-OFL.txt) |
 | Atkinson Hyperlegible | Body text, labels and descriptions | 2020 Braille Institute of America, Inc. | [Google Fonts source](https://github.com/google/fonts/tree/main/ofl/atkinsonhyperlegible), [OFL](GameEngine.UI.Avalonia/Fonts/AtkinsonHyperlegible-OFL.txt) |
 
 The fonts may be bundled with commercial games under those terms. No font

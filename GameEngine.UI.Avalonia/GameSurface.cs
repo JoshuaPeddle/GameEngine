@@ -66,7 +66,11 @@ public static class SurfaceCache
                 if (Images.Count == Capacity) { var oldest = Order.Dequeue(); Images[oldest].Dispose(); Images.Remove(oldest); }
                 image = Create(key); Images.Add(key, image); Order.Enqueue(key); GeneratedCount++;
             }
-            canvas.DrawImageNinePatch(image, new SKRectI(78, 78, 162, 162), bounds, SKFilterMode.Linear);
+            canvas.Save();
+            canvas.Scale(1 / Scale);
+            canvas.DrawImageNinePatch(image, new SKRectI(78, 78, 162, 162),
+                new SKRect(bounds.Left * Scale, bounds.Top * Scale, bounds.Right * Scale, bounds.Bottom * Scale), SKFilterMode.Linear);
+            canvas.Restore();
         }
     }
 
@@ -89,7 +93,8 @@ public static class SurfaceCache
         bool primary = key.Kind == SurfaceKind.Primary && key.State != SurfaceState.Disabled;
         var fill = C(primary ? palette.Accent : key.Kind == SurfaceKind.Raised ? palette.Raised : palette.Surface);
         var rim = C(primary ? palette.Accent : palette.Rim);
-        if (key.State == SurfaceState.Hover) fill = Mix(fill, C(palette.Accent), .16f);
+        if (key.State == SurfaceState.Hover)
+            fill = Mix(fill, primary ? GameTheme.Contrast(palette.OnAccent, Colors.White) > 4.5 ? SKColors.White : SKColors.Black : C(palette.Accent), .12f);
         if (key.State == SurfaceState.Pressed) fill = Mix(fill, SKColors.Black, .13f);
         if (key.State == SurfaceState.Disabled) fill = Mix(C(palette.Surface), C(palette.Background), .3f);
         float radius = (float)Math.Clamp(key.Kind == SurfaceKind.Panel ? theme.Radii.Panel : theme.Radii.Control, 2, 23);
@@ -99,7 +104,7 @@ public static class SurfaceCache
         canvas.DrawRoundRect(new SKRect(2, 4, 78, 80), radius, radius, paint);
         using var gradient = SKShader.CreateLinearGradient(new SKPoint(0, 0), new SKPoint(0, 80),
             [Mix(fill, SKColors.White, primary ? .12f : .035f), fill, Mix(fill, SKColors.Black, .08f)], [0, .45f, 1], SKShaderTileMode.Clamp);
-        paint.Shader = gradient; canvas.DrawRoundRect(rect, radius, radius, paint); paint.Shader = null;
+        paint.Color = SKColors.White; paint.Shader = gradient; canvas.DrawRoundRect(rect, radius, radius, paint); paint.Shader = null;
         canvas.Save();
         using (var clip = new SKRoundRect(rect, radius)) canvas.ClipRoundRect(clip, SKClipOperation.Intersect, true);
         var random = new Random(71);
@@ -110,7 +115,7 @@ public static class SurfaceCache
         }
         using var light = SKShader.CreateLinearGradient(new SKPoint(0, 0), new SKPoint(0, 24),
             [C(palette.Accent).WithAlpha((byte)(Math.Clamp(theme.Glow, 0, 1) * 100)), SKColors.Transparent], null, SKShaderTileMode.Clamp);
-        paint.Shader = light; canvas.DrawRect(rect, paint); paint.Shader = null;
+        paint.Color = SKColors.White; paint.Shader = light; canvas.DrawRect(rect, paint); paint.Shader = null;
         canvas.Restore();
         paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = (float)theme.Stroke;
         paint.Color = key.State == SurfaceState.Focused ? C(palette.Accent) : rim.WithAlpha(primary ? (byte)220 : (byte)140);

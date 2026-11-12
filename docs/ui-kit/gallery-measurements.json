@@ -1,0 +1,23 @@
+{
+  "OS": "macOS 26.6.2",
+  "Architecture": "Arm64",
+  "Runtime": "10.0.10",
+  "Width": 1080,
+  "Height": 2400,
+  "Samples": 120,
+  "Warmup": 20,
+  "Results": [
+    {
+      "Theme": "Night coast",
+      "MeanMs": 3.794196666666666,
+      "P95Ms": 3.841,
+      "ManagedBytesPerRepaint": 75544
+    },
+    {
+      "Theme": "Daybreak",
+      "MeanMs": 3.6646491666666674,
+      "P95Ms": 3.6959,
+      "ManagedBytesPerRepaint": 75544
+    }
+  ]
+}
