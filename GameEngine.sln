@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Audio.Apple", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.Audio.Android", "GameEngine.Audio.Android\GameEngine.Audio.Android.csproj", "{A1700F52-5996-42D5-8C2E-B3ED954E24FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine.UI.Avalonia", "GameEngine.UI.Avalonia\GameEngine.UI.Avalonia.csproj", "{D7492E57-53B5-4196-A065-A8B4E5FDF367}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -299,6 +301,18 @@ Global
 		{A1700F52-5996-42D5-8C2E-B3ED954E24FD}.Release|x64.Build.0 = Release|Any CPU
 		{A1700F52-5996-42D5-8C2E-B3ED954E24FD}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1700F52-5996-42D5-8C2E-B3ED954E24FD}.Release|x86.Build.0 = Release|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Debug|x64.Build.0 = Debug|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Debug|x86.Build.0 = Debug|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Release|x64.ActiveCfg = Release|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Release|x64.Build.0 = Release|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Release|x86.ActiveCfg = Release|Any CPU
+		{D7492E57-53B5-4196-A065-A8B4E5FDF367}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
