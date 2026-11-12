@@ -52,3 +52,14 @@ put the kit in a new project `GameEngine.UI.Avalonia` (published like the runner
 - Gallery captures exist and look like a premium mobile game UI, not default controls.
 - Final message: packaging decision, component list, fonts and licences, performance numbers, test
   counts, and what a game must change to adopt the kit (Tower Idle is next).
+
+## Status at handover (2026-11-12)
+The first run hit the usage limit near the end. Done and committed: the `GameEngine.UI.Avalonia` project,
+fonts and notices, components, gallery scene, 55 passing UI tests, captures in `docs/ui-kit/`,
+`gallery-measurements.json`. Left to do:
+1. Write `docs/13-ui-kit.md` (and link it from `docs/README.md`).
+2. Measure and report idle cost (CPU or frames while nothing animates), not just repaint time.
+3. Full `dotnet build GameEngine.sln -c Release` with zero warnings and a full `dotnet test`; fix
+   anything that fails. Check the `dotnet pack` of the UI project and the workflow edits.
+4. Tidy commit history if needed, delete this brief in the last commit, and give the final message the
+   acceptance list asks for.
