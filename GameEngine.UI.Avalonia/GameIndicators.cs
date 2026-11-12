@@ -16,6 +16,8 @@ public sealed class ResourceCounter : GamePanel
     public static readonly StyledProperty<double> ValueProperty = AvaloniaProperty.Register<ResourceCounter, double>(nameof(Value),
         validate: double.IsFinite);
     public static readonly StyledProperty<string> LabelProperty = AvaloniaProperty.Register<ResourceCounter, string>(nameof(Label), "SALVAGE");
+    public static readonly StyledProperty<GameIconSource?> IconSourceProperty = AvaloniaProperty.Register<ResourceCounter, GameIconSource?>(nameof(IconSource));
+    public GameIconSource? IconSource { get => GetValue(IconSourceProperty); set => SetValue(IconSourceProperty, value); }
     public double Value { get => GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
     public string Label { get => GetValue(LabelProperty); set => SetValue(LabelProperty, value); }
     private readonly GameLabel number = new() { Role = GameTextRole.Title };
@@ -27,7 +29,9 @@ public sealed class ResourceCounter : GamePanel
     public ResourceCounter()
     {
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 12 };
-        row.Children.Add(new GameIcon { Kind = GameIconKind.Coin, VerticalAlignment = VerticalAlignment.Center });
+        var icon = new GameIcon { Kind = GameIconKind.Coin, VerticalAlignment = VerticalAlignment.Center };
+        icon.Bind(GameIcon.SourceProperty, new Binding(nameof(IconSource)) { Source = this });
+        row.Children.Add(icon);
         var stack = new StackPanel { Children = { label, number } }; Grid.SetColumn(stack, 1); row.Children.Add(stack);
         Content = row;
         roll = new MotionDriver(this, v =>
@@ -67,14 +71,33 @@ public sealed class GameBadge : GamePanel
     public static readonly StyledProperty<GameInk> InkProperty = GameLabel.InkProperty.AddOwner<GameBadge>();
     public string Text { get => GetValue(TextProperty); set => SetValue(TextProperty, value); }
     public GameInk Ink { get => GetValue(InkProperty); set => SetValue(InkProperty, value); }
+    public static readonly StyledProperty<GameIconSource?> IconSourceProperty = AvaloniaProperty.Register<GameBadge, GameIconSource?>(nameof(IconSource));
+    public static readonly StyledProperty<GameIconKind?> IconProperty = GameButton.IconProperty.AddOwner<GameBadge>();
+    public GameIconSource? IconSource { get => GetValue(IconSourceProperty); set => SetValue(IconSourceProperty, value); }
+    public GameIconKind? Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
+    private readonly GameIcon glyph = new() { Width = 16, Height = 16, VerticalAlignment = VerticalAlignment.Center };
     public GameBadge()
     {
         Padding = new Thickness(12, 6); HorizontalAlignment = HorizontalAlignment.Left;
         var label = new GameLabel { Role = GameTextRole.Caption };
         label.Bind(TextBlock.TextProperty, new Binding(nameof(Text)) { Source = this });
         label.Bind(GameLabel.InkProperty, new Binding(nameof(Ink)) { Source = this });
-        Content = label;
+        glyph.Bind(GameIcon.SourceProperty, new Binding(nameof(IconSource)) { Source = this });
+        glyph.Bind(GameIcon.ForegroundProperty, new Binding(nameof(GameLabel.Foreground)) { Source = label });
+        glyph.IsVisible = IconSource is not null || Icon.HasValue;
+        Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { glyph, label } };
     }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (glyph is null) return;
+        if (change.Property == IconProperty || change.Property == IconSourceProperty)
+        {
+            glyph.Kind = Icon ?? GameIconKind.Check;
+            glyph.IsVisible = IconSource is not null || Icon.HasValue;
+        }
+    }
+
 }
 
 internal sealed class MeterFill : Control

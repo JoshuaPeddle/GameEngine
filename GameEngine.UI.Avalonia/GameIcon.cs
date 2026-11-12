@@ -6,9 +6,25 @@ namespace GameEngine.UI.Avalonia;
 
 public enum GameIconKind { Menu, Pause, Play, Speed, Settings, Sound, Close, Back, Upgrade, Coin, Lock, Check, Info, Trophy, Research, Prestige }
 
+public sealed class GameIconSource
+{
+    internal Geometry Geometry { get; }
+    internal double Viewport { get; }
+    private GameIconSource(string path, double viewport)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        if (!double.IsFinite(viewport) || viewport <= 0) throw new ArgumentOutOfRangeException(nameof(viewport));
+        Geometry = Geometry.Parse(path);
+        Viewport = viewport;
+    }
+    public static GameIconSource FromPath(string path, double viewport = 24) => new(path, viewport);
+}
+
 public sealed class GameIcon : Control
 {
     public static readonly StyledProperty<GameIconKind> KindProperty = AvaloniaProperty.Register<GameIcon, GameIconKind>(nameof(Kind));
+    public static readonly StyledProperty<GameIconSource?> SourceProperty = AvaloniaProperty.Register<GameIcon, GameIconSource?>(nameof(Source));
+    public GameIconSource? Source { get => GetValue(SourceProperty); set => SetValue(SourceProperty, value); }
     public static readonly StyledProperty<IBrush?> ForegroundProperty = AvaloniaProperty.Register<GameIcon, IBrush?>(nameof(Foreground));
     public GameIconKind Kind { get => GetValue(KindProperty); set => SetValue(KindProperty, value); }
     public IBrush? Foreground { get => GetValue(ForegroundProperty); set => SetValue(ForegroundProperty, value); }
@@ -31,13 +47,26 @@ public sealed class GameIcon : Control
         "M9 3H15 M10 3V10L4 19Q3 21 6 21H18Q21 21 20 19L14 10V3 M8 14H16",
         "M12 2L15 9 22 12 15 15 12 22 9 15 2 12 9 9Z M3 3L5 5 M19 19L21 21"
     }.Select(Geometry.Parse).ToArray();
-    static GameIcon() => AffectsRender<GameIcon>(KindProperty, ForegroundProperty, GameUi.ThemeProperty);
+    static GameIcon() => AffectsRender<GameIcon>(KindProperty, SourceProperty, ForegroundProperty, GameUi.ThemeProperty);
     public GameIcon() { Width = 24; Height = 24; IsHitTestVisible = false; }
     public override void Render(DrawingContext context)
     {
-        var scale = Math.Min(Bounds.Width, Bounds.Height) / 24;
-        using var transform = context.PushTransform(Matrix.CreateScale(scale, scale));
-        context.DrawGeometry(null, new Pen(Foreground ?? GameUi.Brush(GameUi.GetTheme(this).Palette.Accent), 1.6,
-            lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), Paths[(int)Kind]);
+        var theme = GameUi.GetTheme(this);
+        double size = Math.Min(Bounds.Width, Bounds.Height);
+        double viewport = Source?.Viewport ?? 24;
+        double scale = size / viewport;
+        if (scale <= 0) return;
+        using var transform = context.PushTransform(Matrix.CreateScale(scale, scale) *
+            Matrix.CreateTranslation((Bounds.Width - size) / 2, (Bounds.Height - size) / 2));
+        var geometry = Source?.Geometry ?? Paths[(int)Kind];
+        var brush = Foreground ?? GameUi.Brush(theme.Palette.Accent);
+        double stroke = 1.6 * theme.Stroke * viewport / 24;
+        if (theme.Glow > 0)
+        {
+            using var opacity = context.PushOpacity(Math.Clamp(theme.Glow, 0, 1) * .3);
+            context.DrawGeometry(null, new Pen(brush, stroke * 2.4, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), geometry);
+        }
+        context.DrawGeometry(null, new Pen(brush, stroke,
+            lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), geometry);
     }
 }

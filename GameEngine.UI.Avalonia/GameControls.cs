@@ -72,6 +72,8 @@ public class GameButton : Button
 {
     public static readonly StyledProperty<GameButtonKind> KindProperty = AvaloniaProperty.Register<GameButton, GameButtonKind>(nameof(Kind));
     public static readonly StyledProperty<GameIconKind?> IconProperty = AvaloniaProperty.Register<GameButton, GameIconKind?>(nameof(Icon));
+    public static readonly StyledProperty<GameIconSource?> IconSourceProperty = AvaloniaProperty.Register<GameButton, GameIconSource?>(nameof(IconSource));
+    public GameIconSource? IconSource { get => GetValue(IconSourceProperty); set => SetValue(IconSourceProperty, value); }
     private readonly ButtonSkin skin;
     public GameButtonKind Kind { get => GetValue(KindProperty); set => SetValue(KindProperty, value); }
     public GameIconKind? Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
@@ -143,7 +145,7 @@ internal sealed class ButtonSkin
             if (e.Property == Button.IsPressedProperty) motion.Start(scale, owner.IsPressed ? .96 : 1, GameUi.GetTheme(owner).Motion.Press);
             if (e.Property == GameUi.ThemeProperty || e.Property == GameUi.TextScaleProperty || e.Property == InputElement.IsPointerOverProperty ||
                 e.Property == InputElement.IsEffectivelyEnabledProperty || e.Property == Button.IsPressedProperty || e.Property == InputElement.IsFocusedProperty ||
-                e.Property == GameButton.KindProperty || e.Property == GameButton.IconProperty || e.Property == ToggleButton.IsCheckedProperty || e.Property == ContentControl.ContentProperty) Refresh();
+                e.Property == GameButton.IconSourceProperty || e.Property == GameButton.KindProperty || e.Property == GameButton.IconProperty || e.Property == ToggleButton.IsCheckedProperty || e.Property == ContentControl.ContentProperty) Refresh();
         };
         Refresh();
     }
@@ -158,12 +160,13 @@ internal sealed class ButtonSkin
         if (surface is null || glyph is null) return;
         surface.Kind = kind();
         surface.State = !enabled ? SurfaceState.Disabled : owner.IsPressed ? SurfaceState.Pressed : owner.IsFocused ? SurfaceState.Focused : owner.IsPointerOver ? SurfaceState.Hover : SurfaceState.Normal;
-        glyph.IsVisible = icon().HasValue; glyph.Kind = icon() ?? GameIconKind.Play;
+        glyph.Source = (owner as GameButton)?.IconSource;
+        glyph.IsVisible = glyph.Source is not null || icon().HasValue; glyph.Kind = icon() ?? GameIconKind.Play;
         glyph.Foreground = owner.Foreground;
         if (row is not null)
         {
             row.HorizontalAlignment = owner.Content is null ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
-            row.ColumnSpacing = icon().HasValue && owner.Content is not null ? 10 : 0;
+            row.ColumnSpacing = glyph.IsVisible && owner.Content is not null ? 10 : 0;
         }
     }
 }
