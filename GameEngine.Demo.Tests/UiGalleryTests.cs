@@ -94,6 +94,50 @@ public sealed class UiGalleryTests
     }
 
     [AvaloniaTest]
+    public async Task SettledGallerySchedulesNoAnimationTicks()
+    {
+        var results = new List<object>();
+        using var process = Process.GetCurrentProcess();
+        foreach (bool bright in new[] { false, true })
+        {
+            var harness = SceneHarness.Load(new SceneUiGallery()); using var engine = harness.Engine;
+            var gallery = new UiGalleryView((SceneUiGallery)harness.Scene, bright);
+            var window = Open(gallery);
+            try
+            {
+                for (int page = 0; page < 4; page++)
+                {
+                    gallery.Sheet.Close();
+                    gallery.Navigation.SelectedIndex = page < 3 ? page : 0;
+                    if (page == 3) gallery.Sheet.Open();
+                    window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
+                    await Task.Delay(700);
+                    Assert.That(GameUiDiagnostics.ActiveAnimationTimers, Is.Zero);
+                    long ticks = GameUiDiagnostics.AnimationTicks;
+                    var cpu = process.TotalProcessorTime;
+                    long stamp = Stopwatch.GetTimestamp();
+                    await Task.Delay(1000);
+                    double wallMs = Stopwatch.GetElapsedTime(stamp).TotalMilliseconds;
+                    double cpuMs = (process.TotalProcessorTime - cpu).TotalMilliseconds;
+                    long idleTicks = GameUiDiagnostics.AnimationTicks - ticks;
+                    Assert.That(idleTicks, Is.Zero);
+                    results.Add(new { Theme = bright ? "Daybreak" : "Night coast", Page = new[] { "workshop", "settings", "library", "sheet" }[page],
+                        WallMs = wallMs, ProcessCpuMs = cpuMs, OneCorePercent = cpuMs / wallMs * 100,
+                        ActiveAnimationTimers = GameUiDiagnostics.ActiveAnimationTimers, AnimationTicks = idleTicks });
+                }
+            }
+            finally { window.Close(); }
+        }
+        string json = JsonSerializer.Serialize(new { OS = RuntimeInformation.OSDescription, Architecture = RuntimeInformation.ProcessArchitecture.ToString(),
+            Runtime = Environment.Version.ToString(), Results = results }, new JsonSerializerOptions { WriteIndented = true });
+        TestContext.Out.WriteLine(json);
+        if (Environment.GetEnvironmentVariable("UI_KIT_CAPTURE_DIR") is { } directory)
+        {
+            Directory.CreateDirectory(directory); File.WriteAllText(Path.Combine(directory, "idle-measurements.json"), json + Environment.NewLine);
+        }
+    }
+
+    [AvaloniaTest]
     public void WarmGalleryRepaintsReuseSurfaces()
     {
         var results = new List<object>();
