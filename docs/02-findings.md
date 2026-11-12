@@ -384,3 +384,9 @@ Bloom layers now draw once into a retained transparent surface. The composed res
 The public Android host adapter lives beside the native audio backend and has no dependency on the demo application's lifecycle singleton. `HostServices` supplies its foreground gate. Placement uses virtual-key feedback on Android and light impact on iOS; reward and rejection retain stronger notification cues. The adapter checks activity lifetime and the user's preference before dispatching feedback on the UI thread.
 
 The Android audio backend logs startup, decoded sample duration, first successful effect playback, music starts and native decode or player errors under `GameEngineAudio`. Effects report their first successful stream once per backend, so combat does not produce a log line per shot. These diagnostics establish native playback state, not a listener's judgment of the sound mix.
+
+## Reusable game UI
+
+| ID | Sev | Finding | Location | Confirmed | Status |
+|---|---|---|---|---|---|
+| GE-160 | S3 | Every game must reinvent themed menus, typography, drawn surfaces, accessible controls and feedback | Avalonia game HUDs | Tower Idle GamePage and phone captures; 56 UI tests, gallery captures, idle and repaint measurements in [13-ui-kit.md](13-ui-kit.md) | fixed |

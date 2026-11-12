@@ -16,6 +16,7 @@ the behavioural claims.
 | [`06-reliability-plan.md`](06-reliability-plan.md) | Draft implementation plan from the September 2026 review: content safety, mutation consistency, host lifecycle, rendering, physics, and a complete editing workflow. |
 | [`07-emberbrook-engine-review.md`](07-emberbrook-engine-review.md) | Engine ergonomics after building Emberbrook, prioritized improvements, and browser deployment findings. |
 | [`08-batched-rendering.md`](08-batched-rendering.md) | Sprite groups, pooled particles, snapshot ordering, mobile rates and measured benchmarks. |
+| [`13-ui-kit.md`](13-ui-kit.md) | The Avalonia game UI kit, themes, adoption guide, gallery captures, idle and repaint measurements, and package verification. |
 
 ## How these fit together
 

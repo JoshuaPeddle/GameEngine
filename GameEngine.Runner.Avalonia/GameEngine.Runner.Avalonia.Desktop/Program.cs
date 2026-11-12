@@ -13,6 +13,11 @@ namespace GameEngine.Runner.Avalonia.Desktop
         [STAThread]
         public static void Main(string[] args)
         {
+            if (Array.IndexOf(args, "--ui-gallery") >= 0)
+            {
+                AppBuilder.Configure<UiGalleryApp>().UsePlatformDetect().LogToTrace().StartWithClassicDesktopLifetime(args);
+                return;
+            }
             // Core has no audio integration of its own; a desktop head supplies one. Without
             // this the engine still runs, reporting audio as unavailable.
             AudioBackends.Factory = SdlAudioBackend.Create;
