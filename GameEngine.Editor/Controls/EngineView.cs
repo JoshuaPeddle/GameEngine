@@ -333,12 +333,8 @@ namespace GameEngine.Editor.Controls
                 using var lease = leaseFeature.Lease();
                 var canvas = lease.SkCanvas;
 
-                canvas.Save();
-                canvas.ClipRect(new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
-
-                renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot());
-
-                canvas.Restore();
+                renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot(),
+                    new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
 
                 // Resume updates after first visible frame of a new scene
                 _engine.NotifyFirstPresent();

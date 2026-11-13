@@ -466,7 +466,9 @@ namespace GameEngine.Runner.Avalonia
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
             _drawBoundary?.Invoke(canvas, true);
-            try { renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot()); }
+            // The control's full bounds, not the canvas clip: a partial redraw must not refit the scene.
+            var viewport = new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height);
+            try { renderSystem.DrawEntitiesToCanvas(canvas, _engine.GetRenderSnapshot(), viewport); }
             finally { _drawBoundary?.Invoke(canvas, false); }
 
             // Resume updates and report that the first visible frame reached the platform surface.

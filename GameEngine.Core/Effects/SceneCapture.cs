@@ -29,6 +29,6 @@ public static class SceneCapture
         double remainder = time - ticks * step;
         if (remainder > 1e-10) engine.Tick(remainder);
         if (engine.Fault is { } fault) throw new InvalidOperationException($"Capture failed: {fault}");
-        return Render(width, height, time, (canvas, _) => engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, engine.GetRenderSnapshot()));
+        return Render(width, height, time, (canvas, _) => engine.Systems.Get<RenderSystem>().DrawEntitiesToCanvas(canvas, engine.GetRenderSnapshot(), new SKRect(0, 0, width, height)));
     }
 }

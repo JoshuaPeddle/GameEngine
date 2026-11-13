@@ -47,6 +47,7 @@ public class GamePanel : ContentControl
     {
         SetValue(PaddingProperty, new Thickness(GameUi.GetTheme(this).Space.Medium), BindingPriority.Style);
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        SetValue(VerticalContentAlignmentProperty, VerticalAlignment.Center, BindingPriority.Style);
         Template = new FuncControlTemplate<GamePanel>((owner, scope) =>
         {
             var surface = new GameSurface();
@@ -56,6 +57,7 @@ public class GamePanel : ContentControl
             scope.Register(presenter.Name, presenter);
             presenter.Bind(ContentPresenter.ContentProperty, new Binding(nameof(Content)) { Source = owner });
             presenter.Bind(ContentPresenter.PaddingProperty, new Binding(nameof(Padding)) { Source = owner });
+            presenter.Bind(ContentPresenter.VerticalContentAlignmentProperty, new Binding(nameof(VerticalContentAlignment)) { Source = owner });
             return new Grid { Children = { surface, presenter } };
         });
     }

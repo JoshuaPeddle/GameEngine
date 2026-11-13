@@ -37,8 +37,9 @@ public sealed class ResourceCounter : GamePanel
         roll = new MotionDriver(this, v =>
         {
             number.Text = Format(v);
+            // The roll stays inside the number's line box: a moving baseline overlaps the caption.
             double remaining = rollTo == rollFrom ? 0 : Math.Abs((rollTo - v) / (rollTo - rollFrom));
-            number.RenderTransform = new TranslateTransform(0, -4 * remaining);
+            number.Opacity = 1 - .35 * remaining;
         });
         label.Text = Label; number.Text = Format(Value);
     }
