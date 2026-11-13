@@ -77,8 +77,25 @@ namespace GameEngine.Core.Systems
         /// <summary>
         /// Thread-safe overload: renders from an immutable <see cref="RenderSnapshot"/>
         /// that was built on the engine thread. No EntityManager access occurs.
+        /// The scene fills the whole canvas.
         /// </summary>
-        public void DrawEntitiesToCanvas(SKCanvas canvas, RenderSnapshot snapshot)
+        public void DrawEntitiesToCanvas(SKCanvas canvas, RenderSnapshot snapshot) => Draw(canvas, snapshot, null);
+
+        /// <summary>
+        /// Renders into <paramref name="viewport"/>, the host control's full bounds in the
+        /// canvas's local coordinates. Layout, resolution capping and post-processing are
+        /// derived from those bounds and the canvas transform; the canvas clip, such as a
+        /// compositor's damage rectangle, only limits which pixels are written.
+        /// </summary>
+        public void DrawEntitiesToCanvas(SKCanvas canvas, RenderSnapshot snapshot, SKRect viewport)
+        {
+            if (!float.IsFinite(viewport.Left) || !float.IsFinite(viewport.Top) || !float.IsFinite(viewport.Right) || !float.IsFinite(viewport.Bottom))
+                throw new ArgumentOutOfRangeException(nameof(viewport));
+            if (viewport.Width <= 0 || viewport.Height <= 0) return;
+            Draw(canvas, snapshot, viewport);
+        }
+
+        private void Draw(SKCanvas canvas, RenderSnapshot snapshot, SKRect? viewport)
         {
             lock (_drawLock)
             {
@@ -88,19 +105,23 @@ namespace GameEngine.Core.Systems
                 int saved = canvas.Save();
                 try
                 {
+                    var bounds = viewport ?? FullCanvas(canvas);
+                    if (viewport is not null) canvas.ClipRect(bounds);
+                    var device = DeviceSize(canvas, bounds);
                     if (options.Effects?.PostProcess is { } postProcess)
                     {
-                        var bounds = LocalViewport(canvas);
-                        int width = Math.Max(1, (int)bounds.Width), height = Math.Max(1, (int)bounds.Height);
+                        int width = device.Width, height = device.Height;
                         if (postSurface is null || postSurface.Canvas.DeviceClipBounds.Width != width || postSurface.Canvas.DeviceClipBounds.Height != height || postSurface.Context?.Handle != canvas.Context?.Handle)
                         {
                             postSurface?.Dispose();
                             postSurface = canvas.Context is { } context ? SKSurface.Create(context, true, new SKImageInfo(width, height)) : SKSurface.Create(new SKImageInfo(width, height));
                         }
-                        DrawResolutionLimited(postSurface!.Canvas, snapshot);
+                        DrawResolutionLimited(postSurface!.Canvas, snapshot, new SKRect(0, 0, width, height), device);
                         using var image = postSurface.Snapshot();
                         using var content = image.ToShader();
                         using var shader = postProcess.Create(new EffectFrame(effectTime, new SKSize(width, height), snapshot.ActiveCamera is { } cam ? new SKPoint((float)cam.Position.X, (float)cam.Position.Y) : default), content);
+                        canvas.Translate(bounds.Left, bounds.Top);
+                        canvas.Scale(bounds.Width / width, bounds.Height / height);
                         if (shader is null) canvas.DrawImage(image, 0, 0, _animationSampling);
                         else
                         {
@@ -108,7 +129,7 @@ namespace GameEngine.Core.Systems
                             canvas.DrawRect(0, 0, width, height, paint);
                         }
                     }
-                    else DrawResolutionLimited(canvas, snapshot);
+                    else DrawResolutionLimited(canvas, snapshot, bounds, device);
                 }
                 finally
                 {
@@ -118,24 +139,31 @@ namespace GameEngine.Core.Systems
             }
         }
 
-        private static SKRect LocalViewport(SKCanvas canvas)
+        // Without explicit bounds the scene fills the canvas as it stands, which is the whole
+        // target for a host that does not clip.
+        private static SKRect FullCanvas(SKCanvas canvas)
         {
             var device = canvas.DeviceClipBounds;
             var rect = new SKRect(device.Left, device.Top, device.Right, device.Bottom);
             return canvas.TotalMatrix.TryInvert(out var inverse) ? inverse.MapRect(rect) : canvas.LocalClipBounds;
         }
-        private SKSurface? sceneSurface;
-        private void DrawResolutionLimited(SKCanvas canvas, RenderSnapshot snapshot)
+
+        private static SKSizeI DeviceSize(SKCanvas canvas, SKRect bounds)
         {
-            var bounds = LocalViewport(canvas);
-            var deviceBounds = canvas.DeviceClipBounds;
+            var mapped = canvas.TotalMatrix.MapRect(bounds);
+            return new SKSizeI(Math.Max(1, (int)Math.Round(mapped.Width)), Math.Max(1, (int)Math.Round(mapped.Height)));
+        }
+
+        private SKSurface? sceneSurface;
+        private void DrawResolutionLimited(SKCanvas canvas, RenderSnapshot snapshot, SKRect bounds, SKSizeI device)
+        {
             int cap = options.MaxRenderWidth;
-            if (cap == 0 || deviceBounds.Width <= cap)
+            if (cap == 0 || device.Width <= cap)
             {
-                DrawSnapshot(canvas, snapshot);
+                DrawSnapshot(canvas, snapshot, bounds);
                 return;
             }
-            int height = Math.Max(1, (int)Math.Round((double)deviceBounds.Height * cap / deviceBounds.Width));
+            int height = Math.Max(1, (int)Math.Round((double)device.Height * cap / device.Width));
             if (sceneSurface is null || sceneSurface.Canvas.DeviceClipBounds.Width != cap || sceneSurface.Canvas.DeviceClipBounds.Height != height || sceneSurface.Context?.Handle != canvas.Context?.Handle)
             {
                 sceneSurface?.Dispose();
@@ -143,7 +171,7 @@ namespace GameEngine.Core.Systems
                 sceneSurface = (canvas.Context is { } context ? SKSurface.Create(context, true, info) : SKSurface.Create(info))
                     ?? throw new InvalidOperationException("Cannot allocate scene surface.");
             }
-            DrawSnapshot(sceneSurface.Canvas, snapshot);
+            DrawSnapshot(sceneSurface.Canvas, snapshot, new SKRect(0, 0, cap, height));
             using var image = sceneSurface.Snapshot();
             canvas.DrawImage(image, bounds, _animationSampling);
         }
@@ -166,15 +194,15 @@ namespace GameEngine.Core.Systems
             }
             finally { canvas.RestoreToCount(saved); }
         }
-        private void DrawSnapshot(SKCanvas canvas, RenderSnapshot snapshot)
+        private void DrawSnapshot(SKCanvas canvas, RenderSnapshot snapshot, SKRect bounds)
         {
             int saved = canvas.Save();
             try
             {
                 canvas.Clear(options.Effects?.Background?.Fallback ?? SKColors.White);
+                canvas.Translate(bounds.Left, bounds.Top);
 
-                var canvasBounds = LocalViewport(canvas);
-                var viewport = ViewportFor(new Vec2(canvasBounds.Width, canvasBounds.Height));
+                var viewport = ViewportFor(new Vec2(bounds.Width, bounds.Height));
 
                 canvas.Save();
                 canvas.Translate((float)viewport.OffsetX, (float)viewport.OffsetY);

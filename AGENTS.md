@@ -62,6 +62,11 @@ Adding a component means touching `ComponentSchemas`, the factory, the editor fo
   because that is a file-format value.
 - **Coordinates are virtual.** A scene declares `VirtualWidth`/`VirtualHeight`; the engine
   letterboxes and maps pointer input back through the same transform.
+- **A clip is not a viewport.** A host passes its control's full logical bounds to
+  `DrawEntitiesToCanvas(canvas, snapshot, viewport)`. Layout, the `MaxRenderWidth` surface and
+  post-processing are sized from those bounds and the canvas transform; the canvas clip (a
+  compositor's damage rectangle) only limits which pixels are written. Without bounds the scene
+  fills the whole canvas.
 - **Components are data; logic lives in systems.** Rendering stays inside `RenderSystem`.
 - **`CTransform.Position` is the top-left of the bounding box, or the sprite centre when
   there is no box.** A sprite is drawn centred on that point; rotation and scale are applied
